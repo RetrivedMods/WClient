@@ -88,10 +88,11 @@ class PlayerTPModule : Module("PlayerTP", ModuleCategory.Motion) {
                 Vector3f.from(derpYaw, derpPitch, 0f)
             else player.vec3Rotation
             mode = MovePlayerPacket.Mode.NORMAL
-            isOnGround = false
+            onGround = false
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })
+
     }
 
     private fun findNearestEnemy(player: LocalPlayer): Entity? {

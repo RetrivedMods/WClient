@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Hexagon outline -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M12,2L20,7v10l-8,5L4,17V7L12,2z"/>
+
+    <!-- 3D cube centered -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,8.5L8.5,10.5v4l3.5,2l3.5,-2v-4L12,8.5z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.4"
+        android:pathData="M12,12.5L8.5,10.5v4l3.5,2V12.5z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:pathData="M12,12.5l3.5,-2v4l-3.5,2V12.5z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,8.5l3.5,2l-3.5,2l-3.5,-2L12,8.5z"/>
+</vector>

@@ -1,5 +1,4 @@
 package com.retrivedmods.wclient.ui.component
-
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NavigationRailX(

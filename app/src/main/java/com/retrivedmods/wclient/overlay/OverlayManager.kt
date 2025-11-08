@@ -1,4 +1,3 @@
-
 package com.retrivedmods.wclient.overlay
 
 import android.annotation.SuppressLint
@@ -11,10 +10,16 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.retrivedmods.wclient.game.ModuleManager
-import com.retrivedmods.wclient.ui.theme.MuCuteClientTheme
-import com.retrivedmods.wclient.overlay.WatermarkOverlay
+import com.retrivedmods.wclient.ui.theme.WClientTheme
+import com.retrivedmods.wclient.overlay.gui.classic.OverlayButton
+import com.retrivedmods.wclient.overlay.gui.classic.OverlayShortcutButton
+import com.retrivedmods.wclient.overlay.gui.clickgui.ClickGUIButton
+import com.retrivedmods.wclient.overlay.gui.clickgui.ClickGUIOverlay
+import com.retrivedmods.wclient.overlay.gui.w.WOverlayButton
+import com.retrivedmods.wclient.overlay.gui.w.WOverlayManager
 import kotlinx.coroutines.launch
 
 @SuppressLint("StaticFieldLeak")
@@ -29,16 +34,53 @@ object OverlayManager {
     var isShowing = false
         private set
 
-    init {
-        with(overlayWindows) {
-            add(OverlayButton())
-            add(WatermarkOverlay())
-            addAll(
-                ModuleManager
-                    .modules
-                    .filter { it.isShortcutDisplayed }
-                    .map { it.overlayShortcutButton })
+    private var currentOverlayButton: OverlayWindow? = null
+    private var currentClickGUI: OverlayWindow? = null
+    private var currentClickGUIOverlay: OverlayWindow? = null
+
+    private fun getGUITheme(context: Context): GUITheme {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return try {
+            GUITheme.valueOf(
+                sharedPreferences.getString("gui_theme", "CLASSIC") ?: "CLASSIC"
+            )
+        } catch (e: Exception) {
+            GUITheme.CLASSIC
         }
+    }
+
+    private fun initializeOverlays(context: Context) {
+        val theme = getGUITheme(context)
+
+
+        overlayWindows.clear()
+        currentOverlayButton = null
+        currentClickGUI = null
+        currentClickGUIOverlay = null
+
+
+        when (theme) {
+            GUITheme.W -> {
+
+                currentOverlayButton = WOverlayButton()
+
+            }
+            GUITheme.CLICKGUI -> {
+                currentOverlayButton = ClickGUIButton()
+            }
+            GUITheme.CLASSIC -> {
+                currentOverlayButton = OverlayButton()
+                overlayWindows.addAll(
+                    ModuleManager
+                        .modules
+                        .filter { it.isShortcutDisplayed }
+                        .map { it.overlayShortcutButton }
+                )
+            }
+        }
+
+
+        currentOverlayButton?.let { overlayWindows.add(it) }
     }
 
     fun showOverlayWindow(overlayWindow: OverlayWindow) {
@@ -60,10 +102,28 @@ object OverlayManager {
     }
 
     fun show(context: Context) {
-        this.currentContext = context
+        currentContext = context
 
-        overlayWindows.forEach {
-            showOverlayWindow(context, it)
+
+        initializeOverlays(context)
+
+        val theme = getGUITheme(context)
+        when (theme) {
+            GUITheme.W -> {
+
+                WOverlayManager.showOverlayButton()
+            }
+            GUITheme.CLICKGUI -> {
+                overlayWindows.forEach {
+                    showOverlayWindow(context, it)
+                }
+            }
+            GUITheme.CLASSIC -> {
+
+                overlayWindows.forEach {
+                    showOverlayWindow(context, it)
+                }
+            }
         }
 
         isShowing = true
@@ -72,8 +132,24 @@ object OverlayManager {
     fun dismiss() {
         val context = currentContext
         if (context != null) {
-            overlayWindows.forEach {
-                dismissOverlayWindow(context, it)
+            val theme = getGUITheme(context)
+            when (theme) {
+                GUITheme.W -> {
+
+                    WOverlayManager.hideAll()
+                }
+                GUITheme.CLICKGUI -> {
+                    overlayWindows.forEach {
+                        dismissOverlayWindow(context, it)
+                    }
+                    currentClickGUIOverlay?.let { dismissOverlayWindow(context, it) }
+                }
+                GUITheme.CLASSIC -> {
+
+                    overlayWindows.forEach {
+                        dismissOverlayWindow(context, it)
+                    }
+                }
             }
             isShowing = false
         }
@@ -85,7 +161,7 @@ object OverlayManager {
         val layoutParams = overlayWindow.layoutParams
         val composeView = overlayWindow.composeView
         composeView.setContent {
-            MuCuteClientTheme {
+            WClientTheme {
                 overlayWindow.Content()
             }
         }
@@ -122,6 +198,7 @@ object OverlayManager {
 
         }
     }
+
     fun updateOverlayOpacity(opacity: Float) {
         overlayWindows.find { it is OverlayButton }?.let { button ->
             button.layoutParams.alpha = opacity
@@ -156,15 +233,67 @@ object OverlayManager {
             currentContext?.let { context ->
                 try {
                     val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                    // Check if view is attached before updating
+
                     if (button.composeView.isAttachedToWindow) {
                         windowManager.updateViewLayout(button.composeView, button.layoutParams)
                     }
                 } catch (e: Exception) {
-                    // Ignore IllegalArgumentException when view is not attached
+
                 }
             }
         }
-
     }
+
+    fun refreshTheme() {
+        val context = currentContext
+        if (context != null && isShowing) {
+
+            dismissAllOverlays()
+
+            show(context)
+        }
+    }
+
+    private fun dismissAllOverlays() {
+        val context = currentContext ?: return
+
+
+        overlayWindows.forEach {
+            try {
+                dismissOverlayWindow(context, it)
+            } catch (_: Exception) {
+
+            }
+        }
+
+
+        try {
+            WOverlayManager.hideAll()
+        } catch (_: Exception) {
+
+        }
+
+
+        overlayWindows.clear()
+        currentOverlayButton = null
+        currentClickGUI = null
+        currentClickGUIOverlay = null
+    }
+
+    fun showClickGUI() {
+        val context = currentContext ?: return
+        if (currentClickGUIOverlay == null) {
+            currentClickGUIOverlay = ClickGUIOverlay()
+        }
+        currentClickGUIOverlay?.let { showOverlayWindow(context, it) }
+    }
+
+    fun dismissClickGUI() {
+        val context = currentContext ?: return
+        currentClickGUIOverlay?.let {
+            dismissOverlayWindow(context, it)
+            currentClickGUIOverlay = null
+        }
+    }
+
 }

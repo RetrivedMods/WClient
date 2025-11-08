@@ -4,65 +4,63 @@ package com.retrivedmods.wclient.game
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
-import com.retrivedmods.wclient.game.module.combat.AdvanceCombatAuraModule
-import com.retrivedmods.wclient.game.module.combat.WAuraModule
 import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
-import com.retrivedmods.wclient.game.module.combat.HitboxModule
-import com.retrivedmods.wclient.game.module.combat.TrollerModule
-import com.retrivedmods.wclient.game.module.combat.InfiniteAuraModule
 import com.retrivedmods.wclient.game.module.combat.AntiKnockbackModule
-import com.retrivedmods.wclient.game.module.combat.AutoHvHModule
-import com.retrivedmods.wclient.game.module.combat.BlinkStrikeModule
-import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
-import com.retrivedmods.wclient.game.module.combat.CriticalsModule
-import com.retrivedmods.wclient.game.module.combat.CrystalauraModule
+import com.retrivedmods.wclient.game.module.combat.CrystalSmashModule
 import com.retrivedmods.wclient.game.module.combat.EnemyHunterModule
+import com.retrivedmods.wclient.game.module.combat.HitAndRunModule
+import com.retrivedmods.wclient.game.module.combat.HitboxModule
 import com.retrivedmods.wclient.game.module.combat.KillauraModule
-import com.retrivedmods.wclient.game.module.combat.ReachModule
-import com.retrivedmods.wclient.game.module.combat.SmartAuraModule
-import com.retrivedmods.wclient.game.module.combat.VelocityBoostModule
-import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
+import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
+import com.retrivedmods.wclient.game.module.combat.WAuraModule
+
 import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
-import com.retrivedmods.wclient.game.module.misc.ChestStealerModule
-import com.retrivedmods.wclient.game.module.player.DesyncModule
+import com.retrivedmods.wclient.game.module.misc.BaritoneModule
+import com.retrivedmods.wclient.game.module.misc.CommandHandlerModule
+import com.retrivedmods.wclient.game.module.visual.CoordinatesModule
+import com.retrivedmods.wclient.game.module.misc.DesyncModule
+import com.retrivedmods.wclient.game.module.misc.FakeDeathModule
+import com.retrivedmods.wclient.game.module.misc.FakeXPModule
+
+import com.retrivedmods.wclient.game.module.misc.MinerModule
+import com.retrivedmods.wclient.game.module.misc.NoChatModule
 import com.retrivedmods.wclient.game.module.motion.NoClipModule
-import com.retrivedmods.wclient.game.module.misc.PlayerTracerModule
+import com.retrivedmods.wclient.game.module.misc.PieChartModule
 import com.retrivedmods.wclient.game.module.misc.PositionLoggerModule
+import com.retrivedmods.wclient.game.module.misc.ReplayModule
+
+import com.retrivedmods.wclient.game.module.misc.ChestStealerModule
+import com.retrivedmods.wclient.game.module.world.AntiDebuffModule
+import com.retrivedmods.wclient.game.module.world.EffectsModule
+import com.retrivedmods.wclient.game.module.world.ParticlesModule
 import com.retrivedmods.wclient.game.module.world.TimeShiftModule
-import com.retrivedmods.wclient.game.module.player.BlinkModule
-import com.retrivedmods.wclient.game.module.player.RegenerationModule
 import com.retrivedmods.wclient.game.module.world.WeatherControllerModule
 import com.retrivedmods.wclient.game.module.motion.AirJumpModule
 import com.retrivedmods.wclient.game.module.motion.AntiAFKModule
 import com.retrivedmods.wclient.game.module.motion.AutoWalkModule
 import com.retrivedmods.wclient.game.module.motion.BhopModule
-import com.retrivedmods.wclient.game.module.motion.FastStopModule
 import com.retrivedmods.wclient.game.module.motion.FlyModule
-import com.retrivedmods.wclient.game.module.motion.GlideModule
 import com.retrivedmods.wclient.game.module.motion.HighJumpModule
 import com.retrivedmods.wclient.game.module.motion.JetPackModule
-import com.retrivedmods.wclient.game.module.motion.JitterFlyModule
 import com.retrivedmods.wclient.game.module.motion.MotionFlyModule
-import com.retrivedmods.wclient.game.module.motion.MotionVarModule
-import com.retrivedmods.wclient.game.module.motion.OpFightBotModule
-import com.retrivedmods.wclient.game.module.motion.SpeedModule
-import com.retrivedmods.wclient.game.module.motion.SprintModule
-import com.retrivedmods.wclient.game.module.player.FreeCameraModule
-import com.retrivedmods.wclient.game.module.visual.NoHurtCameraModule
-import com.retrivedmods.wclient.game.module.visual.ZoomModule
-import com.retrivedmods.wclient.game.module.visual.DamageTextModule
 import com.retrivedmods.wclient.game.module.motion.PlayerTPModule
-import com.retrivedmods.wclient.game.module.motion.SlowFallingModule
+import com.retrivedmods.wclient.game.module.motion.SpeedModule
 import com.retrivedmods.wclient.game.module.motion.SpiderModule
-import com.retrivedmods.wclient.game.module.player.FastBreakModule
-import com.retrivedmods.wclient.game.module.player.JesusModule
-import com.retrivedmods.wclient.game.module.player.StrengthModule
-import com.retrivedmods.wclient.game.module.visual.NightVisionModule
-import com.retrivedmods.wclient.game.module.visual.FakeProxyModule
-import com.retrivedmods.wclient.game.module.visual.NameTagModule
+import com.retrivedmods.wclient.game.module.motion.SprintModule
+import com.retrivedmods.wclient.game.module.motion.UnifiedFlyModule
+import com.retrivedmods.wclient.game.module.visual.CrosshairModule
+import com.retrivedmods.wclient.game.module.visual.DamageTextModule
+import com.retrivedmods.wclient.game.module.visual.ESPModule
+import com.retrivedmods.wclient.game.module.visual.FullbrightModule
+import com.retrivedmods.wclient.game.module.visual.MinimapModule
+import com.retrivedmods.wclient.game.module.visual.NetworkInfoModule
+import com.retrivedmods.wclient.game.module.visual.NoHurtCameraModule
 import com.retrivedmods.wclient.game.module.visual.PlayerJoinModule
-import com.retrivedmods.wclient.game.module.world.FakeLagModule
-import com.retrivedmods.wclient.game.module.world.PingStatsModule
+import com.retrivedmods.wclient.game.module.visual.SpeedDisplayModule
+import com.retrivedmods.wclient.game.module.visual.WorldStateModule
+import com.retrivedmods.wclient.game.module.visual.ZoomModule
+import com.retrivedmods.wclient.game.module.visual.TargetHudModule
+import com.retrivedmods.wclient.game.module.world.FreeCameraModule
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -82,73 +80,70 @@ object ModuleManager {
 
     init {
         with(_modules) {
+            // Combat
+            add(WAuraModule())
+            add(KillauraModule())
+            add(EnemyHunterModule())
+            add(AntiKnockbackModule())
+            add(AntiCrystalModule())
+            add(HitAndRunModule())
+            add(HitboxModule())
+            add(CrystalSmashModule())
+            add(TriggerBotModule())
+
+            
+            // Motion
+            add(MotionFlyModule())
+            add(PlayerTPModule())
             add(FlyModule())
-            add(ZoomModule())
-            add(AutoHvHModule())
+            add(SpeedModule())
             add(AirJumpModule())
             add(NoClipModule())
-            add(GlideModule())
-            add(JitterFlyModule())
-            add(AdvanceCombatAuraModule())
-            add(TriggerBotModule())
-            add(CrystalauraModule())
-            add(TrollerModule())
-            add(DamageTextModule())
-            add(WAuraModule())
-            add(SpeedModule())
             add(JetPackModule())
-            add(BlinkModule())
-            add(AdvanceDisablerModule())
-            add(BlinkModule())
-            add(NightVisionModule())
-            add(VelocityBoostModule())
-            add(RegenerationModule())
-            add(AutoDisconnectModule())
-            add(PlayerJoinModule())
-            add(HitboxModule())
-            add(InfiniteAuraModule())
-            add(EnemyHunterModule())
-            add(CriticalsModule())
-            add(FakeProxyModule())
-            add(NameTagModule())
-            add(ReachModule())
-            add(SmartAuraModule())
-            add(PlayerTPModule())
             add(HighJumpModule())
-            add(SpiderModule())
-            add(JesusModule())
-            add(AntiKnockbackModule())
-            add(FastStopModule())
-            add(OpFightBotModule())
-            add(FakeLagModule())
-            add(FastBreakModule())
-            add(StrengthModule())
-            add(BlinkStrikeModule())
-            add(PingStatsModule())
-            add(ChestStealerModule())
-            add(SlowFallingModule())
-
             add(BhopModule())
             add(SprintModule())
-            add(NoHurtCameraModule())
             add(AutoWalkModule())
             add(AntiAFKModule())
-            add(DesyncModule())
-            add(PositionLoggerModule())
-            add(MotionFlyModule())
+            add(SpiderModule())
+            add(UnifiedFlyModule())
+            
+            // Visual
+            add(DamageTextModule())
+            add(ESPModule())
+            add(PlayerJoinModule())
+            add(ZoomModule())
+            add(CoordinatesModule())
+            add(NoHurtCameraModule())
+            add(SpeedDisplayModule())
+            add(NetworkInfoModule())
+            add(WorldStateModule())
+            add(MinimapModule())
+            add(CrosshairModule())
+            add(TargetHudModule())
+            add(FullbrightModule())
+            
+            // World
             add(FreeCameraModule())
-            add(KillauraModule())
-
-
-
-            add(AntiCrystalModule())
-
             add(TimeShiftModule())
             add(WeatherControllerModule())
-
-            add(MotionVarModule())
-            add(PlayerTracerModule())
-
+            add(EffectsModule())
+            add(ParticlesModule())
+            add(AntiDebuffModule())
+            add(ChestStealerModule())
+            
+            // Misc
+            add(AutoDisconnectModule())
+            add(DesyncModule())
+            add(PositionLoggerModule())
+            add(NoChatModule())
+            add(CommandHandlerModule())
+            add(ReplayModule())
+            add(BaritoneModule())
+            add(PieChartModule())
+            add(FakeDeathModule())
+            add(FakeXPModule())
+            add(MinerModule())
         }
     }
 
@@ -251,5 +246,4 @@ object ModuleManager {
             false
         }
     }
-
 }

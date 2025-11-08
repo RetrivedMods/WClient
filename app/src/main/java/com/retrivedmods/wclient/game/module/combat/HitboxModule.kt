@@ -3,7 +3,11 @@ package com.retrivedmods.wclient.game.module.combat
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.game.entity.*
+import com.retrivedmods.wclient.game.entity.Entity
+import com.retrivedmods.wclient.game.entity.EntityUnknown
+import com.retrivedmods.wclient.game.entity.LocalPlayer
+import com.retrivedmods.wclient.game.entity.MobList
+import com.retrivedmods.wclient.game.entity.Player
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataMap
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityEventType
@@ -11,14 +15,14 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityDataPacket
 import org.cloudburstmc.protocol.bedrock.packet.EntityEventPacket
 
-class HitboxModule : Module("Hitbox", ModuleCategory.Combat) {
+class HitboxModule : Module("hitbox", ModuleCategory.Combat) {
 
-    private val hitboxWidth by floatValue("Width", 1.5f, 0.5f..12f)
-    private val hitboxHeight by floatValue("Height", 1.5f, 0.5f..12f)
+    private val hitboxWidth by floatValue("width", 1.5f, 0.5f..12f)
+    private val hitboxHeight by floatValue("height", 1.5f, 0.5f..12f)
     private var playersOnly by boolValue("players_only", true)
-    private var mobsOnly by boolValue("Mobs", false)
-    private val particleCount by intValue("Particles", 8, 4..16)
-    private val visualizeHitbox by boolValue("Visualize", true)
+    private var mobsOnly by boolValue("include_mobs", false)
+    private val particleCount by intValue("particles", 8, 4..16)
+    private val visualizeHitbox by boolValue("visualize", true)
     private var lastParticleTime = 0L
     private val particleInterval = 500L
 
@@ -96,7 +100,7 @@ class HitboxModule : Module("Hitbox", ModuleCategory.Combat) {
 
     private fun Player.isBot(): Boolean {
         if (this is LocalPlayer) return false
-        val playerList = session.level.playerMap[this.uuid] ?: return true
+        val playerList = session.level.playerMap[this.uuid] ?: return false // Changed: treat unknown players as real players
         return playerList.name.isBlank()
     }
 

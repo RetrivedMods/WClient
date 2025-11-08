@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.retrivedmods.wclient.R
-import com.retrivedmods.wclient.ui.theme.MuCuteClientTheme
+import com.retrivedmods.wclient.ui.theme.WClientTheme
 
 class CrashHandlerActivity : ComponentActivity() {
 
@@ -34,7 +34,7 @@ class CrashHandlerActivity : ComponentActivity() {
         val message = intent?.getStringExtra("message") ?: return finish()
 
         setContent {
-            MuCuteClientTheme {
+            WClientTheme {
                 Scaffold(
                     topBar = {
                         TopAppBar(

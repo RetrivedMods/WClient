@@ -16,20 +16,12 @@ class OverlayLifecycleOwner : SavedStateRegistryOwner {
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateRegistryController.savedStateRegistry
 
-    fun setCurrentState(state: Lifecycle.State) {
-        lifecycle.currentState = state
-    }
-
     fun handleLifecycleEvent(event: Lifecycle.Event) {
         lifecycle.handleLifecycleEvent(event)
     }
 
     fun performRestore(savedState: Bundle?) {
         savedStateRegistryController.performRestore(savedState)
-    }
-
-    fun performSave(outBundle: Bundle) {
-        savedStateRegistryController.performSave(outBundle)
     }
 
 }

@@ -1,6 +1,5 @@
 package com.retrivedmods.wclient.game.entity
 
-import android.util.Log
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.inventory.AbstractInventory
 import com.retrivedmods.wclient.game.inventory.ContainerInventory
@@ -47,9 +46,6 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
     var openContainer: AbstractInventory? = null
         private set
-
-    // Overridden health property
-    override var health: Float = 100f // Default health is 100
 
     override fun onPacketBound(packet: BedrockPacket) {
         super.onPacketBound(packet)
@@ -113,13 +109,6 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     fun attack(entity: Entity) {
         swing()
 
-        Log.e(
-            "Inventory", """
-            hotbarSlot: ${inventory.heldItemSlot}
-            hand: ${inventory.hand}
-        """.trimIndent()
-        )
-
         val inventoryTransactionPacket = InventoryTransactionPacket()
         inventoryTransactionPacket.transactionType = InventoryTransactionType.ITEM_USE_ON_ENTITY
         inventoryTransactionPacket.actionType = 1
@@ -136,4 +125,5 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         super.onDisconnect()
         reset()
     }
+
 }

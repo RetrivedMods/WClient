@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
@@ -32,6 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
+import com.retrivedmods.wclient.ui.component.WGlassCard
+import com.retrivedmods.wclient.ui.component.WFloatingActionButton
+import com.retrivedmods.wclient.ui.theme.WColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -46,15 +50,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.DialogProperties
 import com.retrivedmods.wclient.R
 import com.retrivedmods.wclient.game.AccountManager
-import com.retrivedmods.wclient.model.Account
-import com.retrivedmods.wclient.util.AuthWebView
+import com.retrivedmods.wclient.ui.component.AuthWebView
 import com.retrivedmods.wclient.util.LocalSnackbarHostState
 import com.retrivedmods.wclient.util.SnackbarHostStateScope
 import com.retrivedmods.wclient.util.getActivityWindow
 import com.retrivedmods.wclient.util.getDialogWindow
 import com.retrivedmods.wclient.util.windowFullScreen
-import com.mucheng.mucute.relay.util.XboxDeviceInfo
 import kotlinx.coroutines.launch
+import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession.FullBedrockSession
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,15 +66,24 @@ fun AccountPageContent() {
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         var showAddAccountDropDownMenu by remember { mutableStateOf(false) }
-        var selectedAccountAction: Account? by remember { mutableStateOf(null) }
-        var deviceInfo: XboxDeviceInfo? by remember { mutableStateOf(null) }
+        var selectedAccountAction: FullBedrockSession? by remember { mutableStateOf(null) }
+        var login: Boolean by remember { mutableStateOf(false) }
         val snackbarHostState = LocalSnackbarHostState.current
 
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
-                        Text(stringResource(R.string.account))
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                stringResource(R.string.account),
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = WColors.OnSurface
+                            )
+                        }
                     },
                     actions = {
                         IconButton(
@@ -84,16 +96,16 @@ fun AccountPageContent() {
                         AddAccountDropDownMenu(
                             expanded = showAddAccountDropDownMenu,
                             onClick = {
-                                deviceInfo = it
                                 showAddAccountDropDownMenu = false
+                                login = true
                             }
                         ) {
                             showAddAccountDropDownMenu = false
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        titleContentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                        containerColor = WColors.Background,
+                        titleContentColor = WColors.OnSurface
                     )
                 )
             },
@@ -104,7 +116,7 @@ fun AccountPageContent() {
                         .animateContentSize()
                 )
             },
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
+            containerColor = WColors.Background
         ) {
             Box(
                 Modifier
@@ -112,12 +124,12 @@ fun AccountPageContent() {
                     .fillMaxSize()
             ) {
                 LazyColumn(Modifier.fillMaxSize()) {
-                    items(AccountManager.accounts, key = { value -> value.remark }) { account ->
+                    items(AccountManager.accounts) { account ->
                         ListItem(
                             modifier = Modifier
                                 .animateItem()
                                 .clickable {
-                                    if (AccountManager.currentAccount != account) {
+                                    if (AccountManager.selectedAccount != account) {
                                         AccountManager.selectAccount(account)
                                     } else {
                                         AccountManager.selectAccount(null)
@@ -127,12 +139,12 @@ fun AccountPageContent() {
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer
                             ),
                             headlineContent = {
-                                Text(account.remark)
+                                Text(account.mcChain.displayName)
                             },
                             supportingContent = {
                                 Row(Modifier.fillMaxWidth()) {
-                                    Text(account.platform.deviceType)
-                                    if (account == AccountManager.currentAccount) {
+                                    Text("Android")
+                                    if (account == AccountManager.selectedAccount) {
                                         Text(
                                             stringResource(R.string.has_been_selected),
                                             color = MaterialTheme.colorScheme.primary,
@@ -156,7 +168,7 @@ fun AccountPageContent() {
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                if (account == AccountManager.currentAccount) stringResource(
+                                                if (account == AccountManager.selectedAccount) stringResource(
                                                     R.string.unselect
                                                 ) else stringResource(
                                                     R.string.select
@@ -165,12 +177,12 @@ fun AccountPageContent() {
                                         },
                                         leadingIcon = {
                                             Icon(
-                                                if (account == AccountManager.currentAccount) Icons.Outlined.CheckBox else Icons.Outlined.CheckBoxOutlineBlank,
+                                                if (account == AccountManager.selectedAccount) Icons.Outlined.CheckBox else Icons.Outlined.CheckBoxOutlineBlank,
                                                 contentDescription = null
                                             )
                                         },
                                         onClick = {
-                                            if (AccountManager.currentAccount != account) {
+                                            if (AccountManager.selectedAccount != account) {
                                                 AccountManager.selectAccount(account)
                                             } else {
                                                 AccountManager.selectAccount(null)
@@ -189,11 +201,10 @@ fun AccountPageContent() {
                                             )
                                         },
                                         onClick = {
-                                            AccountManager.accounts.remove(account)
-                                            if (account == AccountManager.currentAccount) {
+                                            AccountManager.removeAccount(account)
+                                            if (account == AccountManager.selectedAccount) {
                                                 AccountManager.selectAccount(null)
                                             }
-                                            AccountManager.save()
                                             selectedAccountAction = null
                                         }
                                     )
@@ -205,13 +216,17 @@ fun AccountPageContent() {
             }
         }
 
-        deviceInfo?.let {
-            AccountDialog(it) { success ->
-                deviceInfo = null
+        if (login) {
+            AccountDialog { throwable: Throwable? ->
+                login = false
                 coroutineScope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar(
-                        context.getString(if (success) R.string.fetch_account_successfully else R.string.fetch_account_failed)
+                    throwable?.let {
+                        snackbarHostState.showSnackbar(
+                            context.getString(R.string.fetch_account_failed, it.message)
+                        )
+                    } ?: snackbarHostState.showSnackbar(
+                        context.getString(R.string.fetch_account_successfully)
                     )
                 }
             }
@@ -224,8 +239,7 @@ fun AccountPageContent() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AccountDialog(
-    deviceInfo: XboxDeviceInfo,
-    callback: (success: Boolean) -> Unit
+    callback: (Throwable?) -> Unit
 ) {
     BasicAlertDialog(
         onDismissRequest = {},
@@ -258,7 +272,6 @@ private fun AccountDialog(
                 AndroidView(
                     factory = { context ->
                         AuthWebView(context).also { authWebView ->
-                            authWebView.deviceInfo = deviceInfo
                             authWebView.callback = callback
                         }.also { authWebView ->
                             authWebView.addAccount()
@@ -275,22 +288,22 @@ private fun AccountDialog(
 @Composable
 private fun AddAccountDropDownMenu(
     expanded: Boolean,
-    onClick: (XboxDeviceInfo) -> Unit,
+    onClick: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest
     ) {
-        XboxDeviceInfo.devices.values.forEach { deviceInfo ->
-            DropdownMenuItem(
-                text = {
-                    Text(stringResource(R.string.login_in, deviceInfo.deviceType))
-                },
-                onClick = {
-                    onClick(deviceInfo)
-                }
-            )
-        }
+
+        DropdownMenuItem(
+            text = {
+                val xboxDeviceCodeString = stringResource(R.string.xbox_device_code)
+                Text(stringResource(R.string.login_in, xboxDeviceCodeString))
+            },
+            onClick = {
+                onClick()
+            }
+        )
     }
 }

@@ -5,6 +5,7 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.entity.*
 import org.cloudburstmc.math.vector.Vector3f
+import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import kotlin.math.*
@@ -23,11 +24,15 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
     private var lastMoveTime = 0L
     private var lastAttackTime = 0L
     private var angle = 0.0
+    private var isPathBlockedFlag = false
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) return
         val packet = interceptablePacket.packet
         if (packet !is PlayerAuthInputPacket) return
+
+        // Mirror LockHeed-style collision sensing
+        isPathBlockedFlag = packet.inputData.contains(PlayerAuthInputData.HORIZONTAL_COLLISION)
 
         val now = System.currentTimeMillis()
         val moveDelta = now - lastMoveTime
@@ -77,7 +82,8 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
 
         val newPosition = player.vec3Position.add(motion)
 
-        if (!noClip && isPathBlocked(player.vec3Position, newPosition)) return
+        // Respect NoClip toggle with real-time collision like LockHeed
+        if (!noClip && isPathBlockedFlag) return
 
         // --- Smooth Rotation ---
         val lookDX = targetPos.x - playerPos.x
@@ -106,10 +112,11 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
             position = newPosition
             rotation = rotationVec
             mode = MovePlayerPacket.Mode.NORMAL
-            isOnGround = false
+            onGround = false
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })
+
     }
 
     private fun findTarget(): Entity? {
@@ -132,8 +139,8 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
         Vector3f.from(jitter().toDouble(), jitter().toDouble(), jitter().toDouble())
 
     private fun isPathBlocked(start: Vector3f, end: Vector3f): Boolean {
-        // TODO: Implement real block collision
-        return false
+        // Legacy stub kept to preserve format; live collision uses PlayerAuthInputData flag.
+        return isPathBlockedFlag
     }
 
     private fun interpolateAngle(old: Float, target: Float, factor: Float): Float {

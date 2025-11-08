@@ -3,16 +3,16 @@ package com.retrivedmods.wclient.game.module.motion
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.data.Ability
 import org.cloudburstmc.protocol.bedrock.data.AbilityLayer
-import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData
 import org.cloudburstmc.protocol.bedrock.data.PlayerPermission
 import org.cloudburstmc.protocol.bedrock.data.command.CommandPermission
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.RequestAbilityPacket
-import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAbilitiesPacket
+import org.cloudburstmc.math.vector.Vector3f
+import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData
+import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
 
 class FlyModule : Module("fly", ModuleCategory.Motion) {
 
@@ -70,23 +70,6 @@ class FlyModule : Module("fly", ModuleCategory.Motion) {
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         val packet = interceptablePacket.packet
-
-
-        if (isEnabled) {
-            if (packet is PlayerAuthInputPacket) {
-                if (packet.inputData.contains(PlayerAuthInputData.JUMP_DOWN)) {
-                    val motionPacket = SetEntityMotionPacket().apply {
-                        runtimeEntityId = session.localPlayer.runtimeEntityId
-                        motion = Vector3f.from(
-                            session.localPlayer.motionX,
-                            0.42f,
-                            session.localPlayer.motionZ
-                        )
-                    }
-                    session.clientBound(motionPacket)
-                }
-            }
-        }
         if (packet is RequestAbilityPacket && packet.ability == Ability.FLYING) {
             interceptablePacket.intercept()
             return
@@ -98,16 +81,36 @@ class FlyModule : Module("fly", ModuleCategory.Motion) {
         }
 
         if (packet is PlayerAuthInputPacket) {
+            // Enable/disable flying abilities
             if (!canFly && isEnabled) {
                 enableFlyAbilitiesPacket.uniqueEntityId = session.localPlayer.uniqueEntityId
                 session.clientBound(enableFlyAbilitiesPacket)
                 canFly = true
-
-
             } else if (canFly && !isEnabled) {
                 disableFlyAbilitiesPacket.uniqueEntityId = session.localPlayer.uniqueEntityId
                 session.clientBound(disableFlyAbilitiesPacket)
                 canFly = false
+                return
+            }
+
+            // Handle vertical movement when enabled
+            if (isEnabled) {
+                var verticalMotion = 0f
+
+                // Space for up, Shift for down
+                if (packet.inputData.contains(PlayerAuthInputData.JUMPING)) {
+                    verticalMotion = flySpeed
+                } else if (packet.inputData.contains(PlayerAuthInputData.SNEAKING)) {
+                    verticalMotion = -flySpeed
+                }
+
+                if (verticalMotion != 0f) {
+                    val motionPacket = SetEntityMotionPacket().apply {
+                        runtimeEntityId = session.localPlayer.runtimeEntityId
+                        motion = Vector3f.from(0f, verticalMotion, 0f)
+                    }
+                    session.clientBound(motionPacket)
+                }
             }
         }
     }

@@ -3,7 +3,7 @@ package com.retrivedmods.wclient.game
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.retrivedmods.wclient.overlay.OverlayShortcutButton
+import com.retrivedmods.wclient.overlay.gui.classic.OverlayShortcutButton
 import com.retrivedmods.wclient.util.translatedSelf
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -19,7 +19,7 @@ abstract class Module(
     defaultEnabled: Boolean = false,
     val private: Boolean = false
 ) : InterruptiblePacketHandler,
-    Configurable {
+    AutoConfiguration {
 
     open lateinit var session: GameSession
 

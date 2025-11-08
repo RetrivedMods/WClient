@@ -1,62 +1,61 @@
 package com.retrivedmods.wclient.router.main
 
 import android.Manifest
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
+import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
+import android.provider.OpenableColumns
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.AddPhotoAlternate
+import androidx.compose.material.icons.rounded.Extension
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Plumbing
+import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.Upload
+import androidx.compose.material.icons.rounded.Whatshot
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -64,9 +63,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -81,11 +80,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -93,71 +90,55 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mucheng.mucute.relay.MuCuteRelay
 import com.retrivedmods.wclient.R
 import com.retrivedmods.wclient.service.Services
+import com.retrivedmods.wclient.ui.component.WButton
+import com.retrivedmods.wclient.ui.component.WFloatingActionButton
+import com.retrivedmods.wclient.ui.component.WGlassCard
+import com.retrivedmods.wclient.ui.component.authId
+import com.retrivedmods.wclient.ui.theme.WColors
 import com.retrivedmods.wclient.util.LocalSnackbarHostState
+import com.retrivedmods.wclient.util.MinecraftUtils
+import com.retrivedmods.wclient.util.ServerCompatUtils
 import com.retrivedmods.wclient.util.SnackbarHostStateScope
 import com.retrivedmods.wclient.viewmodel.MainScreenViewModel
 import kotlinx.coroutines.launch
+import java.io.File
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomePageContent() {
-
-    val PrimaryAccent = Color(0xFFB71C1C)
-    val CardBackground = Color(0xFF111111)
-    val TextPrimary = Color(0xFFECECEC)
-    val TextSecondary = Color(0xFFBBBBBB)
-    val BorderPrimary = Color(0x30B71C1C)
-    val LuxClientGradient1 = Color(0xFF8B0000)
-    val LuxClientGradient2 = Color(0xFFB22222)
-
-
-
-
-    val infiniteTransition = rememberInfiniteTransition()
-    val gradientOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 2f * Math.PI.toFloat(),
-        animationSpec = infiniteRepeatable(tween(8000)),
-        label = "backgroundAnimation"
-    )
-
     SnackbarHostStateScope {
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         val snackbarHostState = LocalSnackbarHostState.current
         val mainScreenViewModel: MainScreenViewModel = viewModel()
-        val onPostPermissionResult: (Boolean) -> Unit = block@{ isGranted: Boolean ->
+
+        val onPostPermissionResult: (Boolean) -> Unit = block@{ isGranted ->
             if (!isGranted) {
                 coroutineScope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.notification_permission_denied)
-                    )
+                    snackbarHostState.showSnackbar(message = context.getString(R.string.notification_permission_denied))
                 }
                 return@block
             }
-
             if (mainScreenViewModel.selectedGame.value === null) {
                 coroutineScope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.select_game_first)
-                    )
+                    snackbarHostState.showSnackbar(message = context.getString(R.string.select_game_first))
                 }
                 return@block
             }
-
             Services.toggle(context, mainScreenViewModel.captureModeModel.value)
         }
 
@@ -171,9 +152,7 @@ fun HomePageContent() {
             if (!Settings.canDrawOverlays(context)) {
                 coroutineScope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.overlay_permission_denied)
-                    )
+                    snackbarHostState.showSnackbar(message = context.getString(R.string.overlay_permission_denied))
                 }
                 return@rememberLauncherForActivityResult
             }
@@ -188,10 +167,7 @@ fun HomePageContent() {
         var showConnectionDialog by remember { mutableStateOf(false) }
 
         LaunchedEffect(Services.isActive) {
-            if (Services.isActive == isActiveBefore) {
-                return@LaunchedEffect
-            }
-
+            if (Services.isActive == isActiveBefore) return@LaunchedEffect
             isActiveBefore = Services.isActive
             if (Services.isActive) {
                 showConnectionDialog = true
@@ -203,24 +179,91 @@ fun HomePageContent() {
                 val selectedGame = mainScreenViewModel.selectedGame.value
                 if (result == SnackbarResult.ActionPerformed && selectedGame != null) {
                     val intent = context.packageManager.getLaunchIntentForPackage(selectedGame)
-                    if (intent != null) {
-                        context.startActivity(intent)
-                    } else {
-                        snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.failed_to_launch_game),
-                        )
-                    }
+                    if (intent != null) context.startActivity(intent)
+                    else snackbarHostState.showSnackbar(message = context.getString(R.string.failed_to_launch_game))
                 }
                 return@LaunchedEffect
             }
-
             snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(
-                message = context.getString(R.string.backend_disconnected)
-            )
+            snackbarHostState.showSnackbar(message = context.getString(R.string.backend_disconnected))
         }
 
-        // Connection Dialog
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "Home",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = WColors.OnSurface
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = WColors.Background,
+                        titleContentColor = WColors.OnSurface
+                    )
+                )
+            },
+            bottomBar = {
+                SnackbarHost(
+                    snackbarHostState,
+                    modifier = Modifier.animateContentSize()
+                )
+            },
+            containerColor = WColors.Background
+        ) { padding ->
+            Box(Modifier.padding(padding).fillMaxSize()) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    WelcomeCard()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+
+                        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            GameCard()
+                        }
+                    }
+                    TexturePackCard()
+                    HomeLinksRow()
+                }
+                WFloatingActionButton(
+                    onClick = {
+                        if (!Settings.canDrawOverlays(context)) {
+                            Toast.makeText(context, R.string.request_overlay_permission, Toast.LENGTH_SHORT).show()
+                            overlayPermissionLauncher.launch(
+                                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package: ${context.packageName}".toUri())
+                            )
+                            return@WFloatingActionButton
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            postNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            return@WFloatingActionButton
+                        }
+                        onPostPermissionResult(true)
+                    },
+                    modifier = Modifier.padding(15.dp).align(Alignment.BottomEnd),
+                    containerColor = if (Services.isActive) WColors.Error else WColors.Primary,
+                    contentColor = WColors.OnPrimary
+                ) {
+                    AnimatedContent(Services.isActive, label = "") { isActive ->
+                        if (!isActive) Icon(Icons.Rounded.PlayArrow, contentDescription = null)
+                        else Icon(Icons.Rounded.Pause, contentDescription = null)
+                    }
+                }
+            }
+        }
+
         if (showConnectionDialog) {
             val ipAddress = remember {
                 runCatching {
@@ -234,281 +277,104 @@ fun HomePageContent() {
 
             AlertDialog(
                 onDismissRequest = { showConnectionDialog = false },
-                title = {
-                    Text(
-                        "How to Connect",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                },
+                title = { Text("Relay Connected", style = MaterialTheme.typography.titleLarge) },
                 text = {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            "To join, Go to add a new server in the Servers tab by entering the IP address and port provided below, then press Play.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = TextSecondary
-                            )
-                        )
-
-
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                "IP Address:",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                            )
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        val currentModel = mainScreenViewModel.captureModeModel.value
+                        if (currentModel.isProtectedServer()) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = WColors.Primary.copy(alpha = 0.1f))
                             ) {
-                                Text(
-                                    ipAddress,
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        color = PrimaryAccent,
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    modifier = Modifier.weight(1f)
-                                )
-                                IconButton(
-                                    onClick = {
-                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        val clip = ClipData.newPlainText("IP Address", ipAddress)
-                                        clipboard.setPrimaryClip(clip)
-
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("IP Address copied to clipboard")
-                                        }
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.ContentCopy,
-                                        contentDescription = "Copy IP Address",
-                                        tint = PrimaryAccent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
+                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Aternos server", style = MaterialTheme.typography.titleSmall, color = WColors.Primary, fontWeight = FontWeight.Bold)
+                                    Text("Host: ${currentModel.serverHostName}", style = MaterialTheme.typography.bodySmall)
+                                    Text(ServerCompatUtils.getStatusMessage(currentModel.serverConfigType), style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
                                 }
                             }
                         }
 
-                        // Port Section
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Text("Open Minecraft → Friends → join via LAN. If it doesn’t appear, add a server with this IP and port.", style = MaterialTheme.typography.bodyMedium)
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         ) {
-                            Text(
-                                "Port:",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                            )
-                            Text(
-                                "19132",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    color = PrimaryAccent,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            )
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("IP", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
+                                    Text(ipAddress, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(2f))
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Port", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.weight(1f))
+                                    Text("19132", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(2f))
+                                }
+                            }
+                        }
+
+                        if (currentModel.isProtectedServer()) {
+                            Card(colors = CardDefaults.cardColors(containerColor = WColors.Secondary.copy(alpha = 0.1f))) {
+                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("Tips", style = MaterialTheme.typography.titleSmall, color = WColors.Secondary, fontWeight = FontWeight.Bold)
+                                    ServerCompatUtils.getTroubleshootingTips().take(3).forEach {
+                                        Text(it, style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                                    }
+                                }
+                            }
                         }
                     }
                 },
-                confirmButton = {
-                    TextButton(
-                        onClick = { showConnectionDialog = false }
-                    ) {
-                        Text(
-                            "OK",
-                            color = PrimaryAccent,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                },
-                containerColor = CardBackground,
-                titleContentColor = TextPrimary,
-                textContentColor = TextSecondary
+                confirmButton = { TextButton(onClick = { showConnectionDialog = false }) { Text("OK") } }
             )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                "WClient",
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp,
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(LuxClientGradient1, LuxClientGradient2)
-                                    )
-                                )
-                            )
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = CardBackground.copy(alpha = 0.9f),
-                            titleContentColor = TextPrimary
-                        ),
-                        modifier = Modifier.shadow(8.dp)
-                    )
-                },
-                bottomBar = {
-                    SnackbarHost(
-                        snackbarHostState,
-                        modifier = Modifier.animateContentSize()
-                    )
-                },
-                containerColor = Color.Transparent,
-                floatingActionButton = {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val isPressed by interactionSource.collectIsPressedAsState()
-                    val fabScale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.9f else 1f,
-                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-                    )
-
-                    FloatingActionButton(
-                        onClick = {
-                            if (!Settings.canDrawOverlays(context)) {
-                                Toast.makeText(
-                                    context,
-                                    R.string.request_overlay_permission,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                overlayPermissionLauncher.launch(
-                                    Intent(
-                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                        Uri.parse("package: ${context.packageName}")
-                                    )
-                                )
-                                return@FloatingActionButton
-                            }
-
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                postNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                return@FloatingActionButton
-                            }
-
-                            onPostPermissionResult(true)
-                        },
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .graphicsLayer { scaleX = fabScale; scaleY = fabScale }
-                            .shadow(12.dp, shape = CircleShape, spotColor = PrimaryAccent),
-                        containerColor = PrimaryAccent,
-                        contentColor = Color.White,
-                        interactionSource = interactionSource
-                    ) {
-                        AnimatedContent(Services.isActive, label = "") { isActive ->
-                            Icon(
-                                if (!isActive) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-            ) { padding ->
-                Column(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    BackendCard(
-                        primaryAccent = PrimaryAccent,
-                        cardBackground = CardBackground,
-                        textPrimary = TextPrimary,
-                        textSecondary = TextSecondary,
-                        borderPrimary = BorderPrimary
-                    )
-
-                    GameCard(
-                        cardBackground = CardBackground,
-                        textPrimary = TextPrimary,
-                        textSecondary = TextSecondary,
-                        borderPrimary = BorderPrimary,
-                        primaryAccent = PrimaryAccent
-                    )
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun BackendCard(
-    primaryAccent: Color,
-    cardBackground: Color,
-    textPrimary: Color,
-    textSecondary: Color,
-    borderPrimary: Color
-) {
-    Card(
+private fun WelcomeCard() {
+    WGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardBackground.copy(alpha = 0.9f),
-            contentColor = textPrimary
-        ),
-        border = BorderStroke(1.dp, borderPrimary),
-        elevation = CardDefaults.cardElevation(8.dp)
+        glowColor = WColors.Primary,
+        glowIntensity = 0.25f
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(
-                    Icons.Rounded.Plumbing,
+                    Icons.Rounded.Whatshot,
                     contentDescription = null,
-                    tint = primaryAccent,
-                    modifier = Modifier.size(24.dp)
+                    tint = WColors.Primary,
+                    modifier = Modifier
+                        .background(WColors.Primary.copy(alpha = 0.2f), CircleShape)
+                        .padding(10.dp)
+                        .size(28.dp)
                 )
-                Text(
-                    stringResource(R.string.backend),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
+                Column {
+                    Text("WClient", style = MaterialTheme.typography.headlineMedium, color = WColors.OnSurface)
+                    Text("Bedrock, but smoother.", style = MaterialTheme.typography.bodyLarge, color = WColors.Primary)
+                }
             }
-            Text(
-                stringResource(R.string.backend_introduction),
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = textSecondary
-                )
-            )
         }
     }
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun GameCard(
-    cardBackground: Color,
-    textPrimary: Color,
-    textSecondary: Color,
-    borderPrimary: Color,
-    primaryAccent: Color
-) {
+private fun GameCard() {
     val context = LocalContext.current
     val mainScreenViewModel: MainScreenViewModel = viewModel()
     val captureModeModel by mainScreenViewModel.captureModeModel.collectAsStateWithLifecycle()
@@ -520,204 +386,80 @@ private fun GameCard(
     val packageInfoState by mainScreenViewModel.packageInfoState.collectAsStateWithLifecycle()
     val selectedGame by mainScreenViewModel.selectedGame.collectAsStateWithLifecycle()
 
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val cardScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-    )
-
-    // Fixed icon implementation with fallback
-    val minecraftIcon = painterResource(id = R.mipmap.minecraft_icon)
-    val iconModifier = Modifier
-        .size(40.dp)
-        .clip(RoundedCornerShape(8.dp))
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { scaleX = cardScale; scaleY = cardScale },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardBackground.copy(alpha = 0.9f),
-            contentColor = textPrimary
-        ),
-        border = BorderStroke(1.dp, borderPrimary),
-        elevation = CardDefaults.cardElevation(8.dp),
-        onClick = { showGameSettingsDialog = true },
-        interactionSource = interactionSource
+    WGlassCard(
+        modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+        glowColor = WColors.Accent,
+        glowIntensity = 0.22f,
+        onClick = { showGameSettingsDialog = true }
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(20.dp).fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Improved icon display with error handling
-            if (minecraftIcon.intrinsicSize.width > 0) {
-                Image(
-                    painter = minecraftIcon,
-                    contentDescription = "Minecraft Icon",
-                    modifier = iconModifier
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(R.mipmap.minecraft_icon),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(32.dp).clip(CircleShape)
                 )
-            } else {
-                Box(
-                    modifier = iconModifier
-                        .background(cardBackground.copy(alpha = 0.7f))
-                        .border(1.dp, borderPrimary, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Rounded.Settings,
-                        contentDescription = "Default Icon",
-                        tint = textSecondary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                Column(Modifier.weight(1f)) {
+                    Text("Minecraft", style = MaterialTheme.typography.titleMedium, color = WColors.OnSurface)
+                    Text("Supports: ${MinecraftUtils.RECOMMENDED_VERSION}", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
                 }
+                Icon(Icons.Rounded.Settings, contentDescription = null, tint = WColors.Accent, modifier = Modifier.size(22.dp))
             }
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.minecraft),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
-                Text(
-                    stringResource(
-                        R.string.recommended_version,
-                        MuCuteRelay.DefaultCodec.minecraftVersion
-                    ),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = textSecondary
-                    )
-                )
-            }
-            Icon(
-                Icons.Rounded.Settings,
-                contentDescription = "Settings",
-                tint = primaryAccent,
-                modifier = Modifier.size(24.dp)
-            )
+
         }
     }
 
     if (showGameSelectorDialog) {
-        LifecycleEventEffect(Lifecycle.Event.ON_START) {
-            mainScreenViewModel.fetchPackageInfos()
-        }
+        LifecycleEventEffect(Lifecycle.Event.ON_START) { mainScreenViewModel.fetchPackageInfos() }
 
         BasicAlertDialog(
             onDismissRequest = { showGameSelectorDialog = false },
             modifier = Modifier.padding(vertical = 24.dp),
             content = {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    tonalElevation = 24.dp,
-                    color = cardBackground,
-                    border = BorderStroke(1.dp, borderPrimary)
-                ) {
+                Surface(shape = AlertDialogDefaults.shape, tonalElevation = AlertDialogDefaults.TonalElevation) {
                     Column(
-                        Modifier
-                            .padding(24.dp)
-                            .fillMaxWidth(),
+                        Modifier.padding(24.dp).fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            stringResource(R.string.game_selector),
-                            modifier = Modifier.fillMaxWidth(),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = textPrimary
-                            )
-                        )
+                        Text("Choose game", modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.headlineSmall)
                         LazyColumn(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             item {
                                 if (packageInfoState === MainScreenViewModel.PackageInfoState.Loading) {
-                                    LinearProgressIndicator(
-                                        modifier = Modifier
-                                            .padding(vertical = 16.dp)
-                                            .fillMaxWidth(),
-                                        color = primaryAccent
-                                    )
+                                    LinearProgressIndicator(modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth())
                                 }
                             }
-                            items(packageInfos.size) {
-                                val packageInfo = packageInfos[it]
+                            items(packageInfos.size) { index ->
+                                val packageInfo = packageInfos[index]
                                 val applicationInfo = packageInfo.applicationInfo!!
-                                val packageManager = context.packageManager
-                                val icon = remember {
-                                    applicationInfo.loadIcon(packageManager).toBitmap()
-                                        .asImageBitmap()
-                                }
-                                val name = remember {
-                                    applicationInfo.loadLabel(packageManager).toString()
-                                }
+                                val pm = context.packageManager
+                                val icon = remember { applicationInfo.loadIcon(pm).toBitmap().asImageBitmap() }
+                                val name = remember { applicationInfo.loadLabel(pm).toString() }
                                 val packageName = packageInfo.packageName
                                 val versionName = packageInfo.versionName ?: "0.0.0"
-
-                                val itemInteractionSource = remember { MutableInteractionSource() }
-                                val isItemPressed by itemInteractionSource.collectIsPressedAsState()
-                                val itemScale by animateFloatAsState(
-                                    targetValue = if (isItemPressed) 0.95f else 1f,
-                                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-                                )
-
-                                Card(
-                                    onClick = {
-                                        mainScreenViewModel.selectGame(packageName)
-                                        showGameSelectorDialog = false
-                                    },
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = cardBackground.copy(alpha = 0.8f),
-                                        contentColor = textPrimary
-                                    ),
-                                    border = BorderStroke(1.dp, borderPrimary),
-                                    elevation = CardDefaults.cardElevation(4.dp),
-                                    modifier = Modifier.graphicsLayer { scaleX = itemScale; scaleY = itemScale },
-                                    interactionSource = itemInteractionSource
-                                ) {
+                                Card(onClick = {
+                                    mainScreenViewModel.selectGame(packageName)
+                                    showGameSelectorDialog = false
+                                }, shape = MaterialTheme.shapes.medium) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                        modifier = Modifier.padding(16.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                        modifier = Modifier.padding(14.dp)
                                     ) {
-                                        Icon(
-                                            bitmap = icon,
-                                            contentDescription = null,
-                                            tint = Color.Unspecified,
-                                            modifier = Modifier.size(24.dp)
-                                        )
+                                        Icon(bitmap = icon, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(22.dp))
                                         Column(Modifier.weight(1f)) {
-                                            Text(
-                                                name,
-                                                style = MaterialTheme.typography.bodyLarge.copy(
-                                                    color = textPrimary
-                                                ),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                packageName,
-                                                style = MaterialTheme.typography.bodySmall.copy(
-                                                    color = textSecondary
-                                                ),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                versionName,
-                                                style = MaterialTheme.typography.bodySmall.copy(
-                                                    color = textSecondary
-                                                ),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                            Text(name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(packageName, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(versionName, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
@@ -734,188 +476,99 @@ private fun GameCard(
             onDismissRequest = { showGameSettingsDialog = false },
             modifier = Modifier.padding(vertical = 24.dp),
             content = {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    tonalElevation = 24.dp,
-                    color = cardBackground,
-                    border = BorderStroke(1.dp, borderPrimary)
-                ) {
+                Surface(shape = AlertDialogDefaults.shape, tonalElevation = AlertDialogDefaults.TonalElevation) {
                     Column(
-                        Modifier
-                            .padding(24.dp),
+                        Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            stringResource(R.string.game_settings),
-                            modifier = Modifier.align(Alignment.Start),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = textPrimary
-                            )
-                        )
+                        Text("Game settings", modifier = Modifier.align(Alignment.Start), style = MaterialTheme.typography.headlineSmall)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
                             modifier = Modifier.verticalScroll(rememberScrollState())
                         ) {
-                            val gameInteractionSource = remember { MutableInteractionSource() }
-                            val isGamePressed by gameInteractionSource.collectIsPressedAsState()
-                            if (isGamePressed) {
-                                SideEffect {
-                                    showGameSelectorDialog = true
-                                }
-                            }
+                            val interactionSource = remember { MutableInteractionSource() }
+                            val isPressed by interactionSource.collectIsPressedAsState()
+                            if (isPressed) SideEffect { showGameSelectorDialog = true }
 
                             TextField(
                                 value = selectedGame ?: "",
                                 onValueChange = {},
                                 readOnly = true,
                                 maxLines = 1,
-                                label = {
-                                    Text(
-                                        stringResource(R.string.select_game),
-                                        color = textSecondary
-                                    )
-                                },
-                                placeholder = {
-                                    Text(
-                                        stringResource(R.string.no_game_selected),
-                                        color = textSecondary.copy(alpha = 0.7f)
-                                    )
-                                },
-                                interactionSource = gameInteractionSource,
-                                enabled = !Services.isActive,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = cardBackground.copy(alpha = 0.8f),
-                                    unfocusedContainerColor = cardBackground.copy(alpha = 0.8f),
-                                    disabledContainerColor = cardBackground.copy(alpha = 0.5f),
-                                    focusedTextColor = textPrimary,
-                                    unfocusedTextColor = textPrimary,
-                                    disabledTextColor = textPrimary.copy(alpha = 0.5f),
-                                    focusedIndicatorColor = primaryAccent,
-                                    unfocusedIndicatorColor = borderPrimary,
-                                    disabledIndicatorColor = borderPrimary.copy(alpha = 0.3f),
-                                    focusedLabelColor = textSecondary,
-                                    unfocusedLabelColor = textSecondary,
-                                    disabledLabelColor = textSecondary.copy(alpha = 0.5f)
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                label = { Text("Select game") },
+                                placeholder = { Text("No game selected") },
+                                interactionSource = interactionSource,
+                                enabled = !Services.isActive
                             )
-
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                 TextField(
                                     value = serverHostName,
-                                    label = {
-                                        Text(
-                                            stringResource(R.string.server_host_name),
-                                            color = textSecondary
-                                        )
-                                    },
+                                    label = { Text("Server host") },
                                     onValueChange = {
                                         serverHostName = it
                                         if (it.isEmpty()) return@TextField
-                                        mainScreenViewModel.selectCaptureModeModel(
-                                            captureModeModel.copy(serverHostName = it)
-                                        )
+                                        val updated = captureModeModel.copy(serverHostName = it).withAutoDetectedServerConfig()
+                                        mainScreenViewModel.selectCaptureModeModel(updated)
                                     },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                                     singleLine = true,
-                                    enabled = !Services.isActive,
-                                    colors = TextFieldDefaults.colors(
-                                        focusedContainerColor = cardBackground.copy(alpha = 0.8f),
-                                        unfocusedContainerColor = cardBackground.copy(alpha = 0.8f),
-                                        disabledContainerColor = cardBackground.copy(alpha = 0.5f),
-                                        focusedTextColor = textPrimary,
-                                        unfocusedTextColor = textPrimary,
-                                        disabledTextColor = textPrimary.copy(alpha = 0.5f),
-                                        focusedIndicatorColor = primaryAccent,
-                                        unfocusedIndicatorColor = borderPrimary,
-                                        disabledIndicatorColor = borderPrimary.copy(alpha = 0.3f),
-                                        focusedLabelColor = textSecondary,
-                                        unfocusedLabelColor = textSecondary,
-                                        disabledLabelColor = textSecondary.copy(alpha = 0.5f)
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    enabled = !Services.isActive
                                 )
-
                                 TextField(
                                     value = serverPort,
-                                    label = {
-                                        Text(
-                                            stringResource(R.string.server_port),
-                                            color = textSecondary
-                                        )
-                                    },
+                                    label = { Text("Server port") },
                                     onValueChange = {
                                         serverPort = it
                                         if (it.isEmpty()) return@TextField
                                         val port = it.toIntOrNull() ?: return@TextField
-                                        if (port < 0 || port > 65535) return@TextField
-                                        mainScreenViewModel.selectCaptureModeModel(
-                                            captureModeModel.copy(serverPort = port)
-                                        )
+                                        if (port in 0..65535) {
+                                            mainScreenViewModel.selectCaptureModeModel(captureModeModel.copy(serverPort = port))
+                                        }
                                     },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     singleLine = true,
-                                    enabled = !Services.isActive,
-                                    colors = TextFieldDefaults.colors(
-                                        focusedContainerColor = cardBackground.copy(alpha = 0.8f),
-                                        unfocusedContainerColor = cardBackground.copy(alpha = 0.8f),
-                                        disabledContainerColor = cardBackground.copy(alpha = 0.5f),
-                                        focusedTextColor = textPrimary,
-                                        unfocusedTextColor = textPrimary,
-                                        disabledTextColor = textPrimary.copy(alpha = 0.5f),
-                                        focusedIndicatorColor = primaryAccent,
-                                        unfocusedIndicatorColor = borderPrimary,
-                                        disabledIndicatorColor = borderPrimary.copy(alpha = 0.3f),
-                                        focusedLabelColor = textSecondary,
-                                        unfocusedLabelColor = textSecondary,
-                                        disabledLabelColor = textSecondary.copy(alpha = 0.5f)
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    enabled = !Services.isActive
                                 )
+                            }
+
+                            if (ServerCompatUtils.isProtectedServer(serverHostName) && !Services.isActive) {
+                                Card(
+                                    modifier = Modifier.width(TextFieldDefaults.MinWidth),
+                                    shape = MaterialTheme.shapes.medium,
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = WColors.Primary.copy(alpha = 0.1f),
+                                        contentColor = WColors.Primary
+                                    )
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(18.dp), tint = WColors.Primary)
+                                            Text("Aternos detected", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                        }
+                                        val info = ServerCompatUtils.extractServerInfo(serverHostName)
+                                        if (info != null) Text("Server: ${info.serverId}", style = MaterialTheme.typography.bodySmall)
+                                        Text(ServerCompatUtils.getStatusMessage(captureModeModel.serverConfigType), style = MaterialTheme.typography.bodySmall)
+                                        Text(ServerCompatUtils.getConfigDescription(captureModeModel.serverConfigType), style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                                    }
+                                }
                             }
 
                             if (Services.isActive) {
                                 Card(
-                                    modifier = Modifier
-                                        .width(TextFieldDefaults.MinWidth),
-                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.width(TextFieldDefaults.MinWidth),
+                                    shape = MaterialTheme.shapes.medium,
                                     colors = CardDefaults.cardColors(
-                                        containerColor = cardBackground.copy(alpha = 0.8f),
-                                        contentColor = textPrimary
-                                    ),
-                                    border = BorderStroke(1.dp, borderPrimary)
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Outlined.Info,
-                                            contentDescription = null,
-                                            tint = primaryAccent,
-                                            modifier = Modifier.size(20.dp)
-                                        )
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Column {
-                                            Text(
-                                                stringResource(R.string.tips),
-                                                style = MaterialTheme.typography.bodyLarge.copy(
-                                                    color = textPrimary
-                                                )
-                                            )
-                                            Text(
-                                                stringResource(R.string.change_game_settings_tip),
-                                                style = MaterialTheme.typography.bodySmall.copy(
-                                                    color = textSecondary
-                                                )
-                                            )
+                                            Text("Heads up", style = MaterialTheme.typography.bodyLarge)
+                                            Text("Stop the relay to change these settings.", style = MaterialTheme.typography.bodySmall)
                                         }
                                     }
                                 }
@@ -925,5 +578,147 @@ private fun GameCard(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun TexturePackCard() {
+    val context = LocalContext.current
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { selectedUri ->
+            try {
+                val fileName = context.contentResolver.query(selectedUri, null, null, null, null)?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    cursor.moveToFirst()
+                    cursor.getString(nameIndex)
+                } ?: return@let
+
+                if (!fileName.endsWith(".mcpack") && !fileName.endsWith(".mcaddon") && !fileName.endsWith(".mcworld")) {
+                    Toast.makeText(context, "Only .mcpack, .mcaddon or .mcworld are supported", Toast.LENGTH_LONG).show()
+                    return@let
+                }
+
+                val tempFile = File(context.cacheDir, fileName)
+                context.contentResolver.openInputStream(selectedUri)?.use { input ->
+                    tempFile.outputStream().use { output -> input.copyTo(output) }
+                }
+
+                val fileUri = FileProvider.getUriForFile(context, "${context.packageName}.provider", tempFile)
+
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(
+                        fileUri,
+                        when {
+                            fileName.endsWith(".mcworld") -> "application/x-world"
+                            fileName.endsWith(".mcpack") -> "application/x-minecraft-resourcepack"
+                            fileName.endsWith(".mcaddon") -> "application/x-minecraft-addon"
+                            else -> "application/octet-stream"
+                        }
+                    )
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    `package` = "com.mojang.minecraftpe"
+                }
+
+                try {
+                    context.startActivity(intent)
+                    Toast.makeText(context, "Sent to Minecraft", Toast.LENGTH_SHORT).show()
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(context, "Minecraft not found: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    WGlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        glowColor = WColors.Secondary,
+        glowIntensity = 0.2f
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, tint = WColors.Secondary, modifier = Modifier.size(26.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Packs & Worlds", style = MaterialTheme.typography.titleMedium, color = WColors.OnSurface)
+                    Text("Import texture packs, add-ons and worlds.", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                }
+            }
+            WButton(
+                onClick = { filePickerLauncher.launch("*/*") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = WColors.Secondary, contentColor = WColors.OnSecondary)
+            ) {
+                Icon(Icons.Rounded.Upload, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Import")
+            }
+        }
+    }
+}
+
+@Composable
+private fun GameFeatureItem(
+    icon: ImageVector,
+    title: String,
+    description: String
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = WColors.Secondary, modifier = Modifier.size(16.dp))
+        Column {
+            Text(title, style = MaterialTheme.typography.bodySmall, color = WColors.OnSurface, fontWeight = FontWeight.Medium)
+            Text(description, style = MaterialTheme.typography.labelSmall, color = WColors.OnSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun HomeLinksRow() {
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        WGlassCard(
+            onClick = {
+                val intent = Intent(Intent.ACTION_VIEW, "https://www.youtube.com/channel/$authId".toUri())
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            glowColor = WColors.Primary,
+            glowIntensity = 0.18f
+        ) {
+            Row(Modifier.padding(20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = WColors.Primary, modifier = Modifier.size(26.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Youtube", style = MaterialTheme.typography.titleMedium, color = WColors.OnSurface)
+                    Text("Subscribe our youtube channel", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                }
+            }
+        }
+
+        WGlassCard(
+            onClick = {
+                val intent = Intent(Intent.ACTION_VIEW, "https://discord.gg/jVWPuDvdRX".toUri())
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            glowColor = WColors.Accent,
+            glowIntensity = 0.18f
+        ) {
+            Row(Modifier.padding(20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = WColors.Accent, modifier = Modifier.size(26.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Join Discord", style = MaterialTheme.typography.titleMedium, color = WColors.OnSurface)
+                    Text("Hang out, ask, share.", style = MaterialTheme.typography.bodySmall, color = WColors.OnSurfaceVariant)
+                }
+            }
+        }
     }
 }

@@ -1,116 +1,272 @@
 package com.retrivedmods.wclient.game
 
-import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.content.edit
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonPrimitive
-import com.google.gson.JsonSerializationContext
-import com.google.gson.JsonSerializer
+import com.google.gson.JsonParser
 import com.retrivedmods.wclient.application.AppContext
-import com.retrivedmods.wclient.model.Account
-import com.mucheng.mucute.relay.util.XboxDeviceInfo
+import com.retrivedmods.wclient.game.RealmsAuthFlow
+import com.retrivedmods.wclient.service.RealmsManager
+import com.retrivedmods.wrelay.util.AuthUtils
+import com.retrivedmods.wrelay.util.refresh
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import net.raphimc.minecraftauth.MinecraftAuth
+import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession.FullBedrockSession
 import java.io.File
-import java.lang.reflect.Type
+import java.util.concurrent.TimeUnit
 
 object AccountManager {
 
-    private const val ACCOUNT_SHARED_PREFERENCES = "account"
+    private val coroutineScope =
+        CoroutineScope(Dispatchers.IO + CoroutineName("AccountManagerCoroutine"))
 
-    private const val KEY_CURRENT_MICROSOFT_REFRESH_TOKEN = "MICROSOFT_REFRESH_TOKEN"
+    private val _accounts: MutableList<FullBedrockSession> = mutableStateListOf()
 
-    val accounts = mutableStateListOf<Account>()
+    val accounts: List<FullBedrockSession>
+        get() = _accounts
 
-    private var currentRefreshToken: String?
-        get() {
-            val sharedPreferences =
-                AppContext.instance.getSharedPreferences(
-                    ACCOUNT_SHARED_PREFERENCES,
-                    Context.MODE_PRIVATE
-                )
-            return sharedPreferences.getString(KEY_CURRENT_MICROSOFT_REFRESH_TOKEN, null)
-                ?.ifEmpty { null }
-        }
-        set(value) {
-            AppContext.instance.getSharedPreferences(
-                ACCOUNT_SHARED_PREFERENCES,
-                Context.MODE_PRIVATE
-            ).edit {
-                putString(KEY_CURRENT_MICROSOFT_REFRESH_TOKEN, value ?: "")
-            }
-        }
-
-    var currentAccount: Account? by mutableStateOf(null)
+    var selectedAccount: FullBedrockSession? by mutableStateOf(null)
         private set
 
-    fun selectAccount(account: Account?) {
-        currentAccount = account
-        if (account == null) {
-            currentRefreshToken = null
-        } else if (accounts.contains(account)) {
-            currentRefreshToken = account.refreshToken
-        }
-    }
+    private val TOKEN_REFRESH_INTERVAL_MS = TimeUnit.MINUTES.toMillis(30)
 
-    private val storeFile = File(AppContext.instance.filesDir, "credentials.json")
-
-    private val gson = GsonBuilder()
-        .registerTypeAdapter(XboxDeviceInfo::class.java, DeviceInfoAdapter())
-        .create()
+    private val TOKEN_REFRESH_THRESHOLD_MS = TimeUnit.HOURS.toMillis(2)
 
     init {
-        load()
-        selectAccount(currentRefreshToken?.let { t -> accounts.find { it.refreshToken == t } })
+        val fetchedAccounts = fetchAccounts()
+
+        _accounts.addAll(fetchedAccounts)
+        selectedAccount = fetchSelectedAccount()
+
+        RealmsManager.updateSession(selectedAccount)
+
+        startTokenRefreshScheduler()
     }
 
-    private fun load() {
-        accounts.clear()
-        if (!storeFile.exists()) {
-            currentRefreshToken = null
-            return
+    fun addAccount(fullBedrockSession: FullBedrockSession) {
+        val existingAccount = _accounts.find { it.mcChain.displayName == fullBedrockSession.mcChain.displayName }
+        if (existingAccount != null) {
+            _accounts.remove(existingAccount)
         }
-        accounts.addAll(gson.fromJson(storeFile.reader(Charsets.UTF_8), Array<Account>::class.java))
-        cleanupCurrentRefreshToken()
-    }
 
-    fun save() {
-        storeFile.writeText(gson.toJson(accounts.toTypedArray(), Array<Account>::class.java))
-    }
+        _accounts.add(fullBedrockSession)
 
-    private fun cleanupCurrentRefreshToken() {
-        val current = currentRefreshToken
-        accounts.forEach {
-            if (it.refreshToken == current) {
-                return
+        coroutineScope.launch {
+            val file = File(AppContext.instance.cacheDir, "accounts")
+            file.mkdirs()
+
+            try {
+                val json = if (fullBedrockSession.realmsXsts != null) {
+                    RealmsAuthFlow.BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS.toJson(fullBedrockSession)
+                } else {
+                    println("No Realms token available, saving with regular auth flow")
+                    MinecraftAuth.BEDROCK_DEVICE_CODE_LOGIN.toJson(fullBedrockSession)
+                }
+                file.resolve("${fullBedrockSession.mcChain.displayName}.json")
+                    .writeText(AuthUtils.gson.toJson(json))
+                println("Successfully saved account: ${fullBedrockSession.mcChain.displayName} - Realms support: ${fullBedrockSession.realmsXsts != null}")
+            } catch (e: Exception) {
+                println("Failed to save account with Realms support, trying fallback: ${e.message}")
+                try {
+                    val json = MinecraftAuth.BEDROCK_DEVICE_CODE_LOGIN.toJson(fullBedrockSession)
+                    file.resolve("${fullBedrockSession.mcChain.displayName}.json")
+                        .writeText(AuthUtils.gson.toJson(json))
+                    println("Successfully saved account with fallback method: ${fullBedrockSession.mcChain.displayName}")
+                } catch (fallbackException: Exception) {
+                    println("Failed to save account even with fallback: ${fallbackException.message}")
+                    fallbackException.printStackTrace()
+                }
             }
         }
-        currentRefreshToken = null
     }
 
-    private class DeviceInfoAdapter : JsonSerializer<XboxDeviceInfo>,
-        JsonDeserializer<XboxDeviceInfo> {
+    fun removeAccount(fullBedrockSession: FullBedrockSession) {
+        _accounts.remove(fullBedrockSession)
 
-        override fun serialize(
-            src: XboxDeviceInfo,
-            typeOf: Type?,
-            ctx: JsonSerializationContext?
-        ): JsonElement {
-            return JsonPrimitive(src.deviceType)
-        }
+        coroutineScope.launch {
+            val file = File(AppContext.instance.cacheDir, "accounts")
+            file.mkdirs()
 
-        override fun deserialize(
-            json: JsonElement,
-            typeOf: Type?,
-            ctx: JsonDeserializationContext?
-        ): XboxDeviceInfo {
-            return XboxDeviceInfo.devices[json.asString] ?: XboxDeviceInfo.DEVICE_ANDROID
+            file.resolve("${fullBedrockSession.mcChain.displayName}.json")
+                .delete()
         }
     }
 
+    fun selectAccount(fullBedrockSession: FullBedrockSession?) {
+        selectedAccount = fullBedrockSession
+
+        RealmsManager.updateSession(fullBedrockSession)
+
+        coroutineScope.launch {
+            val file = File(AppContext.instance.cacheDir, "accounts")
+            file.mkdirs()
+
+            runCatching {
+                val selectedAccount = file.resolve("selectedAccount")
+                if (fullBedrockSession != null) {
+                    selectedAccount.writeText(fullBedrockSession.mcChain.displayName)
+                } else {
+                    selectedAccount.delete()
+                }
+            }
+        }
+    }
+
+    private fun fetchAccounts(): List<FullBedrockSession> {
+        val file = File(AppContext.instance.cacheDir, "accounts")
+        file.mkdirs()
+
+        val accounts = ArrayList<FullBedrockSession>()
+        val listFiles = file.listFiles() ?: emptyArray()
+        for (child in listFiles) {
+            runCatching {
+                if (child.isFile && child.extension == "json") {
+                    val account = try {
+                        RealmsAuthFlow.BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS
+                            .fromJson(JsonParser.parseString(child.readText()).asJsonObject)
+                    } catch (e: Exception) {
+                        println("Failed to load account with Realms support from ${child.name}, trying legacy format: ${e.message}")
+                        MinecraftAuth.BEDROCK_DEVICE_CODE_LOGIN
+                            .fromJson(JsonParser.parseString(child.readText()).asJsonObject)
+                    }
+                    accounts.add(account)
+                    println("Loaded account ${account.mcChain.displayName} - Realms support: ${account.realmsXsts != null}")
+                }
+            }.onFailure {
+                println("Failed to load account from ${child.name}: ${it.message}")
+            }
+        }
+
+        return accounts
+    }
+
+    private fun fetchSelectedAccount(): FullBedrockSession? {
+        val file = File(AppContext.instance.cacheDir, "accounts")
+        file.mkdirs()
+
+        val selectedAccount = file.resolve("selectedAccount")
+        if (!selectedAccount.exists() || selectedAccount.isDirectory) {
+            return null
+        }
+
+        val displayName = selectedAccount.readText()
+        return accounts.find { it.mcChain.displayName == displayName }
+    }
+
+    private fun startTokenRefreshScheduler() {
+        coroutineScope.launch {
+            while (true) {
+                try {
+                    refreshExpiredTokens()
+                } catch (e: Exception) {
+                    println("Error during token refresh: ${e.message}")
+                    e.printStackTrace()
+                }
+
+                delay(TOKEN_REFRESH_INTERVAL_MS)
+            }
+        }
+    }
+
+    private fun refreshExpiredTokens() {
+        if (_accounts.isEmpty()) {
+            return
+        }
+
+        val accountsToRefresh = _accounts.filter { account ->
+            shouldRefreshToken(account)
+        }
+
+        if (accountsToRefresh.isNotEmpty()) {
+            println("Found ${accountsToRefresh.size} accounts that need token refresh")
+        }
+
+        accountsToRefresh.forEach { account ->
+            try {
+                println("Refreshing token for account: ${account.mcChain.displayName}")
+                val httpClient = MinecraftAuth.createHttpClient()
+                httpClient.connectTimeout = 10000
+                httpClient.readTimeout = 10000
+
+                val refreshedAccount = try {
+                    if (account.realmsXsts != null) {
+                        RealmsAuthFlow.BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS.refresh(httpClient, account)
+                    } else {
+                        account.refresh()
+                    }
+                } catch (e: Exception) {
+                    println("Failed to refresh with Realms support, trying regular refresh: ${e.message}")
+                    account.refresh()
+                }
+
+                val index = _accounts.indexOf(account)
+                if (index >= 0) {
+                    _accounts[index] = refreshedAccount
+
+                    if (selectedAccount == account) {
+                        selectedAccount = refreshedAccount
+                        RealmsManager.updateSession(refreshedAccount)
+                    }
+
+                    saveAccountToDisk(refreshedAccount)
+                }
+
+                println("Successfully refreshed token for: ${refreshedAccount.mcChain.displayName}")
+            } catch (e: Exception) {
+                println("Failed to refresh token for ${account.mcChain.displayName}: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun shouldRefreshToken(account: FullBedrockSession): Boolean {
+        val currentTime = System.currentTimeMillis()
+
+        val msaToken = account.mcChain.xblXsts.initialXblSession.msaToken
+        if (msaToken.expireTimeMs - currentTime < TOKEN_REFRESH_THRESHOLD_MS) {
+            return true
+        }
+
+        val xblExpireTime = account.mcChain.xblXsts.expireTimeMs
+        if (xblExpireTime - currentTime < TOKEN_REFRESH_THRESHOLD_MS) {
+            return true
+        }
+
+        val playFabExpireTime = account.playFabToken.expireTimeMs
+        if (playFabExpireTime - currentTime < TOKEN_REFRESH_THRESHOLD_MS) {
+            return true
+        }
+
+        return false
+    }
+
+    private fun saveAccountToDisk(account: FullBedrockSession) {
+        val file = File(AppContext.instance.cacheDir, "accounts")
+        file.mkdirs()
+
+        try {
+            val json = if (account.realmsXsts != null) {
+                RealmsAuthFlow.BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS.toJson(account)
+            } else {
+                MinecraftAuth.BEDROCK_DEVICE_CODE_LOGIN.toJson(account)
+            }
+            file.resolve("${account.mcChain.displayName}.json")
+                .writeText(AuthUtils.gson.toJson(json))
+        } catch (e: Exception) {
+            println("Failed to save account with Realms support, trying fallback: ${e.message}")
+            try {
+                val json = MinecraftAuth.BEDROCK_DEVICE_CODE_LOGIN.toJson(account)
+                file.resolve("${account.mcChain.displayName}.json")
+                    .writeText(AuthUtils.gson.toJson(json))
+            } catch (fallbackException: Exception) {
+                println("Failed to save account even with fallback: ${fallbackException.message}")
+                fallbackException.printStackTrace()
+            }
+        }
+    }
 }

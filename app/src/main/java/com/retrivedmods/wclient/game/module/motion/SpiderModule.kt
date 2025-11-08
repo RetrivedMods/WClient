@@ -8,32 +8,25 @@ import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
 
-class SpiderModule : Module("Spider", ModuleCategory.Motion) {
+class SpiderModule : Module("spider", ModuleCategory.Motion) {
 
-    private var climbSpeed by floatValue("Climb Speed", 0.6f, 0.1f..2.5f)
+    private val climbSpeed by floatValue("Climb Speed", 0.5f, 0.1f..2.0f)
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) return
 
         val packet = interceptablePacket.packet
         if (packet is PlayerAuthInputPacket) {
-            val player = session.localPlayer
-
-
             if (packet.inputData.contains(PlayerAuthInputData.HORIZONTAL_COLLISION)) {
-
-                val shouldClimb = packet.inputData.contains(PlayerAuthInputData.JUMPING)
-
-                val motionY = if (shouldClimb) climbSpeed else 0.0f
-
-                session.clientBound(SetEntityMotionPacket().apply {
-                    runtimeEntityId = player.runtimeEntityId
+                val motionPacket = SetEntityMotionPacket().apply {
+                    runtimeEntityId = session.localPlayer.runtimeEntityId
                     motion = Vector3f.from(
-                        player.motionX,
-                        motionY,
-                        player.motionZ
+                        session.localPlayer.motionX,
+                        climbSpeed,
+                        session.localPlayer.motionZ
                     )
-                })
+                }
+                session.clientBound(motionPacket)
             }
         }
     }

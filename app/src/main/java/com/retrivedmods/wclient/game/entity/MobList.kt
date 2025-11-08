@@ -18,6 +18,7 @@ object MobList {
         "minecraft:donkey",
         "minecraft:drowned",
         "minecraft:elder_guardian",
+        "minecraft:ender_dragon",
         "minecraft:enderman",
         "minecraft:endermite",
         "minecraft:evoker",
@@ -77,6 +78,7 @@ object MobList {
         "minecraft:zombie",
         "minecraft:zombie_horse",
         "minecraft:zombie_villager",
-        "minecraft:zombified_piglin"
+        "minecraft:zombified_piglin",
+        "minecraft:sniffer"
     )
 }

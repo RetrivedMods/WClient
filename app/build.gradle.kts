@@ -10,15 +10,15 @@ plugins {
 
 android {
     namespace = "com.retrivedmods.wclient"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.retrivedmods.wclient"
         minSdk = 28
-
+        //noinspection OldTargetApi,EditedTargetSdkVersion
         targetSdk = 35
-        versionCode = 11
-        versionName = "11.0"
+        versionCode = 1
+        versionName = "12.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -26,6 +26,9 @@ android {
             //noinspection ChromeOsAbiSupport
             abiFilters += setOf("arm64-v8a", "armeabi-v7a")
         }
+    }
+    buildFeatures {
+        buildConfig = true
     }
     signingConfigs {
         create("shared") {
@@ -89,37 +92,12 @@ android {
     }
 }
 
-configurations.all {
-
-}
-
-fun DependencyHandler.implementationRelay() {
-    debugImplementation(platform(libs.log4j.bom))
-    debugImplementation(libs.log4j.api)
-    debugImplementation(libs.log4j.core)
-    implementation(files("libs/MuCuteRelay.jar"))
-    implementation(libs.bundles.netty)
-    implementation(libs.expiringmap)
-    implementation(libs.network.common)
-    implementation(platform(libs.fastutil.bom))
-    implementation(libs.fastutil.long.common)
-    implementation(libs.fastutil.long.obj.maps)
-    implementation(libs.fastutil.int.obj.maps)
-    implementation(libs.fastutil.obj.int.maps)
-    implementation(libs.jose4j)
-    implementation(libs.math)
-    implementation(libs.nbt)
-    implementation(libs.snappy)
-    implementation(libs.guava)
-    implementation(libs.gson)
-    implementation(libs.http.client)
-    implementation(libs.bcprov)
-    implementation(libs.okhttp)
-}
-
 dependencies {
-    implementationRelay()
+    implementation(project(":relay"))
+    implementation(libs.gson)
     implementation(libs.kotlinx.serialization.json.jvm)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -127,9 +105,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-
     implementation(libs.androidx.material3)
-    implementation("androidx.compose.material:material")
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
     testImplementation(libs.junit)

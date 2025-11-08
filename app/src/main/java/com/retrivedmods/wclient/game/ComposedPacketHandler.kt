@@ -1,9 +1,9 @@
 package com.retrivedmods.wclient.game
 
-import com.mucheng.mucute.relay.listener.MuCuteRelayPacketListener
+import com.retrivedmods.wrelay.listener.WRelayPacketListener
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 
-interface ComposedPacketHandler : MuCuteRelayPacketListener {
+interface ComposedPacketHandler : WRelayPacketListener {
 
     fun beforePacketBound(packet: BedrockPacket): Boolean
 

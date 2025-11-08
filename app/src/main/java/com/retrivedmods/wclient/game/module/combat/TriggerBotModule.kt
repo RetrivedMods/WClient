@@ -3,16 +3,20 @@ package com.retrivedmods.wclient.game.module.combat
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.game.entity.*
+import com.retrivedmods.wclient.game.entity.Entity
+import com.retrivedmods.wclient.game.entity.EntityUnknown
+import com.retrivedmods.wclient.game.entity.LocalPlayer
+import com.retrivedmods.wclient.game.entity.MobList
+import com.retrivedmods.wclient.game.entity.Player
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 
-class TriggerBotModule : Module("TriggerBot", ModuleCategory.Combat) {
+class TriggerBotModule : Module("trigger_bot", ModuleCategory.Combat) {
 
     private var cpsValue by intValue("cps", 12, 1..20)
     private var playersOnly by boolValue("players_only", true)
     private var mobsOnly by boolValue("mobs_only", false)
-    private var rangeValue by floatValue("Range", 4.0f, 2f..8f)
+    private var rangeValue by floatValue("range", 4.0f, 2f..6f)
     private var lastAttackTime = 0L
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
@@ -105,7 +109,7 @@ class TriggerBotModule : Module("TriggerBot", ModuleCategory.Combat) {
 
     private fun Player.isBot(): Boolean {
         if (this is LocalPlayer) return false
-        val playerList = session.level.playerMap[this.uuid] ?: return true
+        val playerList = session.level.playerMap[this.uuid] ?: return false // Changed: treat unknown players as real players
         return playerList.name.isBlank()
     }
 }

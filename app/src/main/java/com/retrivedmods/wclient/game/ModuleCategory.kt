@@ -6,36 +6,34 @@ import com.retrivedmods.wclient.R
 
 enum class ModuleCategory(
     @DrawableRes val iconResId: Int,
-    @StringRes val labelResId: Int
+    @StringRes val labelResId: Int,
+    val displayName: String
 ) {
 
     Combat(
         iconResId = R.drawable.swords_24px,
-        labelResId = R.string.combat
+        labelResId = R.string.combat,
+        displayName = "Combat"
     ),
     Motion(
         iconResId = R.drawable.sprint_24px,
-        labelResId = R.string.motion
+        labelResId = R.string.motion,
+        displayName = "Motion"
     ),
     Visual(
         iconResId = R.drawable.view_in_ar_24px,
-        labelResId = R.string.visual
+        labelResId = R.string.visual,
+        displayName = "Visual"
     ),
-    Player(
-        iconResId = R.drawable.baseline_emoji_people_24,
-        labelResId = R.string.player
-    ),
+
     World(
-        iconResId = R.drawable.baseline_cloudy_snowing_24,
-        labelResId = R.string.world
+        iconResId = R.drawable.public_24px,
+        labelResId = R.string.world,
+        displayName = "World"
     ),
     Misc(
         iconResId = R.drawable.toc_24px,
-        labelResId = R.string.misc
+        labelResId = R.string.misc,
+        displayName = "Misc"
     ),
-    Config(
-        iconResId = R.drawable.manufacturing_24px,
-        labelResId = R.string.config
-    )
-
 }
