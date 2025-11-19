@@ -19,7 +19,7 @@ import org.cloudburstmc.protocol.bedrock.packet.NetworkStackLatencyPacket
 import java.util.ArrayDeque
 import kotlin.random.Random
 
-class ChestStealerModule : Module("ChestStealer", ModuleCategory.World) {
+class ChestStealerModule : Module("ChestStealer", ModuleCategory.Misc) {
     companion object {
         private const val TAG = "ChestStealer"
     }

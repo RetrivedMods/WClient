@@ -6,6 +6,7 @@ import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
 import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
 import com.retrivedmods.wclient.game.module.combat.AntiKnockbackModule
+import com.retrivedmods.wclient.game.module.combat.AutoArmorModule
 import com.retrivedmods.wclient.game.module.combat.CrystalSmashModule
 import com.retrivedmods.wclient.game.module.combat.EnemyHunterModule
 import com.retrivedmods.wclient.game.module.combat.HitAndRunModule
@@ -13,6 +14,7 @@ import com.retrivedmods.wclient.game.module.combat.HitboxModule
 import com.retrivedmods.wclient.game.module.combat.KillauraModule
 import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
 import com.retrivedmods.wclient.game.module.combat.WAuraModule
+import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
 
 import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
 import com.retrivedmods.wclient.game.module.misc.BaritoneModule
@@ -85,6 +87,7 @@ object ModuleManager {
             add(KillauraModule())
             add(EnemyHunterModule())
             add(AntiKnockbackModule())
+            add(AutoArmorModule())
             add(AntiCrystalModule())
             add(HitAndRunModule())
             add(HitboxModule())
@@ -93,8 +96,10 @@ object ModuleManager {
 
             
             // Motion
+
             add(MotionFlyModule())
             add(PlayerTPModule())
+
             add(FlyModule())
             add(SpeedModule())
             add(AirJumpModule())
@@ -109,6 +114,7 @@ object ModuleManager {
             add(UnifiedFlyModule())
             
             // Visual
+
             add(DamageTextModule())
             add(ESPModule())
             add(PlayerJoinModule())
@@ -130,13 +136,14 @@ object ModuleManager {
             add(EffectsModule())
             add(ParticlesModule())
             add(AntiDebuffModule())
-            add(ChestStealerModule())
-            
+
             // Misc
             add(AutoDisconnectModule())
+            add(ChestStealerModule())
             add(DesyncModule())
             add(PositionLoggerModule())
             add(NoChatModule())
+            add(AdvanceDisablerModule())
             add(CommandHandlerModule())
             add(ReplayModule())
             add(BaritoneModule())

@@ -4,6 +4,9 @@ import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.entity.*
+import com.retrivedmods.wclient.game.utils.math.Rotation
+import com.retrivedmods.wclient.game.utils.math.getAngleDifference
+import com.retrivedmods.wclient.game.utils.math.toRotation
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
@@ -21,9 +24,15 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
     private var yOffset by floatValue("YOffset", 0.0f, -10.0f..10.0f)
     private var noClip by boolValue("NoClip", false)
 
+
+    private var smoothFactor by floatValue("Smooth", 0.35f, 0.01f..1.0f)
+    private var spinEnabled by boolValue("SpinEnabled", true)
+    private var spinSpeed by floatValue("SpinSpeedDegPerSec", 180f, 10f..1000f)
+    private var spinRange by floatValue("SpinRange", 4.0f, 0.1f..20.0f)
+
     private var lastMoveTime = 0L
     private var lastAttackTime = 0L
-    private var angle = 0.0
+    private var spinAngle = 0.0
     private var isPathBlockedFlag = false
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
@@ -31,7 +40,7 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
         val packet = interceptablePacket.packet
         if (packet !is PlayerAuthInputPacket) return
 
-        // Mirror LockHeed-style collision sensing
+
         isPathBlockedFlag = packet.inputData.contains(PlayerAuthInputData.HORIZONTAL_COLLISION)
 
         val now = System.currentTimeMillis()
@@ -41,6 +50,7 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
         val player = session.localPlayer
         val target = findTarget() ?: return
 
+
         val attackInterval = 1000L / cps
         if (attackDelta >= attackInterval) {
             repeat(packetsPerAttack) {
@@ -48,6 +58,7 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
             }
             lastAttackTime = now
         }
+
 
         if (moveDelta < 20) return
         lastMoveTime = now
@@ -60,13 +71,15 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
         val dz = targetPos.z - playerPos.z
         val distance = sqrt(dx * dx + dy * dy + dz * dz)
 
+
         val speedScale = baseSpeed + (distance / 3.5)
         val moveVec = if (distance > 4) {
             val direction = Vector3f.from(dx.toFloat(), dy.toFloat(), dz.toFloat()).normalize()
             direction.mul(speedScale).add(jitterVec())
         } else {
-            angle = (angle + speedScale * 40) % 360
-            val rad = Math.toRadians(angle)
+
+            spinAngle = (spinAngle + spinSpeed * (moveDelta / 1000.0)).rem(360.0)
+            val rad = Math.toRadians(spinAngle)
             val offsetX = cos(rad) * strafeRadius
             val offsetZ = sin(rad) * strafeRadius
             Vector3f.from(
@@ -77,35 +90,52 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
         }
 
         val motion = if (player.vec3Position.y < 0.5f) {
-            Vector3f.from(0f, 1.2f, 0f) // Anti-void jump
+            Vector3f.from(0f, 1.2f, 0f)
         } else moveVec
 
         val newPosition = player.vec3Position.add(motion)
 
-        // Respect NoClip toggle with real-time collision like LockHeed
+
         if (!noClip && isPathBlockedFlag) return
 
-        // --- Smooth Rotation ---
-        val lookDX = targetPos.x - playerPos.x
-        val lookDY = (targetPos.y + yOffset) - playerPos.y
-        val lookDZ = targetPos.z - playerPos.z
 
-        val horizontalDist = sqrt(lookDX * lookDX + lookDZ * lookDZ)
-        val targetYaw = Math.toDegrees(atan2(-lookDX, lookDZ).toDouble()).toFloat()
-        val targetPitch = Math.toDegrees((-atan2(lookDY, horizontalDist)).toDouble()).toFloat()
+        val lookTarget = Vector3f.from(
+            targetPos.x.toFloat(),
+            (targetPos.y + yOffset).toFloat(),
+            targetPos.z.toFloat()
+        )
+
+
+        val targetRot: Rotation = toRotation(playerPos, lookTarget)
+
 
         val oldYaw = player.rotationYaw
         val oldPitch = player.rotationPitch
-        val smoothFactor = 0.35f
 
-        val newYaw = interpolateAngle(oldYaw, targetYaw, smoothFactor)
-        val newPitch = interpolateAngle(oldPitch, targetPitch, smoothFactor)
+
+        val deltaYaw = getAngleDifference(targetRot.yaw, oldYaw)
+        val deltaPitch = getAngleDifference(targetRot.pitch, oldPitch)
+
+
+        var newYaw = oldYaw + deltaYaw * smoothFactor
+        var newPitch = oldPitch + deltaPitch * smoothFactor
+
+        if (spinEnabled && distance <= spinRange) {
+
+            spinAngle = (spinAngle + spinSpeed * (moveDelta / 1000.0)).rem(360.0)
+            newYaw = (newYaw + spinAngle.toFloat()) % 360.0f
+        }
+
+
+        newYaw = (newYaw + 360f) % 360f
+
 
         player.rotationYaw = newYaw
         player.rotationYawHead = newYaw
         player.rotationPitch = newPitch
 
         val rotationVec = Vector3f.from(newYaw, newPitch, 0f)
+
 
         session.clientBound(MovePlayerPacket().apply {
             runtimeEntityId = player.runtimeEntityId
@@ -116,7 +146,6 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })
-
     }
 
     private fun findTarget(): Entity? {
@@ -139,14 +168,7 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
         Vector3f.from(jitter().toDouble(), jitter().toDouble(), jitter().toDouble())
 
     private fun isPathBlocked(start: Vector3f, end: Vector3f): Boolean {
-        // Legacy stub kept to preserve format; live collision uses PlayerAuthInputData flag.
-        return isPathBlockedFlag
-    }
 
-    private fun interpolateAngle(old: Float, target: Float, factor: Float): Float {
-        var delta = (target - old) % 360.0f
-        if (delta > 180f) delta -= 360f
-        if (delta < -180f) delta += 360f
-        return (old + delta * factor) % 360.0f
+        return isPathBlockedFlag
     }
 }

@@ -104,7 +104,7 @@ class MotionFlyModule : Module("MotionFly", ModuleCategory.Motion) {
             else -> glideSpeed
         }
 
-        // PlayerAuthInputPacket.motion encodes (strafe, forward)
+
         val inputX = packet.motion.x
         val inputZ = packet.motion.y
 
@@ -135,4 +135,4 @@ class MotionFlyModule : Module("MotionFly", ModuleCategory.Motion) {
     override fun onDisabled() {
         applyFlyAbilities(false)
     }
-}
+} 

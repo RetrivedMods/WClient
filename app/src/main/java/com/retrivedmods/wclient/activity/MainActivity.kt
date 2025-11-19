@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,10 +15,15 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.retrivedmods.wclient.navigation.Navigation
 import com.retrivedmods.wclient.ui.component.LoadingScreen
 import androidx.compose.runtime.*
 import com.retrivedmods.wclient.ui.theme.WClientTheme
+import com.retrivedmods.wclient.auth.VerificationManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
@@ -27,15 +33,67 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setupImmersiveMode()
         checkBatteryOptimizations()
+
         setContent {
             WClientTheme {
                 var showLoading by remember { mutableStateOf(true) }
-
+                var verifying by remember { mutableStateOf(false) }
 
                 if (showLoading) {
-                    LoadingScreen(onDone = { showLoading = false })
+                    LoadingScreen(onDone = {
+                        lifecycleScope.launch {
+
+                            if (VerificationManager.isAuthorized(this@MainActivity)) {
+                                withContext(Dispatchers.Main) { showLoading = false }
+                                return@launch
+                            }
+
+
+                            withContext(Dispatchers.Main) { verifying = true }
+
+                            try {
+
+                                val (token, realUrl, verifyUrl) = VerificationManager.requestVerificationDirect(this@MainActivity, short = true)
+                                VerificationManager.openInAppBrowser(this@MainActivity, verifyUrl)
+
+
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(this@MainActivity, "Complete verification in the browser, then return to this app.", Toast.LENGTH_LONG).show()
+                                }
+
+
+                                VerificationManager.pollTokenStatus(this@MainActivity, token) { verified, reason ->
+                                    lifecycleScope.launch {
+                                        withContext(Dispatchers.Main) {
+                                            verifying = false
+                                            if (verified) {
+                                                showLoading = false
+                                                Toast.makeText(this@MainActivity, "Device verified — welcome!", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(this@MainActivity, "Verification failed: ${reason ?: "unknown"}", Toast.LENGTH_LONG).show()
+
+                                                showLoading = false
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (t: Throwable) {
+                                withContext(Dispatchers.Main) {
+                                    verifying = false
+                                    showLoading = false
+                                    Toast.makeText(this@MainActivity, "Verification request failed: ${t.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    })
                 } else {
-                    Navigation()
+                    if (verifying) {
+
+                        LoadingScreen(onDone = { /* no-op */ })
+                    } else {
+
+                        Navigation()
+                    }
                 }
             }
         }
@@ -63,5 +121,10 @@ class MainActivity : ComponentActivity() {
             }
             startActivity(intent)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        VerificationManager.cancelAll()
     }
 }
