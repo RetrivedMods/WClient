@@ -1,6 +1,6 @@
-# WClient - The Ultimate Hacked Client for Minecraft Bedrock Edition (MCPE)
+# WClient - The Ultimate Utility Client for Minecraft Bedrock Edition (MCPE)
 
-**WClient** is a premium-grade, feature-rich hacked client designed for Minecraft Bedrock Edition (MCPE), offering unparalleled performance, smooth visuals, and powerful combat utilities. Inspired by top-tier clients like **ProtoHax**, **MuCuteClient**, and advancements by **Project Lumina**, WClient combines the best of all worlds into a single, user-friendly package.
+**WClient** is a premium-grade, feature-rich utility client designed for Minecraft Bedrock Edition (MCPE), offering unparalleled performance, smooth visuals, and powerful combat utilities. Inspired by top-tier clients like **ProtoHax**, **MuCuteClient**, and advancements by **Project Lumina**, WClient combines the best of all worlds into a single, user-friendly package.
 
 > ⚔️ Dominate the battlefield.  
 > 🕹️ Fly with style.  
@@ -62,9 +62,7 @@ We appreciate the open-source community, testers, and players who help us improv
 Have suggestions or found a bug?  
 📩 Contact us: `retrivedgamer@gmail.com`  
 💬 Join our Discord: [discord.gg/wclient](https://discord.gg/N2Gejr8Fbp)
-💰 Support us:  
-- UPI: `prajwalnanotkar09@oksbi`  
-- PayPal: [paypal.me/retrivedgamer](https://paypal.me/retrivedgamer)
+
 
 ---
 
