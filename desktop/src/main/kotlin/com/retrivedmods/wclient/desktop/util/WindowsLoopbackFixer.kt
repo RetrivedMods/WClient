@@ -96,7 +96,7 @@ object WindowsLoopbackFixer {
         
         try {
             val tempDir = System.getProperty("java.io.tmpdir")
-            val scriptFile = File(tempDir, "novaclient-fix.bat")
+            val scriptFile = File(tempDir, "wclient-fix.bat")
             
             val script = """
                 @echo off
@@ -144,7 +144,7 @@ object WindowsLoopbackFixer {
     private fun createBatchFile(): File? {
         try {
             val tempDir = System.getProperty("java.io.tmpdir")
-            val batFile = File(tempDir, "novaclient-fix.bat")
+            val batFile = File(tempDir, "wclient-fix.bat")
             
             val script = """
                 @echo off
@@ -163,7 +163,7 @@ object WindowsLoopbackFixer {
     private fun createVBSLauncher(batPath: String): File? {
         try {
             val tempDir = System.getProperty("java.io.tmpdir")
-            val vbsFile = File(tempDir, "novaclient-elevate.vbs")
+            val vbsFile = File(tempDir, "wclient-elevate.vbs")
             
             val vbsScript = """
                 Set UAC = CreateObject("Shell.Application")

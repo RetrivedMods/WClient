@@ -48,7 +48,6 @@ class MainActivity : ComponentActivity() {
                                 return@launch
                             }
 
-
                             withContext(Dispatchers.Main) { verifying = true }
 
                             try {
@@ -56,11 +55,9 @@ class MainActivity : ComponentActivity() {
                                 val (token, realUrl, verifyUrl) = VerificationManager.requestVerificationDirect(this@MainActivity, short = true)
                                 VerificationManager.openInAppBrowser(this@MainActivity, verifyUrl)
 
-
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(this@MainActivity, "Complete verification in the browser, then return to this app.", Toast.LENGTH_LONG).show()
                                 }
-
 
                                 VerificationManager.pollTokenStatus(this@MainActivity, token) { verified, reason ->
                                     lifecycleScope.launch {
@@ -71,7 +68,6 @@ class MainActivity : ComponentActivity() {
                                                 Toast.makeText(this@MainActivity, "Device verified — welcome!", Toast.LENGTH_SHORT).show()
                                             } else {
                                                 Toast.makeText(this@MainActivity, "Verification failed: ${reason ?: "unknown"}", Toast.LENGTH_LONG).show()
-
                                                 showLoading = false
                                             }
                                         }
@@ -88,10 +84,8 @@ class MainActivity : ComponentActivity() {
                     })
                 } else {
                     if (verifying) {
-
                         LoadingScreen(onDone = { /* no-op */ })
                     } else {
-
                         Navigation()
                     }
                 }

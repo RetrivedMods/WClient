@@ -15,6 +15,7 @@ import com.retrivedmods.wclient.game.module.combat.KillauraModule
 import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
 import com.retrivedmods.wclient.game.module.combat.WAuraModule
 import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
+import com.retrivedmods.wclient.game.module.misc.ArrayListModule
 
 import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
 import com.retrivedmods.wclient.game.module.misc.BaritoneModule
@@ -119,6 +120,7 @@ object ModuleManager {
             add(ESPModule())
             add(PlayerJoinModule())
             add(ZoomModule())
+
             add(CoordinatesModule())
             add(NoHurtCameraModule())
             add(SpeedDisplayModule())

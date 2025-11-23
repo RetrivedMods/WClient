@@ -23,11 +23,8 @@ object VerificationManager {
     private const val KEY_VERIFIED_UNTIL = "verified_until"
     private const val KEY_CURRENT_TOKEN = "current_token"
 
-    private const val BASE_VERIFY_URL = "https://retrivedmods.online/auth/verify.php"
 
-
-    private const val LINKARA_API_KEY = "47def04d9f7b611805d386d9024f01c65d427f5f"
-    private const val LINKARA_API_ENDPOINT = "https://linkara.xyz/api"
+    private const val BASE_VERIFY_URL = "https://retrivedmods.online/LV/verify.php"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .followRedirects(true)
@@ -89,52 +86,13 @@ object VerificationManager {
                 val j = JSONObject(body)
                 val token = j.optString("token", "")
                 val real = j.optString("real_verify_url", j.optString("verify_url", ""))
-                var verify = j.optString("verify_url", real)
+                val verify = j.optString("verify_url", real)
 
                 if (token.isBlank() || real.isBlank()) throw Exception("Invalid response")
-
-
-              if (short && verify == real) {
-                  try {
-                      val shortened = shortenWithLinkara(real)
-                      if (!shortened.isNullOrBlank()) {
-                            Log.d(TAG, "Linkara shortened (client): $shortened")
-                            verify = shortened
-                        } else {
-                            Log.w(TAG, "Linkara client shortening returned empty; using real URL")
-                        }
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Linkara client shortening failed; using real URL", t)
-                    }
-                }
-
                 setCurrentToken(ctx, token)
                 return@withContext Triple(token, real, verify)
             }
         }
-
-
-    private fun shortenWithLinkara(targetUrl: String): String {
-        try {
-            val apiUrl = "$LINKARA_API_ENDPOINT?api=${Uri.encode(LINKARA_API_KEY)}&url=${Uri.encode(targetUrl)}"
-            val req = Request.Builder().url(apiUrl).get().build()
-            client.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    Log.w(TAG, "Linkara API returned ${resp.code}")
-                    return ""
-                }
-                val body = resp.body?.string() ?: return ""
-                val j = JSONObject(body)
-                if (j.optString("status") == "success") {
-                    return j.optString("shortenedUrl", "")
-                }
-            }
-        } catch (t: Throwable) {
-            Log.e(TAG, "shortenWithLinkara error", t)
-        }
-        return ""
-    }
-
 
     fun openInAppBrowser(activity: Activity, verifyUrl: String) {
         try {
@@ -161,7 +119,6 @@ object VerificationManager {
         }
     }
 
-
     fun openInExternalBrowser(activity: Activity, url: String) {
         try {
             val i = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
@@ -175,7 +132,6 @@ object VerificationManager {
             Log.e(TAG, "Failed to open external browser", t)
         }
     }
-
 
     fun pollTokenStatus(ctx: Context, token: String, onComplete: (Boolean, String?) -> Unit) {
         scope.launch {

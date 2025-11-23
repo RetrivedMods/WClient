@@ -1,7 +1,7 @@
 package com.retrivedmods.wclient.desktop.core
 
 import com.google.gson.JsonParser
-import com.radiantbyte.novarelay.util.AuthUtils
+import com.retrivedmods.wrelay.util.AuthUtils
 import net.lenni0451.commons.httpclient.RetryHandler
 import net.raphimc.minecraftauth.MinecraftAuth
 import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession
@@ -13,7 +13,7 @@ object DesktopAccountManager {
     private val accounts = mutableListOf<StepFullBedrockSession.FullBedrockSession>()
     private var selectedAccount: StepFullBedrockSession.FullBedrockSession? = null
     
-    private val accountsDir = File(System.getProperty("user.home"), ".novaclient/accounts")
+    private val accountsDir = File(System.getProperty("user.home"), ".wclient/accounts")
     
     init {
         accountsDir.mkdirs()

@@ -1,13 +1,13 @@
 package com.retrivedmods.wclient.desktop.core
 
-import com.radiantbyte.novarelay.NovaRelaySession
-import com.radiantbyte.novarelay.listener.NovaRelayPacketListener
+import com.retrivedmods.wrelay.listener.WRelayPacketListener
+import com.retrivedmods.wrelay.WRelaySession
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 
 class DesktopCommandHandler(
-    private val session: NovaRelaySession
-) : NovaRelayPacketListener {
+    private val session: WRelaySession
+) : WRelayPacketListener {
     
     private val prefix = "."
     
