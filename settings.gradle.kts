@@ -30,7 +30,6 @@ dependencyResolutionManagement {
 rootProject.name = "WClient"
 include(":app")
 include(":relay")
-include(":desktop")
 include(
     ":relay:adventure",
     ":relay:Protocol:bedrock-codec",

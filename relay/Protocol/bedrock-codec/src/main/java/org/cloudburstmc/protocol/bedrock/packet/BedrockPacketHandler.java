@@ -908,7 +908,7 @@ public interface BedrockPacketHandler extends PacketHandler {
         return PacketSignal.UNHANDLED;
     }
 
-    default PacketSignal handle(ServerScriptDebugDrawerPacket packet) {
+    default PacketSignal handle(DebugDrawerPacket packet) {
         return PacketSignal.UNHANDLED;
     }
 
@@ -921,6 +921,10 @@ public interface BedrockPacketHandler extends PacketHandler {
     }
 
     default PacketSignal handle(ServerPlayerPostMovePositionPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ServerScriptDebugDrawerPacket packet) {
         return PacketSignal.UNHANDLED;
     }
 }

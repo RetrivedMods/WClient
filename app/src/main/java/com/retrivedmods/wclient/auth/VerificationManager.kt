@@ -24,7 +24,7 @@ object VerificationManager {
     private const val KEY_CURRENT_TOKEN = "current_token"
 
 
-    private const val BASE_VERIFY_URL = "https://retrivedmods.online/LV/verify.php"
+    private const val BASE_VERIFY_URL = "https://retrivedmods.online/LV1/verify.php"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .followRedirects(true)

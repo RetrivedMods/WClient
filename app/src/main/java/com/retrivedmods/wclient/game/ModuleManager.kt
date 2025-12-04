@@ -15,7 +15,7 @@ import com.retrivedmods.wclient.game.module.combat.KillauraModule
 import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
 import com.retrivedmods.wclient.game.module.combat.WAuraModule
 import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
-import com.retrivedmods.wclient.game.module.misc.ArrayListModule
+import com.retrivedmods.wclient.game.module.combat.AutoFightModule
 
 import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
 import com.retrivedmods.wclient.game.module.misc.BaritoneModule
@@ -86,6 +86,7 @@ object ModuleManager {
             // Combat
             add(WAuraModule())
             add(KillauraModule())
+            add(AutoFightModule())
             add(EnemyHunterModule())
             add(AntiKnockbackModule())
             add(AutoArmorModule())
