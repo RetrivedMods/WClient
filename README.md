@@ -26,9 +26,7 @@
 - **Smooth Zoom**: PC-like FOV zoom with smooth transitions.
 
 ### ✅ Utility Modules
-- **Inventory Tweaks**: Auto combine and sort items.
-- **Anti-Kick, Anti-Hit, God Mode**: Stay protected against server-side restrictions.
-- **Diamond Armor Exploit**: Wear multiple chestplates for invincibility (Lifeboat compatible).
+- **Auto Armour**: Automatically wears top level armour.
 
 
 ---
