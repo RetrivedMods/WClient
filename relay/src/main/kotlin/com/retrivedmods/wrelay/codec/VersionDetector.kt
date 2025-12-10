@@ -3,6 +3,7 @@ package com.retrivedmods.wrelay.codec
 object VersionDetector {
 
     private val versionRanges = mapOf(
+        898 to listOf("1.21.130"),
         860 to listOf("1.21.124"),
         859 to listOf("1.21.120"),
         844 to listOf("1.21.110", "1.21.111", "1.21.112", "1.21.113", "1.21.114"),

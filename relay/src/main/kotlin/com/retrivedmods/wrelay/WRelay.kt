@@ -41,10 +41,10 @@ class WRelay(
                 .gameType("Survival")
                 .version(DefaultCodec.minecraftVersion)
                 .protocolVersion(DefaultCodec.protocolVersion)
-                .motd("W Relay")
+                .motd("§cWelcome To WRelay§c")
                 .playerCount(0)
                 .maximumPlayerCount(20)
-                .subMotd("W Relay")
+                .subMotd("WClient")
                 .nintendoLimited(false)
 
     }

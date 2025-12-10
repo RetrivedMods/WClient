@@ -69,6 +69,8 @@ object CodecRegistry {
         registerCodec(844, "1.21.111", "org.cloudburstmc.protocol.bedrock.codec.v844.Bedrock_v844")
         registerCodec(859, "1.21.120", "org.cloudburstmc.protocol.bedrock.codec.v859.Bedrock_v859")
         registerCodec(860, "1.21.124", "org.cloudburstmc.protocol.bedrock.codec.v860.Bedrock_v860")
+        registerCodec(898, "1.21.130", "org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898")
+
 
         sortedProtocolVersions.sortDescending()
     }

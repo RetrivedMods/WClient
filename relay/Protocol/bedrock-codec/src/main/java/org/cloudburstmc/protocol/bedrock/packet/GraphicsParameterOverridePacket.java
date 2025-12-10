@@ -19,10 +19,10 @@ import java.util.Map;
 @ToString(doNotUseGetters = true)
 public class GraphicsParameterOverridePacket implements BedrockPacket {
 
-    private String biomeIdentifier;
-    private GraphicsOverrideParameterType parameterType;
-    private Map<Float, Vector3f> values;
-    private boolean reset;
+    public String biomeIdentifier;
+    public GraphicsOverrideParameterType parameterType;
+    public Map<Float, Vector3f> values;
+    public boolean reset;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

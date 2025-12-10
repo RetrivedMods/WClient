@@ -1,23 +1,22 @@
 package org.cloudburstmc.protocol.bedrock.packet;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.cloudburstmc.protocol.bedrock.data.debugshape.DebugShape;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
-import java.util.List;
+import java.util.UUID;
 
-/**
- * Sends debug geometry to the client. Meant for script debugging purposes.
- */
 @Data
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
-public class DebugDrawerPacket implements BedrockPacket {
+public class ServerboundDataStorePacket implements BedrockPacket {
 
-    public final List<DebugShape> shapes = new ObjectArrayList<>();
+    public String dataStoreName;
+    public String property;
+    public String path;
+    public Object data;
+    public int updateCount;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {
@@ -26,15 +25,15 @@ public class DebugDrawerPacket implements BedrockPacket {
 
     @Override
     public BedrockPacketType getPacketType() {
-        return BedrockPacketType.DEBUG_DRAWER;
+        return BedrockPacketType.SERVERBOUND_DATA_STORE;
     }
 
     @Override
-    public BedrockPacket clone() {
+    public ServerboundDataStorePacket clone() {
         try {
-            return (DebugDrawerPacket) super.clone();
+            return (ServerboundDataStorePacket) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
+            throw new AssertionError(e);
         }
     }
 }

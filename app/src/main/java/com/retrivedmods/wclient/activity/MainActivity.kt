@@ -41,8 +41,10 @@ class MainActivity : ComponentActivity() {
 
                 if (showLoading) {
                     LoadingScreen(onDone = {
+                        // Explicitly use lifecycleScope (main dispatcher by default),
+                        // and ensure calls that may addObservers run on the main thread.
                         lifecycleScope.launch {
-
+                            // Quick check: if already authorized, hide loading on main thread
                             if (VerificationManager.isAuthorized(this@MainActivity)) {
                                 withContext(Dispatchers.Main) { showLoading = false }
                                 return@launch
@@ -51,24 +53,31 @@ class MainActivity : ComponentActivity() {
                             withContext(Dispatchers.Main) { verifying = true }
 
                             try {
-
-                                val (token, realUrl, verifyUrl) = VerificationManager.requestVerificationDirect(this@MainActivity, short = true)
-                                VerificationManager.openInAppBrowser(this@MainActivity, verifyUrl)
+                                // Ensure requestVerificationDirect and openInAppBrowser run on main
+                                val (token, realUrl, verifyUrl) = withContext(Dispatchers.Main) {
+                                    VerificationManager.requestVerificationDirect(this@MainActivity, short = true)
+                                }
 
                                 withContext(Dispatchers.Main) {
+                                    VerificationManager.openInAppBrowser(this@MainActivity, verifyUrl)
                                     Toast.makeText(this@MainActivity, "Complete verification in the browser, then return to this app.", Toast.LENGTH_LONG).show()
                                 }
 
-                                VerificationManager.pollTokenStatus(this@MainActivity, token) { verified, reason ->
-                                    lifecycleScope.launch {
-                                        withContext(Dispatchers.Main) {
-                                            verifying = false
-                                            if (verified) {
-                                                showLoading = false
-                                                Toast.makeText(this@MainActivity, "Device verified — welcome!", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                Toast.makeText(this@MainActivity, "Verification failed: ${reason ?: "unknown"}", Toast.LENGTH_LONG).show()
-                                                showLoading = false
+                                // Ensure pollTokenStatus (which may add observers) is called on main thread.
+                                withContext(Dispatchers.Main) {
+                                    VerificationManager.pollTokenStatus(this@MainActivity, token) { verified, reason ->
+                                        // Callback originates from VerificationManager; update UI on main thread.
+                                        lifecycleScope.launch {
+                                            // UI updates always on main
+                                            withContext(Dispatchers.Main) {
+                                                verifying = false
+                                                if (verified) {
+                                                    showLoading = false
+                                                    Toast.makeText(this@MainActivity, "Device verified — welcome!", Toast.LENGTH_SHORT).show()
+                                                } else {
+                                                    Toast.makeText(this@MainActivity, "Verification failed: ${reason ?: "unknown"}", Toast.LENGTH_LONG).show()
+                                                    showLoading = false
+                                                }
                                             }
                                         }
                                     }

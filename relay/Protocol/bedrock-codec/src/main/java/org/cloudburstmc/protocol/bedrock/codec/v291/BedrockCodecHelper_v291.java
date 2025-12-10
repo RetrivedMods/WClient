@@ -178,7 +178,7 @@ public class BedrockCodecHelper_v291 extends BaseBedrockCodecHelper {
         writeUuid(buffer, originData.getUuid());
         writeString(buffer, originData.getRequestId());
         if (originData.getOrigin() == CommandOriginType.DEV_CONSOLE || originData.getOrigin() == CommandOriginType.TEST) {
-            VarInts.writeLong(buffer, originData.getEvent());
+            VarInts.writeLong(buffer, originData.getPlayerId());
         }
     }
 

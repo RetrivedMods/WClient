@@ -13,7 +13,7 @@ dependencies {
     // Lombok as annotation processor (avoids circular dependency)
     compileOnly("org.projectlombok:lombok:1.18.34")
     annotationProcessor("org.projectlombok:lombok:1.18.34")
-    
+
     api(project(":relay:Protocol:common"))
     api(libs.adventure.text.serializer.legacy)
     api(libs.adventure.text.serializer.json)

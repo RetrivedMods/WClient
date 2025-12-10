@@ -11,33 +11,33 @@ import org.cloudburstmc.protocol.common.util.OptionalBoolean;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CameraInstructionPacket implements BedrockPacket {
-    private CameraSetInstruction setInstruction;
-    private CameraFadeInstruction fadeInstruction;
-    private OptionalBoolean clear = OptionalBoolean.empty();
+    public CameraSetInstruction setInstruction;
+    public CameraFadeInstruction fadeInstruction;
+    public OptionalBoolean clear = OptionalBoolean.empty();
     /**
      * @since v712
      */
-    private CameraTargetInstruction targetInstruction;
+    public CameraTargetInstruction targetInstruction;
     /**
      * @since v712
      */
-    private OptionalBoolean removeTarget = OptionalBoolean.empty();
+    public OptionalBoolean removeTarget = OptionalBoolean.empty();
     /**
      * @since v827
      */
-    private CameraFovInstruction fovInstruction;
+    public CameraFovInstruction fovInstruction;
     /**
      * @since v859
      */
-    private CameraSplineInstruction splineInstruction;
+    public CameraSplineInstruction splineInstruction;
     /**
      * @since v859
      */
-    private CameraAttachToEntityInstruction attachInstruction;
+    public CameraAttachToEntityInstruction attachInstruction;
     /**
      * @since v859
      */
-    private OptionalBoolean detachFromEntity = OptionalBoolean.empty();
+    public OptionalBoolean detachFromEntity = OptionalBoolean.empty();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {
