@@ -1,6 +1,11 @@
 
 # WClient - #1 Utility Client for MCPE
 
+![MCPE](https://img.shields.io/badge/Minecraft-Bedrock-green?logo=minecraft&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-MCPE-orange)
+![Kotlin](https://img.shields.io/badge/Code-Kotlin-7F52FF?logo=kotlin&logoColor=white)
+![License](https://img.shields.io/badge/License-GNU%20GPLv3-blue?logo=gnu&logoColor=white)
+
 **WClient** is a modular, high‑performance utility client designed for **Minecraft Bedrock Edition**. Built with a strong focus on stability, packet‑level control, and extensibility, WClient delivers advanced combat, movement, and visual enhancements while maintaining a clean, maintainable architecture.
 
 WClient does **not** modify game memory directly and is engineered for compatibility across multiple Bedrock environments.
