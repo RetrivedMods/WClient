@@ -11,19 +11,17 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.*
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import com.retrivedmods.wclient.auth.VerificationManager
 import com.retrivedmods.wclient.navigation.Navigation
 import com.retrivedmods.wclient.ui.component.LoadingScreen
-import androidx.compose.runtime.*
 import com.retrivedmods.wclient.ui.theme.WClientTheme
-import com.retrivedmods.wclient.auth.VerificationManager
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
@@ -36,64 +34,82 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             WClientTheme {
+
                 var showLoading by remember { mutableStateOf(true) }
                 var verifying by remember { mutableStateOf(false) }
 
                 if (showLoading) {
-                    LoadingScreen(onDone = {
-                        // Explicitly use lifecycleScope (main dispatcher by default),
-                        // and ensure calls that may addObservers run on the main thread.
-                        lifecycleScope.launch {
-                            // Quick check: if already authorized, hide loading on main thread
-                            if (VerificationManager.isAuthorized(this@MainActivity)) {
-                                withContext(Dispatchers.Main) { showLoading = false }
-                                return@launch
-                            }
+                    LoadingScreen(
+                        onDone = {
+                            lifecycleScope.launch {
 
-                            withContext(Dispatchers.Main) { verifying = true }
 
-                            try {
-                                // Ensure requestVerificationDirect and openInAppBrowser run on main
-                                val (token, realUrl, verifyUrl) = withContext(Dispatchers.Main) {
-                                    VerificationManager.requestVerificationDirect(this@MainActivity, short = true)
+                                if (VerificationManager.isAuthorized(this@MainActivity)) {
+                                    showLoading = false
+                                    return@launch
                                 }
 
-                                withContext(Dispatchers.Main) {
-                                    VerificationManager.openInAppBrowser(this@MainActivity, verifyUrl)
-                                    Toast.makeText(this@MainActivity, "Complete verification in the browser, then return to this app.", Toast.LENGTH_LONG).show()
-                                }
+                                verifying = true
 
-                                // Ensure pollTokenStatus (which may add observers) is called on main thread.
-                                withContext(Dispatchers.Main) {
-                                    VerificationManager.pollTokenStatus(this@MainActivity, token) { verified, reason ->
-                                        // Callback originates from VerificationManager; update UI on main thread.
-                                        lifecycleScope.launch {
-                                            // UI updates always on main
-                                            withContext(Dispatchers.Main) {
-                                                verifying = false
-                                                if (verified) {
-                                                    showLoading = false
-                                                    Toast.makeText(this@MainActivity, "Device verified — welcome!", Toast.LENGTH_SHORT).show()
-                                                } else {
-                                                    Toast.makeText(this@MainActivity, "Verification failed: ${reason ?: "unknown"}", Toast.LENGTH_LONG).show()
-                                                    showLoading = false
-                                                }
-                                            }
+                                try {
+
+                                    val (token, _, verifyUrl) =
+                                        VerificationManager.requestVerificationDirect(
+                                            this@MainActivity,
+                                            short = true
+                                        )
+
+
+                                    VerificationManager.openInAppBrowser(
+                                        this@MainActivity,
+                                        verifyUrl
+                                    )
+
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Complete verification in the browser, then return to this app.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+
+                                  
+                                    VerificationManager.pollTokenStatus(
+                                        this@MainActivity,
+                                        token
+                                    ) { verified, reason ->
+
+                                        verifying = false
+                                        showLoading = false
+
+                                        if (verified) {
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Welcome - You are now verified!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Verification failed: ${reason ?: "unknown"}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
                                         }
                                     }
-                                }
-                            } catch (t: Throwable) {
-                                withContext(Dispatchers.Main) {
+
+                                } catch (t: Throwable) {
                                     verifying = false
                                     showLoading = false
-                                    Toast.makeText(this@MainActivity, "Verification request failed: ${t.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Verification request failed: ${t.message}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                 }
                             }
                         }
-                    })
+                    )
                 } else {
                     if (verifying) {
-                        LoadingScreen(onDone = { /* no-op */ })
+                        LoadingScreen(onDone = {})
                     } else {
                         Navigation()
                     }
@@ -105,10 +121,10 @@ class MainActivity : ComponentActivity() {
     private fun setupImmersiveMode() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        windowInsetsController.apply {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
             hide(WindowInsetsCompat.Type.systemBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -118,11 +134,11 @@ class MainActivity : ComponentActivity() {
     private fun checkBatteryOptimizations() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-            val intent = Intent().apply {
-                action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                data = "package:$packageName".toUri()
-            }
-            startActivity(intent)
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = "package:$packageName".toUri()
+                }
+            )
         }
     }
 

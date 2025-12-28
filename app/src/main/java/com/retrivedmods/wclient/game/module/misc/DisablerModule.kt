@@ -7,7 +7,7 @@ import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import kotlin.random.Random
 
-class AdvanceDisablerModule : Module("Advance Disabler", ModuleCategory.Misc) {
+class DisablerModule : Module("Disabler", ModuleCategory.Misc) {
 
     private val lifeboatBypass by boolValue("Lifeboat Bypass", true)
     private val hiveBypass by boolValue("Hive Bypass", true)

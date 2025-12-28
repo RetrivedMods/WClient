@@ -6,7 +6,7 @@ import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.ModuleManager
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 
-class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true, true) {
+class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true) {
     private val prefix = "."
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
@@ -81,7 +81,7 @@ class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true
                     if (module != null && !module.private) {
                         module.isEnabled = !module.isEnabled
                     } else {
-                        session.displayClientMessage("§l§b[NovaClient] §r§cModule not found: §f$command")
+                        session.displayClientMessage("§l§c[WClient] §r§cModule not found: §f$command")
                     }
                 }
             }
@@ -90,7 +90,7 @@ class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true
 
     private fun displayHelp(category: String?) {
         val header = """
-            §l§b[NovaClient] §r§7Module List
+            §l§c[WClient] §r§7Module List
             §7Commands:
             §f.help <category> §7- View modules in a category
             §f.<module> §7- Toggle a module

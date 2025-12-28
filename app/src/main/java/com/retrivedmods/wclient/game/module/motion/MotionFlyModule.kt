@@ -135,4 +135,4 @@ class MotionFlyModule : Module("MotionFly", ModuleCategory.Motion) {
     override fun onDisabled() {
         applyFlyAbilities(false)
     }
-} 
+}

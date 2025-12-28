@@ -18,7 +18,7 @@ class ArrayListModule : Module("arraylist", ModuleCategory.Misc) {
     private val sortMode by enumValue("Sort", SortMode.LENGTH, SortMode::class.java)
     private val animationSpeed by intValue("Animation Speed", 300, 100..1000)
     private val showBackground by boolValue("Background", true)
-    private val showBorder by boolValue("Border", true)
+    private val showBorder by boolValue("Border", false)
     private val borderStyle by enumValue("Border Style", BorderStyle.LEFT, BorderStyle::class.java)
     private val colorMode by enumValue("Color Mode", ColorMode.RAINBOW, ColorMode::class.java)
     private val rainbowSpeed by floatValue("Rainbow Speed", 1.0f, 0.1f..5.0f)

@@ -1,50 +1,37 @@
 package com.retrivedmods.wclient.overlay.hud
 
 import android.view.Gravity
-import com.retrivedmods.wclient.overlay.OverlayWindow
-import com.retrivedmods.wclient.overlay.OverlayManager
 import android.view.WindowManager
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.retrivedmods.wclient.BuildConfig
+import com.retrivedmods.wclient.overlay.OverlayManager
+import com.retrivedmods.wclient.overlay.OverlayWindow
 import com.retrivedmods.wclient.game.module.misc.WaterMarkModule
 import com.retrivedmods.wclient.ui.theme.WColors
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import kotlin.math.abs
 import kotlin.math.sin
 
 class WaterMarkOverlay : OverlayWindow() {
@@ -66,42 +53,31 @@ class WaterMarkOverlay : OverlayWindow() {
     override val layoutParams: WindowManager.LayoutParams
         get() = _layoutParams
 
-    private var customText by mutableStateOf("W Client")
+
+    private var customText by mutableStateOf("WClient")
     private var showVersion by mutableStateOf(true)
-    private var showTime by mutableStateOf(false)
     private var position by mutableStateOf(WaterMarkModule.Position.TOP_LEFT)
     private var fontSize by mutableStateOf(18)
-    private var colorMode by mutableStateOf(WaterMarkModule.ColorMode.RAINBOW)
     private var rainbowSpeed by mutableStateOf(1.0f)
     private var showBackground by mutableStateOf(true)
     private var backgroundOpacity by mutableStateOf(0.7f)
     private var showShadow by mutableStateOf(true)
     private var shadowOffset by mutableStateOf(2)
-    private var animateText by mutableStateOf(false)
+    private var animateText by mutableStateOf(true)
     private var glowEffect by mutableStateOf(false)
     private var borderStyle by mutableStateOf(WaterMarkModule.BorderStyle.NONE)
+
 
     companion object {
         val overlayInstance by lazy { WaterMarkOverlay() }
         private var shouldShowOverlay = false
 
-        fun showOverlay() {
-            if (shouldShowOverlay) {
-                try {
-                    OverlayManager.showOverlayWindow(overlayInstance)
-                } catch (e: Exception) {}
-            }
-        }
-
-        fun dismissOverlay() {
-            try {
-                OverlayManager.dismissOverlayWindow(overlayInstance)
-            } catch (e: Exception) {}
-        }
-
         fun setOverlayEnabled(enabled: Boolean) {
             shouldShowOverlay = enabled
-            if (enabled) showOverlay() else dismissOverlay()
+            try {
+                if (enabled) OverlayManager.showOverlayWindow(overlayInstance)
+                else OverlayManager.dismissOverlayWindow(overlayInstance)
+            } catch (_: Exception) {}
         }
 
         fun isOverlayEnabled(): Boolean = shouldShowOverlay
@@ -114,10 +90,6 @@ class WaterMarkOverlay : OverlayWindow() {
             overlayInstance.showVersion = show
         }
 
-        fun setShowTime(show: Boolean) {
-            overlayInstance.showTime = show
-        }
-
         fun setPosition(pos: WaterMarkModule.Position) {
             overlayInstance.position = pos
             overlayInstance.updateLayoutParams()
@@ -125,10 +97,6 @@ class WaterMarkOverlay : OverlayWindow() {
 
         fun setFontSize(size: Int) {
             overlayInstance.fontSize = size
-        }
-
-        fun setColorMode(mode: WaterMarkModule.ColorMode) {
-            overlayInstance.colorMode = mode
         }
 
         fun setRainbowSpeed(speed: Float) {
@@ -164,8 +132,9 @@ class WaterMarkOverlay : OverlayWindow() {
         }
     }
 
+
     private fun updateLayoutParams() {
-        val gravity = when (position) {
+        _layoutParams.gravity = when (position) {
             WaterMarkModule.Position.TOP_LEFT -> Gravity.TOP or Gravity.START
             WaterMarkModule.Position.TOP_CENTER -> Gravity.TOP or Gravity.CENTER_HORIZONTAL
             WaterMarkModule.Position.TOP_RIGHT -> Gravity.TOP or Gravity.END
@@ -176,175 +145,130 @@ class WaterMarkOverlay : OverlayWindow() {
             WaterMarkModule.Position.BOTTOM_CENTER -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             WaterMarkModule.Position.BOTTOM_RIGHT -> Gravity.BOTTOM or Gravity.END
         }
-        
-        _layoutParams.gravity = gravity
-        
+
         try {
             windowManager.updateViewLayout(composeView, _layoutParams)
-        } catch (e: Exception) {}
+        } catch (_: Exception) {}
     }
+
+
 
     @Composable
     override fun Content() {
-        if (!isOverlayEnabled()) return
+        if (!shouldShowOverlay) return
 
         var rainbowOffset by remember { mutableStateOf(0f) }
-        var pulseOffset by remember { mutableStateOf(0f) }
-        var waveOffset by remember { mutableStateOf(0f) }
+        var pulse by remember { mutableStateOf(0f) }
 
         LaunchedEffect(Unit) {
             while (true) {
-                rainbowOffset += rainbowSpeed * 0.02f
-                pulseOffset += 0.05f
-                waveOffset += 0.1f
-                if (rainbowOffset > 1f) rainbowOffset = 0f
-                if (pulseOffset > 1f) pulseOffset = 0f
-                if (waveOffset > 1f) waveOffset = 0f
-                delay(16L)
+                rainbowOffset = (rainbowOffset + rainbowSpeed * 0.01f) % 1f
+                pulse = (pulse + 0.05f) % 1f
+                delay(16)
             }
         }
 
         val scale by animateFloatAsState(
-            targetValue = if (animateText) 1f + sin(pulseOffset * 6.28f) * 0.05f else 1f,
-            animationSpec = tween(100),
-            label = "TextScale"
+            targetValue = if (animateText) 1f + sin(pulse * 6.28f) * 0.05f else 1f,
+            animationSpec = tween(120),
+            label = "scale"
         )
 
-        val watermarkText = buildWatermarkText()
-        val textColor = getTextColor(rainbowOffset, pulseOffset, waveOffset)
+        val rainbowColors = List(7) { i ->
+            val hue = ((i * 360f / 7) + rainbowOffset * 360f) % 360f
+            Color.hsv(hue, 1f, 1f)
+        }
+
+        val gradientBrush = Brush.horizontalGradient(rainbowColors)
 
         Box(
             modifier = Modifier
                 .scale(scale)
                 .pointerInput(Unit) {
                     detectDragGestures { _, drag ->
-                        _layoutParams.x = (_layoutParams.x + drag.x.toInt()).coerceAtLeast(0)
-                        _layoutParams.y = (_layoutParams.y + drag.y.toInt()).coerceAtLeast(0)
+                        _layoutParams.x += drag.x.toInt()
+                        _layoutParams.y += drag.y.toInt()
                         try {
                             windowManager.updateViewLayout(composeView, _layoutParams)
-                        } catch (e: Exception) {}
+                        } catch (_: Exception) {}
                     }
                 }
-                .let { modifier ->
-                    if (showBackground) {
-                        modifier
+                .then(
+                    if (showBackground)
+                        Modifier
                             .background(
                                 WColors.Surface.copy(alpha = backgroundOpacity),
-                                RoundedCornerShape(8.dp)
+                                RoundedCornerShape(10.dp)
                             )
-                            .clip(RoundedCornerShape(8.dp))
-                    } else modifier
-                }
-                .let { modifier ->
-                    when (borderStyle) {
-                        WaterMarkModule.BorderStyle.SOLID -> modifier.border(
-                            2.dp, textColor, RoundedCornerShape(8.dp)
-                        )
-                        WaterMarkModule.BorderStyle.DASHED -> modifier.border(
-                            2.dp, textColor, RoundedCornerShape(8.dp)
-                        )
-                        WaterMarkModule.BorderStyle.GLOW -> modifier.drawBehind {
-                            if (glowEffect) {
-                                drawIntoCanvas { canvas ->
-                                    val paint = Paint().asFrameworkPaint().apply {
-                                        color = textColor.toArgb()
-                                        setShadowLayer(10f, 0f, 0f, textColor.toArgb())
-                                    }
-                                    canvas.nativeCanvas.drawRoundRect(
-                                        0f, 0f, size.width, size.height, 8f, 8f, paint
-                                    )
+                            .clip(RoundedCornerShape(10.dp))
+                    else Modifier
+                )
+                .then(
+                    if (borderStyle == WaterMarkModule.BorderStyle.SOLID)
+                        Modifier.border(2.dp, gradientBrush, RoundedCornerShape(10.dp))
+                    else Modifier
+                )
+                .then(
+                    if (glowEffect)
+                        Modifier.drawBehind {
+                            drawIntoCanvas {
+                                val paint = Paint().asFrameworkPaint().apply {
+                                    color = Color.White.toArgb()
+                                    setShadowLayer(20f, 0f, 0f, Color.White.toArgb())
                                 }
+                                it.nativeCanvas.drawRoundRect(
+                                    0f, 0f, size.width, size.height,
+                                    12f, 12f, paint
+                                )
                             }
                         }
-                        else -> modifier
-                    }
-                }
-                .padding(12.dp)
+                    else Modifier
+                )
+                .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
-            if (showShadow && shadowOffset > 0) {
+
+            if (showShadow) {
                 Text(
-                    text = watermarkText,
-                    color = Color.Black.copy(alpha = 0.5f),
-                    fontSize = fontSize.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.offset(shadowOffset.dp, shadowOffset.dp)
+                    text = buildAnnotatedWatermark(
+                        Brush.horizontalGradient(listOf(Color.Black, Color.Black))
+                    ),
+                    modifier = Modifier.offset(shadowOffset.dp, shadowOffset.dp),
+                    style = TextStyle(color = Color.Black.copy(alpha = 0.4f))
                 )
             }
 
             Text(
-                text = watermarkText,
-                color = textColor,
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.Bold
+                text = buildAnnotatedWatermark(gradientBrush),
+                style = TextStyle(fontWeight = FontWeight.Medium)
             )
         }
     }
 
-    private fun buildWatermarkText(): String {
-        val parts = mutableListOf<String>()
-
-        parts.add(customText)
-
-        if (showVersion) {
-            parts.add("v1.9")
-        }
-
-        if (showTime) {
-            val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-            parts.add(timeFormat.format(Date()))
-        }
-
-        return parts.joinToString(" | ")
-    }
-
-    private fun getTextColor(rainbowOffset: Float, pulseOffset: Float, waveOffset: Float): Color {
-        return when (colorMode) {
-            WaterMarkModule.ColorMode.RAINBOW -> {
-                hsvToRgb(rainbowOffset, 0.8f, 1f)
+    @Composable
+    private fun buildAnnotatedWatermark(brush: Brush): AnnotatedString {
+        return buildAnnotatedString {
+            withStyle(
+                SpanStyle(
+                    fontSize = fontSize.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    brush = brush
+                )
+            ) {
+                append(customText)
             }
-            WaterMarkModule.ColorMode.GRADIENT -> {
-                lerpColor(WColors.Accent, WColors.Secondary, rainbowOffset)
-            }
-            WaterMarkModule.ColorMode.STATIC -> WColors.Accent
-            WaterMarkModule.ColorMode.PULSING -> {
-                val alpha = 0.5f + sin(pulseOffset * 6.28f) * 0.5f
-                WColors.Accent.copy(alpha = alpha)
-            }
-            WaterMarkModule.ColorMode.WAVE -> {
-                val hue = (waveOffset + sin(waveOffset * 6.28f) * 0.2f) % 1f
-                hsvToRgb(hue, 0.8f, 1f)
+
+            if (showVersion) {
+                withStyle(
+                    SpanStyle(
+                        fontSize = (fontSize * 0.55f).sp,
+                        fontWeight = FontWeight.Medium,
+                        baselineShift = BaselineShift.Superscript,
+                        brush = brush
+                    )
+                ) {
+                    append(" v${BuildConfig.VERSION_NAME}")
+                }
             }
         }
-    }
-
-    private fun hsvToRgb(h: Float, s: Float, v: Float): Color {
-        val hDegrees = h * 360f
-        val c = v * s
-        val x = c * (1 - abs((hDegrees / 60f) % 2 - 1))
-        val m = v - c
-
-        val (r, g, b) = when {
-            hDegrees < 60 -> Triple(c, x, 0f)
-            hDegrees < 120 -> Triple(x, c, 0f)
-            hDegrees < 180 -> Triple(0f, c, x)
-            hDegrees < 240 -> Triple(0f, x, c)
-            hDegrees < 300 -> Triple(x, 0f, c)
-            else -> Triple(c, 0f, x)
-        }
-
-        return Color(
-            red = (r + m).coerceIn(0f, 1f),
-            green = (g + m).coerceIn(0f, 1f),
-            blue = (b + m).coerceIn(0f, 1f)
-        )
-    }
-
-    private fun lerpColor(start: Color, stop: Color, fraction: Float): Color {
-        return Color(
-            red = start.red + fraction * (stop.red - start.red),
-            green = start.green + fraction * (stop.green - start.green),
-            blue = start.blue + fraction * (stop.blue - start.blue),
-            alpha = start.alpha + fraction * (stop.alpha - start.alpha)
-        )
     }
 }

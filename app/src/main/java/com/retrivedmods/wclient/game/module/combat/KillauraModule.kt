@@ -3,136 +3,163 @@ package com.retrivedmods.wclient.game.module.combat
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.game.entity.Entity
-import com.retrivedmods.wclient.game.entity.EntityUnknown
-import com.retrivedmods.wclient.game.entity.LocalPlayer
-import com.retrivedmods.wclient.game.entity.MobList
-import com.retrivedmods.wclient.game.entity.Player
+import com.retrivedmods.wclient.game.entity.*
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
+import kotlin.math.cos
+import kotlin.math.sin
 
 class KillauraModule : Module("killaura", ModuleCategory.Combat) {
 
+
+
     private var playersOnly by boolValue("players_only", true)
     private var mobsOnly by boolValue("mobs_only", false)
-    private var tpAuraEnabled by boolValue("tp_aura", false)
 
-    private var rangeValue by floatValue("range", 3.7f, 2f..12f)
-    private var attackInterval by intValue("delay", 5, 1..20)
-    private var cpsValue by intValue("cps", 10, 1..20)
-    private var boost by intValue("packets", 1, 1..10)
-    private var tpspeed by intValue("tp_speed", 1000, 100..2000)
+    private var tpAuraEnabled by boolValue("tp_aura", true)
+    private var teleportBehind by boolValue("tp_behind", true)
+    private var criticalHits by boolValue("critical_hit", true)
+    private var strafe by boolValue("strafe", false)
 
-    private var distanceToKeep by floatValue("keep_distance", 2.0f, 1f..12f)
+    private var rangeValue by floatValue("range", 9.5f, 2f..16f)
+    private var cpsValue by intValue("cps", 20, 5..30)
+
+    private var tpSpeed by intValue("tp_speed", 100, 10..500)
+    private var tpYOffset by intValue("tp_y_offset", 1, -10..10)
+    private var keepDistance by floatValue("keep_distance", 1.2f, 0.5f..5f)
+
+    private val strafeSpeed by floatValue("strafe_speed", 2.5f, 1f..4f)
+    private val strafeRadius by floatValue("strafe_radius", 2.5f, 1f..6f)
+
+
 
     private var lastAttackTime = 0L
     private var tpCooldown = 0L
+    private var strafeAngle = 0f
+
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) return
-
         val packet = interceptablePacket.packet
-        if (packet is PlayerAuthInputPacket) {
-            val currentTime = System.currentTimeMillis()
-            val minAttackDelay = 1000L / cpsValue
+        if (packet !is PlayerAuthInputPacket) return
 
-            if (packet.tick % attackInterval == 0L && (currentTime - lastAttackTime) >= minAttackDelay) {
-                val closestEntities = searchForClosestEntities()
-                if (closestEntities.isEmpty()) return
+        val now = System.currentTimeMillis()
+        val delay = 1000L / cpsValue
 
-                closestEntities.forEach { entity ->
-                    // Handle teleportation once when TP Aura is enabled
-                    if (tpAuraEnabled && (currentTime - tpCooldown) >= tpspeed) {
-                        teleportTo(entity, distanceToKeep)
-                        tpCooldown = currentTime
-                    }
+        if (now - lastAttackTime < delay) return
 
-                    repeat(boost) {
-                        session.localPlayer.attack(entity)
-                    }
+        val targets = searchForTargets()
+        if (targets.isEmpty()) return
 
-                    lastAttackTime = currentTime
-                }
+        for (target in targets) {
+
+            if (tpAuraEnabled && now - tpCooldown >= tpSpeed) {
+                teleportTo(target)
+                tpCooldown = now
             }
+
+            if (criticalHits) triggerCriticalHit()
+
+            session.localPlayer.attack(target)
+
+            if (strafe) strafeAroundTarget(target)
+
+            lastAttackTime = now
         }
     }
 
-    private fun teleportTo(entity: Entity, distance: Float) {
-        val targetPosition = entity.vec3Position
-        val playerPosition = session.localPlayer.vec3Position
+    /* ===================== CORE LOGIC ===================== */
 
-        val direction = Vector3f.from(
-            targetPosition.x - playerPosition.x,
-            0f,  // No modification to Y-axis
-            targetPosition.z - playerPosition.z
-        )
+    private fun searchForTargets(): List<Entity> {
+        val player = session.localPlayer
+        return session.level.entityMap.values
+            .filter { it.distance(player) <= rangeValue && it.isTarget() }
+            .sortedBy { it.distance(player) }
+    }
 
-        val length = direction.length()
-        val normalizedDirection = if (length != 0f) {
-            Vector3f.from(direction.x / length, 0f, direction.z / length)
+    private fun teleportTo(entity: Entity) {
+        val player = session.localPlayer
+        val pos = entity.vec3Position
+
+        val yawRad = Math.toRadians(entity.vec3Rotation.y.toDouble()).toFloat()
+        val behind = Vector3f.from(sin(yawRad), 0f, -cos(yawRad)).normalize()
+
+        val tpPos = if (teleportBehind) {
+            Vector3f.from(
+                pos.x + behind.x * keepDistance,
+                pos.y + tpYOffset,
+                pos.z + behind.z * keepDistance
+            )
         } else {
-            direction
+            val dir = pos.sub(player.vec3Position).normalize()
+            Vector3f.from(
+                pos.x - dir.x * keepDistance,
+                pos.y + tpYOffset,
+                pos.z - dir.z * keepDistance
+            )
         }
 
-        val newPosition = Vector3f.from(
-            targetPosition.x - normalizedDirection.x * distance,
-            playerPosition.y,
-            targetPosition.z - normalizedDirection.z * distance
+        session.clientBound(
+            MovePlayerPacket().apply {
+                runtimeEntityId = player.runtimeEntityId
+                position = tpPos
+                rotation = entity.vec3Rotation
+                mode = MovePlayerPacket.Mode.NORMAL
+                onGround = false
+                tick = player.tickExists
+            }
         )
+    }
 
-        val movePlayerPacket = MovePlayerPacket().apply {
-            runtimeEntityId = session.localPlayer.runtimeEntityId
-            position = newPosition
-            rotation = entity.vec3Rotation
-            mode = MovePlayerPacket.Mode.NORMAL
-            isOnGround = false
-            ridingRuntimeEntityId = 0
-            tick = session.localPlayer.tickExists
-        }
+    private fun strafeAroundTarget(entity: Entity) {
+        val pos = entity.vec3Position
+        strafeAngle += strafeSpeed
+        if (strafeAngle >= 360f) strafeAngle -= 360f
 
-        session.clientBound(movePlayerPacket)
+        val x = strafeRadius * cos(strafeAngle)
+        val z = strafeRadius * sin(strafeAngle)
+
+        session.clientBound(
+            MovePlayerPacket().apply {
+                runtimeEntityId = session.localPlayer.runtimeEntityId
+                position = pos.add(x.toFloat(), 0f, z.toFloat())
+                rotation = Vector3f.ZERO
+                mode = MovePlayerPacket.Mode.NORMAL
+                onGround = true
+                tick = session.localPlayer.tickExists
+            }
+        )
+    }
+
+    private fun triggerCriticalHit() {
+        val player = session.localPlayer
+        session.clientBound(
+            MovePlayerPacket().apply {
+                runtimeEntityId = player.runtimeEntityId
+                position = player.vec3Position.add(0f, 0.1f, 0f)
+                rotation = player.vec3Rotation
+                mode = MovePlayerPacket.Mode.NORMAL
+                onGround = false
+                tick = player.tickExists
+            }
+        )
     }
 
 
-
-    private fun Entity.isTarget(): Boolean {
-        return when (this) {
-            is LocalPlayer -> false
-            is Player -> {
-                if (mobsOnly) {
-                    false
-                } else if (playersOnly) {
-                    !this.isBot()
-                } else {
-                    !this.isBot()
-                }
-            }
-            is EntityUnknown -> {
-                if (mobsOnly) {
-                    isMob()
-                } else if (playersOnly) {
-                    false
-                } else {
-                    true
-                }
-            }
-            else -> false
-        }
-    }
-
-    private fun EntityUnknown.isMob(): Boolean {
-        return this.identifier in MobList.mobTypes
+    private fun Entity.isTarget(): Boolean = when (this) {
+        is LocalPlayer -> false
+        is Player -> playersOnly && !isBot()
+        is EntityUnknown -> mobsOnly && isMob()
+        else -> false
     }
 
     private fun Player.isBot(): Boolean {
         if (this is LocalPlayer) return false
-        val playerList = session.level.playerMap[this.uuid] ?: return false // Changed: treat unknown players as real players
-        return playerList.name.isBlank()
+        return session.level.playerMap[this.uuid]?.name.isNullOrBlank()
     }
 
-    private fun searchForClosestEntities(): List<Entity> {
-        return session.level.entityMap.values
-            .filter { entity -> entity.distance(session.localPlayer) < rangeValue && entity.isTarget() }
+    private fun EntityUnknown.isMob(): Boolean {
+        return this.identifier in MobList.mobTypes
     }
 }

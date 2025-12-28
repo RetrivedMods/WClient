@@ -1,9 +1,9 @@
 package com.retrivedmods.wclient.game
 
-
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
+import com.retrivedmods.wclient.game.module.combat.ACAModule
 import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
 import com.retrivedmods.wclient.game.module.combat.AntiKnockbackModule
 import com.retrivedmods.wclient.game.module.combat.AutoArmorModule
@@ -14,9 +14,10 @@ import com.retrivedmods.wclient.game.module.combat.HitboxModule
 import com.retrivedmods.wclient.game.module.combat.KillauraModule
 import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
 import com.retrivedmods.wclient.game.module.combat.WAuraModule
-import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
+import com.retrivedmods.wclient.game.module.misc.DisablerModule
 import com.retrivedmods.wclient.game.module.combat.AutoFightModule
-
+import com.retrivedmods.wclient.game.module.combat.AutoHvHModule
+import com.retrivedmods.wclient.game.module.misc.ArrayListModule
 import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
 import com.retrivedmods.wclient.game.module.misc.BaritoneModule
 import com.retrivedmods.wclient.game.module.misc.CommandHandlerModule
@@ -33,6 +34,7 @@ import com.retrivedmods.wclient.game.module.misc.PositionLoggerModule
 import com.retrivedmods.wclient.game.module.misc.ReplayModule
 
 import com.retrivedmods.wclient.game.module.misc.ChestStealerModule
+import com.retrivedmods.wclient.game.module.misc.WaterMarkModule
 import com.retrivedmods.wclient.game.module.world.AntiDebuffModule
 import com.retrivedmods.wclient.game.module.world.EffectsModule
 import com.retrivedmods.wclient.game.module.world.ParticlesModule
@@ -69,7 +71,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import java.io.File
-
 object ModuleManager {
 
     private val _modules: MutableList<Module> = ArrayList()
@@ -87,6 +88,8 @@ object ModuleManager {
             add(WAuraModule())
             add(KillauraModule())
             add(AutoFightModule())
+            add(ACAModule())
+            add(AutoHvHModule())
             add(EnemyHunterModule())
             add(AntiKnockbackModule())
             add(AutoArmorModule())
@@ -131,6 +134,7 @@ object ModuleManager {
             add(CrosshairModule())
             add(TargetHudModule())
             add(FullbrightModule())
+
             
             // World
             add(FreeCameraModule())
@@ -142,11 +146,13 @@ object ModuleManager {
 
             // Misc
             add(AutoDisconnectModule())
+            add(ArrayListModule())
             add(ChestStealerModule())
             add(DesyncModule())
+            add(WaterMarkModule())
             add(PositionLoggerModule())
             add(NoChatModule())
-            add(AdvanceDisablerModule())
+            add(DisablerModule())
             add(CommandHandlerModule())
             add(ReplayModule())
             add(BaritoneModule())
