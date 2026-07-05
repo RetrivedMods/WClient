@@ -65,6 +65,7 @@ import com.retrivedmods.wclient.game.module.visual.SpeedDisplayModule
 import com.retrivedmods.wclient.game.module.visual.WorldStateModule
 import com.retrivedmods.wclient.game.module.visual.ZoomModule
 import com.retrivedmods.wclient.game.module.visual.TargetHudModule
+import com.retrivedmods.wclient.game.module.visual.AutoEzzModule
 import com.retrivedmods.wclient.game.module.world.FreeCameraModule
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -133,6 +134,7 @@ object ModuleManager {
             add(CrosshairModule())
             add(TargetHudModule())
             add(FullbrightModule())
+            add(AutoEzzModule())
 
             // World
             add(FreeCameraModule())
@@ -163,52 +165,32 @@ object ModuleManager {
     }
 
     fun saveConfig() {
-
-        if (!AppContext.isInitialized) {
-            return
-        }
-
+        if (!AppContext.isInitialized) return
         val configsDir = AppContext.instance.filesDir.resolve("configs")
         configsDir.mkdirs()
-
         val config = configsDir.resolve("UserConfig.json")
         val jsonObject = buildJsonObject {
             put("modules", buildJsonObject {
                 _modules.forEach {
-                    if (it.private) {
-                        return@forEach
-                    }
+                    if (it.private) return@forEach
                     put(it.name, it.toJson())
                 }
             })
         }
-
         config.writeText(json.encodeToString(JsonObject.serializer(), jsonObject))
     }
 
     fun loadConfig() {
-
-        if (!AppContext.isInitialized) {
-            return
-        }
-
+        if (!AppContext.isInitialized) return
         val configsDir = AppContext.instance.filesDir.resolve("configs")
         configsDir.mkdirs()
-
         val config = configsDir.resolve("UserConfig.json")
-        if (!config.exists()) {
-            return
-        }
-
+        if (!config.exists()) return
         val jsonString = config.readText()
-        if (jsonString.isEmpty()) {
-            return
-        }
-
+        if (jsonString.isEmpty()) return
         try {
             val jsonObject = json.parseToJsonElement(jsonString).jsonObject
             val modules = jsonObject["modules"]?.jsonObject ?: return
-
             _modules.forEach { module ->
                 (modules[module.name] as? JsonObject)?.let {
                     module.fromJson(it)
@@ -223,9 +205,7 @@ object ModuleManager {
         val jsonObject = buildJsonObject {
             put("modules", buildJsonObject {
                 _modules.forEach {
-                    if (it.private) {
-                        return@forEach
-                    }
+                    if (it.private) return@forEach
                     put(it.name, it.toJson())
                 }
             })
@@ -237,7 +217,6 @@ object ModuleManager {
         try {
             val jsonObject = json.parseToJsonElement(configStr).jsonObject
             val modules = jsonObject["modules"]?.jsonObject ?: return
-
             _modules.forEach { module ->
                 modules[module.name]?.let {
                     if (it is JsonObject) {
@@ -259,7 +238,6 @@ object ModuleManager {
                 configsDir?.mkdirs()
                 File(configsDir, if (filePath.endsWith(".json")) filePath else "$filePath.json")
             }
-
             file.parentFile?.mkdirs()
             file.writeText(exportConfig())
             true
@@ -273,21 +251,10 @@ object ModuleManager {
         return try {
             val documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
             val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-
-            val baseDir = if (documentsDir.exists() || documentsDir.mkdirs()) {
-                documentsDir
-            } else {
-                downloadsDir
-            }
-
+            val baseDir = if (documentsDir.exists() || documentsDir.mkdirs()) documentsDir else downloadsDir
             val wclientDir = File(baseDir, "WClient")
             val configsDir = File(wclientDir, "configs")
-
-            if (configsDir.exists() || configsDir.mkdirs()) {
-                configsDir
-            } else {
-                null
-            }
+            if (configsDir.exists() || configsDir.mkdirs()) configsDir else null
         } catch (e: Exception) {
             e.printStackTrace()
             null
