@@ -21,7 +21,7 @@ class AutoEzzModule : Module("auto_ezz", ModuleCategory.Visual) {
 
             if (entity is Player && entity !is LocalPlayer && !entity.isBot()) {
                 val playerName = session.level.playerMap[entity.uuid]?.name ?: return
-                sendChatMessage("ezz you are mine @$playerName")
+                sendChatMessage("ezzzzzzzz @$playerName You are mine")
             }
         }
     }
