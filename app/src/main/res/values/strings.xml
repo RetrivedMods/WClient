@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name" translatable="false">WClient</string>
+    <string name="app_name" translatable="false">inkclient</string>
     <string name="home">Home</string>
     <string name="what_is_this">What\'s this?</string>
-    <string name="introduction">WClient is a Minecraft Bedrock client that utilizes a MITM approach, providing various utilities to enhance the gameplay experience without modifying the game\'s memory.</string>
-    <string name="backend" translatable="false">WRelay</string>
+    <string name="introduction">inkClient is a Minecraft Bedrock client that gives utilities.</string>
+    <string name="backend" translatable="false">Ink</string>
     <string name="backend_introduction">Set up a MITM-based interception in a few simple steps.</string>
     <string name="minecraft" translatable="false">Minecraft</string>
     <string name="recommended_version">Recommended version: %s</string>
@@ -19,9 +19,9 @@
     <string name="server_port">Server port</string>
     <string name="tips">Tips</string>
     <string name="change_game_settings_tip">You need to disconnect before changing game settings.</string>
-    <string name="backend_connected">WRelay connected.</string>
+    <string name="backend_connected">Ink connected.</string>
     <string name="start_game">Start Game</string>
-    <string name="backend_disconnected">WRelay disconnected.</string>
+    <string name="backend_disconnected">Ink disconnected.</string>
     <string name="select_game">Select game</string>
     <string name="no_game_selected">No game selected</string>
     <string name="game_selector">Game Selector</string>
