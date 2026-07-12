@@ -31,7 +31,7 @@
         android:persistent="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.WClient"
+        android:theme="@style/Theme.InkClient"
         tools:targetApi="tiramisu">
 
         <activity
@@ -51,6 +51,12 @@
 
         <activity android:name=".activity.CrashHandlerActivity" />
 
+        <activity
+            android:name=".activity.ResourcePackActivity"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+
         <service
             android:name=".service.RelayService"
             android:enabled="true"
@@ -60,11 +66,11 @@
 
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="WRelay Capture" />
+                android:value="InkLoader Capture" />
 
             <intent-filter>
-                <action android:name="com.retrivedmods.wrelay.capture.start" />
-                <action android:name="com.retrivedmods.wrelay.capture.stop" />
+                <action android:name="com.retrivedmods.inkloader.capture.start" />
+                <action android:name="com.retrivedmods.inkloader.capture.stop" />
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
