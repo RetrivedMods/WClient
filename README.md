@@ -1,3 +1,4 @@
+
 # 🪶 Ink Client
 > A sleek, high-performance utility client for Minecraft Pocket Edition (Bedrock) on Android. 
 
@@ -44,3 +45,5 @@ chmod +x gradlew
 
 # Assemble the modular APK package
 ./gradlew assembleDebug
+
+its a fork of wclient a huge inspiration 
