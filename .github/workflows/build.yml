@@ -1,0 +1,22 @@
+name: Build Ink Client APK
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+    - run: chmod +x gradlew
+    - run: ./gradlew assembleDebug
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ink-client-application
+        path: app/build/outputs/apk/debug/*-debug.apk
