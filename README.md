@@ -1,33 +1,46 @@
 # 🪶 Ink Client
-> A sleek, high-performance proxy client and launcher for Minecraft Bedrock on Android. 
+> A sleek, high-performance utility client for Minecraft Pocket Edition (Bedrock) on Android. 
 
-Ink Client strips away the clutter of traditional setups, offering an ultra-clean, enterprise-grade dark aesthetic paired with robust network-layer control.
-
----
-
-## 🖤 Core Aesthetics & Features
-
-* **Ink Minimalist Theme:** A pure, flat monochrome design. Deep velvet black layouts (`#0A0A0A`) paired with razor-sharp white active accents.
-* **Ink Loader Engine:** A lightweight, optimized internal proxy proxying local loopback streams (`127.0.0.1`) smoothly.
-* **In-Game Hot-Swapper:** Dynamically intercept and swap custom textures mid-game over the packet stream without restarting your app.
-* **Pro Performance HUD:** Modern, borderless text overlays to trace your frame timings and actions with zero performance drag.
+Ink Client changes how you experience mobile gameplay. Inspired by legendary setups like Lumina and Flarial, it strips away the bloated menus and aggressive neon clutter of traditional clients, replacing them with a highly optimized, enterprise-grade dark aesthetic paired with next-generation modular control.
 
 ---
 
-## 🛠️ Developer Setup & Compilation
+## 🖤 The Core Profile
 
-To build your custom copy of Ink Client from source code into an installable application, use an Android IDE or standard command-line build tools equipped with the following dependencies:
+* **Ink Minimalist ClickGUI:** A pure, flat monochrome UI dashboard. Deep velvet black menus (`#0A0A0A`) paired with razor-sharp white active switches. Built for flawless visibility and speed mid-game.
+* **Ink Loader Engine:** An ultra-lightweight, localized performance loader designed to manage internal system resources smoothly with maximum FPS stability.
+* **In-Game Texture Changer:** A game-changing utility that intercepts live game assets. Swap, load, and test custom resource packs directly while connected to servers or active worlds—no game restarts required.
+* **Pro Performance HUD:** Modern, borderless, crystal-clear screen overlays tracking your active keystrokes, frame timings, and actions-per-second (CPS) without blocking your field of view.
 
-* **Java Development Kit:** Version 17 (OpenJDK 17)
-* **Build Automation:** Gradle Wrapper (included in the project tree)
+---
 
-### Triggering the Build
+## 🎛️ Built-In Modules
 
-Open your project compiler, navigate into the root directory of the repository, and execute the build sequence:
+Ink Client comes packed with a premium, fully customizable toolkit engineered for performance and utility:
+
+| Category | Modules Included | Description |
+| :--- | :--- | :--- |
+| **Movement** | `Fly`, `Speed`, `Sprint`, `Step` | Dominate map traversal with fluid, custom-tuned velocity multipliers. |
+| **Combat** | `Killaura`, `TriggerBot`, `Hitboxes` | Highly responsive tracking and hit detection optimized for mobile touch inputs. |
+| **Visuals** | `HUD`, `Keystrokes`, `ESP`, `Fullbright` | Crystal-clear display overlays that keep vital stats visible without crowding your screen. |
+| **Utility** | `GlobalResourcePackChanger`, `FastPlace` | Hot-swap global textures mid-game on any server and maximize block deployment speeds. |
+
+---
+
+## 🛠️ Compilation & Deployment
+
+To compile your custom copy of Ink Client from source into an installable application, open your Android build pipeline or environment with the following environment standards:
+
+* **Java Environment:** OpenJDK 17
+* **Build System:** Gradle Lifecycle (Wrapper included in codebase)
+
+### Running the Build
+
+From your development workspace environment, run the automation commands to package the application:
 
 ```bash
-# Grant execution rights to the automation wrapper
+# Grant execution permissions to the build tool
 chmod +x gradlew
 
-# Compile and package the application
+# Assemble the modular APK package
 ./gradlew assembleDebug
