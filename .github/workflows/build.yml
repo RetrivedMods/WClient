@@ -1,22 +1,38 @@
-name: Build Ink Client APK
+name: Build and Release Ink Client APK
+
 on:
   push:
-    branches: [ main, master ]
-  workflow_dispatch:
+    tags:
+      - 'v*' # Triggers automatically when you create a tag like v1.0.0
+  workflow_dispatch: # Allows you to manually click a button to build and release
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Crucial: Gives GitHub permission to post to your Releases tab
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-java@v4
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Set up OpenJDK 17
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-    - run: chmod +x gradlew
-    - run: ./gradlew assembleDebug
-    - uses: actions/upload-artifact@v4
+
+    - name: Grant Build Script Execution Rights
+      run: chmod +x gradlew
+
+    - name: Compile Code to APK
+      run: ./gradlew assembleDebug
+
+    - name: Automatically Create Release and Upload APK
+      uses: softprops/action-gh-release@v2
       with:
-        name: ink-client-application
-        path: app/build/outputs/apk/debug/*-debug.apk
+        tag_name: v1.0.0
+        name: Ink Client Official
+        draft: false
+        prerelease: false
+        files: app/build/outputs/apk/debug/*-debug.apk
