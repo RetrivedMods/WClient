@@ -1,16 +1,13 @@
 name: Build and Release Ink Client APK
 
 on:
-  push:
-    tags:
-      - 'v*' # Triggers automatically when you create a tag like v1.0.0
-  workflow_dispatch: # Allows you to manually click a button to build and release
+  workflow_dispatch: # This adds the manual "Run workflow" button
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Crucial: Gives GitHub permission to post to your Releases tab
+      contents: write
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
@@ -31,8 +28,8 @@ jobs:
     - name: Automatically Create Release and Upload APK
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v1.0.0
-        name: Ink Client Official
+        tag_name: v1.0.0-Beta
+        name: Ink Client Official Beta
         draft: false
         prerelease: false
         files: app/build/outputs/apk/debug/*-debug.apk
