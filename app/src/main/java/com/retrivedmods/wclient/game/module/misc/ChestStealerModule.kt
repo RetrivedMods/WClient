@@ -103,6 +103,16 @@ class ChestStealerModule : Module("ChestStealer", ModuleCategory.Misc) {
     private val startDelay by intValue("Start Delay (ms)", 20, 0..200)
     private val autoEquipArmor by boolValue("Auto Equip Armor", true)
     private val priorityMode by boolValue("Priority Mode", true)
+    private val ignoreJunk by boolValue("Ignore Junk", true)
+    private val smartSteal by boolValue("Smart Steal", true)
+    private val autoSort by boolValue("Auto Sort", false)
+    private val showStats by boolValue("Show Stats", true)
+    private val stealDelay by intValue("Steal Delay", 1, 0..50)
+    private val maxItemsPerChest by intValue("Max Items", 27, 1..54)
+    private val onlyValuable by boolValue("Only Valuables", false)
+    private val filterMode by enumValue("Filter", FilterMode.WHITELIST, FilterMode::class.java)
+    
+    enum class FilterMode { WHITELIST, BLACKLIST, ALL }
 
 
     private var currentContainer: ContainerInventory? = null

@@ -70,7 +70,10 @@ object CodecRegistry {
         registerCodec(859, "1.21.120", "org.cloudburstmc.protocol.bedrock.codec.v859.Bedrock_v859")
         registerCodec(860, "1.21.124", "org.cloudburstmc.protocol.bedrock.codec.v860.Bedrock_v860")
         registerCodec(898, "1.21.130", "org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898")
-
+        registerCodec(924, "1.26.0", "org.cloudburstmc.protocol.bedrock.codec.v924.Bedrock_v924")
+        registerCodec(944, "1.26.10", "org.cloudburstmc.protocol.bedrock.codec.v944.Bedrock_v944")
+        registerCodec(975, "1.26.20", "org.cloudburstmc.protocol.bedrock.codec.v975.Bedrock_v975")
+        registerCodec(1001, "1.26.30", "org.cloudburstmc.protocol.bedrock.codec.v1001.Bedrock_v1001")
 
         sortedProtocolVersions.sortDescending()
     }
@@ -102,14 +105,19 @@ object CodecRegistry {
             return exactMatch
         }
 
-        val closestVersion = sortedProtocolVersions.findLast { it <= protocolVersion }
-            ?: sortedProtocolVersions.last()
+        // Pick the highest registered protocol that is still <= the requested one.
+        // If the client is newer than everything we support, fall back to the latest
+        // codec we actually have registered instead of the oldest.
+        val closestVersion = sortedProtocolVersions.filter { it <= protocolVersion }.maxOrNull()
+            ?: sortedProtocolVersions.maxOrNull()
+            ?: error("No codecs registered")
 
         return codecMap[closestVersion]!!
     }
 
     fun getLatestCodec(): BedrockCodec {
-        return codecMap[sortedProtocolVersions.first()]!!
+        val latest = sortedProtocolVersions.maxOrNull() ?: error("No codecs registered")
+        return codecMap[latest]!!
     }
 
     fun getMinecraftVersion(protocolVersion: Int): String? {

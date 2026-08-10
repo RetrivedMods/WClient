@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.cloudburstmc.math.vector.Vector3i;
 import org.cloudburstmc.protocol.bedrock.data.BlockChangeEntry;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
@@ -13,12 +14,10 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class UpdateSubChunkBlocksPacket implements BedrockPacket {
-    public int chunkX;
-    public int chunkY;
-    public int chunkZ;
+    private Vector3i position;
 
-    public final List<BlockChangeEntry> standardBlocks = new ObjectArrayList<>();
-    public final List<BlockChangeEntry> extraBlocks = new ObjectArrayList<>();
+    private final List<BlockChangeEntry> standardBlocks = new ObjectArrayList<>();
+    private final List<BlockChangeEntry> extraBlocks = new ObjectArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

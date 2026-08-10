@@ -9,9 +9,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class EntityFallPacket implements BedrockPacket {
-    public long runtimeEntityId;
-    public float fallDistance;
-    public boolean inVoid;
+    private long runtimeEntityId;
+    private float fallDistance;
+    private boolean inVoid;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

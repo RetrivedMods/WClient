@@ -61,7 +61,7 @@ public final class InventorySource {
         UNTRACKED_INTERACTION_UI(100),
         NON_IMPLEMENTED_TODO(99999);
 
-        private static final Int2ObjectMap<Type> BY_ID = new Int2ObjectOpenHashMap<>(6);
+        private static final Int2ObjectMap<Type> BY_ID = new Int2ObjectOpenHashMap<>(values().length);
 
         static {
             for (Type type : values()) {

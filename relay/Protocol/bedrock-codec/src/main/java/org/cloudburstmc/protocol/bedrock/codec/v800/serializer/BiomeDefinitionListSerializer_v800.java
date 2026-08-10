@@ -63,12 +63,12 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
         packet.setBiomes(new BiomeDefinitions(indexedBiomes));
     }
 
-    protected void writeDefinitionId(ByteBuf buffer, BedrockCodecHelper helper, BiomeDefinitionData definition, SequencedHashSet<String> strings) {
-        helper.writeOptional(buffer, Objects::nonNull, definition.getId(), (buf, id) -> buf.writeShortLE(strings.addAndGetIndex(id)));
+    protected void writeDefinitionId(ByteBuf buffer, BedrockCodecHelper helper, BiomeDefinitionData definition) {
+        helper.writeOptional(buffer, Objects::nonNull, definition.getId(), ByteBuf::writeShortLE);
     }
 
     protected void writeDefinition(ByteBuf buffer, BedrockCodecHelper helper, BiomeDefinitionData definition, SequencedHashSet<String> strings) {
-        this.writeDefinitionId(buffer, helper, definition, strings);
+        this.writeDefinitionId(buffer, helper, definition);
         buffer.writeFloatLE(definition.getTemperature());
         buffer.writeFloatLE(definition.getDownfall());
         buffer.writeFloatLE(definition.getRedSporeDensity());
@@ -89,12 +89,12 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
                 (buf, aHelper, data) -> writeDefinitionChunkGen(buf, aHelper, data, strings));
     }
 
-    protected Indexed<String> readDefinitionId(ByteBuf buffer, BedrockCodecHelper helper, List<String> strings) {
-        return helper.readOptional(buffer, null, (buf, aHelper) -> new Indexed<>(strings, buf.readUnsignedShortLE()));
+    protected Integer readDefinitionId(ByteBuf buffer, BedrockCodecHelper helper) {
+        return helper.readOptional(buffer, null, (buf, aHelper) -> buf.readUnsignedShortLE());
     }
 
     protected BiomeDefinitionData readDefinition(ByteBuf buffer, BedrockCodecHelper helper, List<String> strings) {
-        Indexed<String> id = this.readDefinitionId(buffer, helper, strings);
+        Integer id = this.readDefinitionId(buffer, helper);
         float temperature = buffer.readFloatLE();
         float downfall = buffer.readFloatLE();
         float redSporeDensity = buffer.readFloatLE();
@@ -171,7 +171,7 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
                 hasFrozenOceanSurface, hasTheEndSurface,
                 mesaSurface, cappedSurface,
                 overworldGenRules, multinoiseGenRules,
-                legacyWorldGenRules, null);
+                legacyWorldGenRules, null, null, null, null);
     }
 
     protected void writeClimate(ByteBuf buffer, BedrockCodecHelper helper, BiomeClimateData climate) {
@@ -224,9 +224,9 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
 
     protected BiomeConsolidatedFeatureData readConsolidatedFeature(ByteBuf buffer, BedrockCodecHelper helper, List<String> strings) {
         BiomeScatterParamData scatter = readScatterParam(buffer, helper, strings);
-        Indexed<String> feature = new Indexed<>(strings, buffer.readShortLE());
-        Indexed<String> identifier = new Indexed<>(strings, buffer.readShortLE());
-        Indexed<String> pass = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> feature = new Indexed<>(strings, buffer.readUnsignedShortLE());
+        Indexed<String> identifier = new Indexed<>(strings, buffer.readUnsignedShortLE());
+        Indexed<String> pass = new Indexed<>(strings, buffer.readUnsignedShortLE());
         boolean internalUse = buffer.readBoolean();
 
         return new BiomeConsolidatedFeatureData(scatter, feature, identifier, pass, internalUse);
@@ -252,12 +252,12 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
         CoordinateEvaluationOrder evalOrder = EVALUATION_ORDERS[VarInts.readInt(buffer)];
         int chancePercentTypeInt = VarInts.readInt(buffer);
         ExpressionOp chancePercentType = chancePercentTypeInt == -1 ? null : EXPRESSION_OPS[chancePercentTypeInt];
-        Indexed<String> chancePercent = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> chancePercent = new Indexed<>(strings, buffer.readUnsignedShortLE());
         int chanceNumerator = buffer.readIntLE();
         int chanceDenominator = buffer.readIntLE();
         int iterationTypeInt = VarInts.readInt(buffer);
         ExpressionOp iterationsType = iterationTypeInt == -1 ? null : EXPRESSION_OPS[iterationTypeInt];
-        Indexed<String> iterations = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> iterations = new Indexed<>(strings, buffer.readUnsignedShortLE());
 
         return new BiomeScatterParamData(coordinates, evalOrder, chancePercentType,
                 chancePercent, chanceNumerator, chanceDenominator,
@@ -277,9 +277,9 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
 
     protected BiomeCoordinateData readCoordinate(ByteBuf buffer, BedrockCodecHelper helper, List<String> strings) {
         ExpressionOp minValueType = this.readExpressionOp(buffer);
-        Indexed<String> minValue = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> minValue = new Indexed<>(strings, buffer.readUnsignedShortLE());
         ExpressionOp maxValueType = this.readExpressionOp(buffer);
-        Indexed<String> maxValue = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> maxValue = new Indexed<>(strings, buffer.readUnsignedShortLE());
         long gridOffset = buffer.readUnsignedIntLE();
         long gridStepSize = buffer.readUnsignedIntLE();
         RandomDistributionType distribution = RANDOM_DISTRIBUTION_TYPES[VarInts.readInt(buffer)];
@@ -341,9 +341,9 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
         float noiseLowerBound = buffer.readFloatLE();
         float noiseUpperBound = buffer.readFloatLE();
         ExpressionOp heightMinType = this.readExpressionOp(buffer);
-        Indexed<String> heightMin = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> heightMin = new Indexed<>(strings, buffer.readUnsignedShortLE());
         ExpressionOp heightMaxType = this.readExpressionOp(buffer);
-        Indexed<String> heightMax = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> heightMax = new Indexed<>(strings, buffer.readUnsignedShortLE());
         BiomeSurfaceMaterialData adjustedMaterials = readSurfaceMaterial(buffer, helper);
 
         return new BiomeElementData(noiseFrequencyScale, noiseLowerBound, noiseUpperBound,
@@ -458,8 +458,8 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
     }
 
     protected BiomeWeightedData readWeight(ByteBuf buffer, BedrockCodecHelper helper, List<String> strings) {
-        Indexed<String> biome = new Indexed<>(strings, buffer.readShortLE());
-        int weight = buffer.readIntLE();
+        Indexed<String> biome = new Indexed<>(strings, buffer.readUnsignedShortLE());
+        int weight = (int) buffer.readUnsignedIntLE();
         return new BiomeWeightedData(biome, weight);
     }
 
@@ -476,7 +476,7 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
                                                                                List<String> strings) {
         List<BiomeWeightedData> weightedBiomes = new ObjectArrayList<>();
         helper.readArray(buffer, weightedBiomes, (buf, aHelper) -> readWeight(buf, aHelper, strings));
-        Indexed<String> conditionJson = new Indexed<>(strings, buffer.readShortLE());
+        Indexed<String> conditionJson = new Indexed<>(strings, buffer.readUnsignedShortLE());
         long minPassingNeighbors = buffer.readUnsignedIntLE();
         return new BiomeConditionalTransformationData(weightedBiomes, conditionJson, minPassingNeighbors);
     }
@@ -488,7 +488,7 @@ public class BiomeDefinitionListSerializer_v800 implements BedrockPacketSerializ
 
     protected BiomeWeightedTemperatureData readWeightedTemperature(ByteBuf buffer, BedrockCodecHelper helper) {
         BiomeTemperatureCategory temperature = TEMPERATURE_CATEGORIES[VarInts.readInt(buffer)];
-        int weight = buffer.readIntLE();
+        int weight = (int) buffer.readUnsignedIntLE();
         return new BiomeWeightedTemperatureData(temperature, weight);
     }
 

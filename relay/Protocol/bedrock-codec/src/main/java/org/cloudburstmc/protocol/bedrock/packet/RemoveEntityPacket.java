@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class RemoveEntityPacket implements BedrockPacket {
-    public long uniqueEntityId;
+    private long uniqueEntityId;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

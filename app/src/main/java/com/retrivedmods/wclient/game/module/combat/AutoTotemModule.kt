@@ -14,6 +14,12 @@ class AutoTotemModule : Module("Auto Totem", ModuleCategory.Combat) {
     private var onlyWhenLowHealth by boolValue("Only When Low Health", false)
     private var healthThreshold by intValue("Health Threshold", 10, 1..20)
     private var replaceOffhand by boolValue("Replace Offhand", true)
+    private var totemSlot by intValue("Totem Slot", 40, 0..40)
+    private var switchBack by boolValue("Switch Back", false)
+    private var openInventory by boolValue("Open Inventory", false)
+    private var checkFallDamage by boolValue("Check Fall Damage", true)
+    private var autoRefill by boolValue("Auto Refill", false)
+    private var refillThreshold by intValue("Refill Threshold", 1, 1..10)
 
     private var lastTotemTime = 0L
 

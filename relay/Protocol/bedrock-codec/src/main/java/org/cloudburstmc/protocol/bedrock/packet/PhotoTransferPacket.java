@@ -10,25 +10,25 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PhotoTransferPacket implements BedrockPacket {
-    public String name;
-    public byte[] data;
-    public String bookId;
+    private String name;
+    private byte[] data;
+    private String bookId;
     /**
      * @since v465
      */
-    public PhotoType photoType;
+    private PhotoType photoType;
     /**
      * @since v465
      */
-    public PhotoType sourceType;
+    private PhotoType sourceType;
     /**
      * @since v465
      */
-    public long ownerId;
+    private long ownerId;
     /**
      * @since v465
      */
-    public String newPhotoName;
+    private String newPhotoName;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

@@ -12,14 +12,14 @@ import java.util.UUID;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ResourcePackDataInfoPacket implements BedrockPacket {
-    public UUID packId;
-    public String packVersion;
-    public long maxChunkSize;
-    public long chunkCount;
-    public long compressedPackSize;
-    public byte[] hash;
-    public boolean premium;
-    public ResourcePackType type;
+    private UUID packId;
+    private String packVersion;
+    private long maxChunkSize;
+    private long chunkCount;
+    private long compressedPackSize;
+    private byte[] hash;
+    private boolean premium;
+    private ResourcePackType type;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

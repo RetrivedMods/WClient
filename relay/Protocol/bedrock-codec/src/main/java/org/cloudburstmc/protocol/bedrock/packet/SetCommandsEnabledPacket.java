@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetCommandsEnabledPacket implements BedrockPacket {
-    public boolean commandsEnabled;
+    private boolean commandsEnabled;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

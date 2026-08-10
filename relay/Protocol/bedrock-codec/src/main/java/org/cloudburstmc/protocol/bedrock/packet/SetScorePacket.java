@@ -13,8 +13,8 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetScorePacket implements BedrockPacket {
-    public Action action;
-    public List<ScoreInfo> infos = new ObjectArrayList<>();
+    private Action action;
+    private List<ScoreInfo> infos = new ObjectArrayList<>();
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

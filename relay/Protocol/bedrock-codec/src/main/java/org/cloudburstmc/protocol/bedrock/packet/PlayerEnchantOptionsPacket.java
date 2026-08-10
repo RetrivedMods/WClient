@@ -13,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @ToString(doNotUseGetters = true)
 public class PlayerEnchantOptionsPacket implements BedrockPacket {
-    public final List<EnchantOptionData> options = new ArrayList<>();
+    private final List<EnchantOptionData> options = new ArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

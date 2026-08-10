@@ -13,21 +13,21 @@ import java.util.Set;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class EmotePacket implements BedrockPacket {
-    public long runtimeEntityId;
+    private long runtimeEntityId;
     /**
      * @since v589
      */
-    public String xuid;
+    private String xuid;
     /**
      * @since 589
      */
-    public String platformId;
-    public String emoteId;
-    public final Set<EmoteFlag> flags = EnumSet.noneOf(EmoteFlag.class);
+    private String platformId;
+    private String emoteId;
+    private final Set<EmoteFlag> flags = EnumSet.noneOf(EmoteFlag.class);
     /**
      * @since v729
      */
-    public int emoteDuration;
+    private int emoteDuration;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

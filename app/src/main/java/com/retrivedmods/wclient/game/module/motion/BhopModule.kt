@@ -13,6 +13,12 @@ class BhopModule : Module("bhop", ModuleCategory.Motion) {
     private val jumpHeight by floatValue("jumpHeight", 0.42f, 0.4f..3.0f)
     private val motionInterval by intValue("motionInterval", 120, 50..2000)
     private val times by intValue("times", 1, 1..20)
+    private val speedMultiplier by floatValue("speedMultiplier", 1.0f, 0.1f..5.0f)
+    private val autoJump by boolValue("autoJump", true)
+    private val groundCheck by boolValue("groundCheck", true)
+    private val limitHeight by boolValue("limitHeight", false)
+    private val heightLimit by floatValue("heightLimit", 3.0f, 1.0f..10.0f)
+    private val strafeMode by boolValue("strafe", true)
     private var lastMotionTime = 0L
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {

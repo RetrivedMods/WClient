@@ -12,4 +12,9 @@ public class PiglinBarterEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.PIGLIN_BARTER;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 16;
+    }
 }

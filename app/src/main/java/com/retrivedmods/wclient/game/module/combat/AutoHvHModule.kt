@@ -92,7 +92,7 @@ class AutoHvHModule : Module("Auto HVH", ModuleCategory.Combat) {
             position = newPosition
             rotation = player.vec3Rotation
             mode = MovePlayerPacket.Mode.NORMAL
-            onGround = false
+            setOnGround(false)
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })

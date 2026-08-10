@@ -48,7 +48,7 @@ public class BlockEventPacket implements BedrockPacket {
      * @param blockPosition block event position
      * @return block event position
      */
-    public Vector3i blockPosition;
+    private Vector3i blockPosition;
 
     /**
      * Block event type to execute
@@ -56,7 +56,7 @@ public class BlockEventPacket implements BedrockPacket {
      * @param eventType block event type
      * @return block event type
      */
-    public int eventType;
+    private int eventType;
 
     /**
      * Data used by event (if applicable)
@@ -64,7 +64,7 @@ public class BlockEventPacket implements BedrockPacket {
      * @param eventData data for event
      * @return data for event
      */
-    public int eventData;
+    private int eventData;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

@@ -21,8 +21,8 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CreativeContentPacket implements BedrockPacket {
-    public final List<CreativeItemGroup> groups = new ObjectArrayList<>();
-    public final List<CreativeItemData> contents = new ObjectArrayList<>();
+    private final List<CreativeItemGroup> groups = new ObjectArrayList<>();
+    private final List<CreativeItemData> contents = new ObjectArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

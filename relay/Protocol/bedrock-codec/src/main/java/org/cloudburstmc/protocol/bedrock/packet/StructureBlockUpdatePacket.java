@@ -11,13 +11,13 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class StructureBlockUpdatePacket implements BedrockPacket {
-    public Vector3i blockPosition;
-    public StructureEditorData editorData;
-    public boolean powered;
+    private Vector3i blockPosition;
+    private StructureEditorData editorData;
+    private boolean powered;
     /**
      * @since v553
      */
-    public boolean waterlogged;
+    private boolean waterlogged;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

@@ -88,7 +88,7 @@ class PlayerTPModule : Module("PlayerTP", ModuleCategory.Motion) {
                 Vector3f.from(derpYaw, derpPitch, 0f)
             else player.vec3Rotation
             mode = MovePlayerPacket.Mode.NORMAL
-            onGround = false
+            setOnGround(false)
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })

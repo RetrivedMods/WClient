@@ -17,7 +17,7 @@ public class BiomeDefinitionListSerializer_v859 extends BiomeDefinitionListSeria
     protected void writeDefinitionChunkGen(ByteBuf buffer, BedrockCodecHelper helper, BiomeDefinitionChunkGenData definitionChunkGen,
                                            SequencedHashSet<String> strings) {
         super.writeDefinitionChunkGen(buffer, helper, definitionChunkGen, strings);
-        helper.writeOptionalNull(buffer, definitionChunkGen.getBiomeReplacementData(), this::writeBiomeReplacementData);
+        helper.writeOptionalNull(buffer, definitionChunkGen.getBiomeReplacements(), this::writeBiomeReplacementsData);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class BiomeDefinitionListSerializer_v859 extends BiomeDefinitionListSeria
         BiomeMultinoiseGenRulesData multinoiseGenRules = helper.readOptional(buffer, null, this::readMultinoiseGenRules);
         BiomeLegacyWorldGenRulesData legacyWorldGenRules = helper.readOptional(buffer, null,
                 (buf, aHelper) -> this.readLegacyWorldGenRules(buf, aHelper, strings));
-        BiomeReplacementData replacementData = helper.readOptional(buffer, null, this::readBiomeReplacementData);
+        List<BiomeReplacementData> replacementsData = helper.readOptional(buffer, null, this::readBiomeReplacementsData);
 
         return new BiomeDefinitionChunkGenData(climate, consolidatedFeatures,
                 mountainParams, surfaceMaterialAdjustment,
@@ -48,27 +48,33 @@ public class BiomeDefinitionListSerializer_v859 extends BiomeDefinitionListSeria
                 hasFrozenOceanSurface, hasTheEndSurface,
                 mesaSurface, cappedSurface,
                 overworldGenRules, multinoiseGenRules,
-                legacyWorldGenRules, replacementData);
+                legacyWorldGenRules, replacementsData, null, null, null);
     }
 
-    protected void writeBiomeReplacementData(ByteBuf buffer, BedrockCodecHelper helper, BiomeReplacementData replacementData) {
-        buffer.writeShortLE(replacementData.getBiome());
-        buffer.writeShortLE(replacementData.getDimension());
-        helper.writeArray(buffer, replacementData.getTargetBiomes(), (buf, value) -> buf.writeShortLE(value));
-        buffer.writeFloatLE(replacementData.getAmount());
-        buffer.writeFloatLE(replacementData.getNoiseFrequencyScale());
-        buffer.writeIntLE(replacementData.getReplacementIndex());
+    protected void writeBiomeReplacementsData(ByteBuf buffer, BedrockCodecHelper helper, List<BiomeReplacementData> replacementsData) {
+        helper.writeArray(buffer, replacementsData, (buf, h, replacementData) -> {
+            buffer.writeShortLE(replacementData.getBiome());
+            buffer.writeShortLE(replacementData.getDimension());
+            helper.writeArray(buffer, replacementData.getTargetBiomes(), (buf1, value) -> buf1.writeShortLE(value));
+            buffer.writeFloatLE(replacementData.getAmount());
+            buffer.writeFloatLE(replacementData.getNoiseFrequencyScale());
+            buffer.writeIntLE(replacementData.getReplacementIndex());
+        });
     }
 
-    protected BiomeReplacementData readBiomeReplacementData(ByteBuf buffer, BedrockCodecHelper helper) {
-        int biome = buffer.readShortLE();
-        int dimension = buffer.readShortLE();
-        List<Short> targetBiomes = new ArrayList<>();
-        helper.readArray(buffer, targetBiomes, (buf, aHelper) -> buf.readShortLE());
-        float amount = buffer.readFloatLE();
-        float noiseFrequencyScale = buffer.readFloatLE();
-        int replacementIndex = buffer.readIntLE();
+    protected List<BiomeReplacementData> readBiomeReplacementsData(ByteBuf buffer, BedrockCodecHelper helper) {
+        List<BiomeReplacementData> replacementsData = new ArrayList<>();
+        helper.readArray(buffer, replacementsData, (buf, h) -> {
+            int biome = buf.readUnsignedShortLE();
+            int dimension = buf.readUnsignedShortLE();
+            List<Short> targetBiomes = new ArrayList<>();
+            h.readArray(buf, targetBiomes, (buf2, aHelper) -> (short) buf2.readUnsignedShortLE());
+            float amount = buf.readFloatLE();
+            float noiseFrequencyScale = buf.readFloatLE();
+            int replacementIndex = (int) buf.readUnsignedIntLE();
 
-        return new BiomeReplacementData(biome, dimension, targetBiomes, amount, noiseFrequencyScale, replacementIndex);
+            return new BiomeReplacementData(biome, dimension, targetBiomes, amount, noiseFrequencyScale, replacementIndex);
+        });
+        return replacementsData;
     }
 }

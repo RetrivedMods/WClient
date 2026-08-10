@@ -8,4 +8,8 @@ public class DimensionDefinition {
     int maximumHeight;
     int minimumHeight;
     int generatorType;
+    /**
+     * @since v975
+     */
+    int dimensionType;
 }

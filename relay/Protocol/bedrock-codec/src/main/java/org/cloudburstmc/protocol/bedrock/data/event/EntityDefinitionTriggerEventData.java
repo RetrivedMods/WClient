@@ -10,4 +10,9 @@ public class EntityDefinitionTriggerEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.ENTITY_DEFINITION_TRIGGER;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 13;
+    }
 }

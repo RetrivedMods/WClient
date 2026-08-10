@@ -13,8 +13,8 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class UnlockedRecipesPacket implements BedrockPacket {
-    public ActionType action;
-    public final List<String> unlockedRecipes = new ObjectArrayList<>();
+    private ActionType action;
+    private final List<String> unlockedRecipes = new ObjectArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

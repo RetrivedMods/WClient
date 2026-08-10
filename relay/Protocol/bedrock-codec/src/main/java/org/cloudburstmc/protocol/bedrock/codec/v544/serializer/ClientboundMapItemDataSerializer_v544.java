@@ -25,7 +25,7 @@ public class ClientboundMapItemDataSerializer_v544 extends ClientboundMapItemDat
         }
         List<MapDecoration> decorations = packet.getDecorations();
         List<MapTrackedObject> trackedObjects = packet.getTrackedObjects();
-        if (!decorations.isEmpty() && !trackedObjects.isEmpty()) {
+        if (!decorations.isEmpty() || !trackedObjects.isEmpty()) {
             type |= FLAG_DECORATION_UPDATE;
         }
         LongList trackedEntityIds = packet.getTrackedEntityIds();

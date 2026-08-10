@@ -13,27 +13,27 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @ToString(doNotUseGetters = true, exclude = {"data"})
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = false)
 public class LevelChunkPacket extends AbstractReferenceCounted implements BedrockPacket {
-    public int chunkX;
-    public int chunkZ;
-    public int subChunksLength;
-    public boolean cachingEnabled;
+    private int chunkX;
+    private int chunkZ;
+    private int subChunksLength;
+    private boolean cachingEnabled;
     /**
      * @since v471
      */
-    public boolean requestSubChunks;
+    private boolean requestSubChunks;
     /**
      * @since v485
      */
-    public int subChunkLimit;
+    private int subChunkLimit;
 
-    public final LongList blobIds = new LongArrayList();
+    private final LongList blobIds = new LongArrayList();
 
-    public ByteBuf data;
+    private ByteBuf data;
 
     /**
      * @since v649
      */
-    public int dimension;
+    private int dimension;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

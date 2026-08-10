@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class AutomationClientConnectPacket implements BedrockPacket {
-    public String address;
+    private String address;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

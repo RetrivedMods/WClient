@@ -51,6 +51,7 @@ public class Bedrock_v898 extends Bedrock_v860 {
             .updateSerializer(ResourcePackStackPacket.class, ResourcePackStackSerializer_v898.INSTANCE)
             .updateSerializer(StartGamePacket.class, StartGameSerializer_v898.INSTANCE)
             .updateSerializer(TextPacket.class, TextSerializer_v898.INSTANCE)
+            .registerPacket(ClientboundDataStorePacket::new, ClientboundDataStoreSerializer_v898.INSTANCE, 330, PacketRecipient.CLIENT)
             .registerPacket(ServerboundDataStorePacket::new, ServerboundDataStoreSerializer_v898.INSTANCE, 332, PacketRecipient.SERVER)
             .build();
 }

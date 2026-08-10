@@ -13,4 +13,9 @@ public class PlayerDiedEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.PLAYER_DIED;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 6;
+    }
 }

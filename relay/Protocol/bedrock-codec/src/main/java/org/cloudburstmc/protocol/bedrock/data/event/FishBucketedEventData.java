@@ -3,6 +3,7 @@ package org.cloudburstmc.protocol.bedrock.data.event;
 import lombok.Value;
 
 @Value
+@Deprecated
 public class FishBucketedEventData implements EventData {
     private final int pattern;
     private final int preset;

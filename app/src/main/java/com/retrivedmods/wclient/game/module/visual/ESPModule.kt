@@ -30,9 +30,12 @@ class ESPModule : Module("esp", ModuleCategory.Visual) {
 
     enum class BoxMode { None, Box2D, Box3D, Corner }
     enum class TracerPosition { Bottom, Top, Center }
+    enum class GlowMode { NONE, OUTLINE, FULL }
+    enum class HealthMode { DISABLED, BAR, TEXT, BOTH }
 
     private val fov by floatValue("fov", 110f, 40f..110f)
     private val strokeWidth by floatValue("stroke_width", 2.5f, 1f..10f)
+    private val renderDistance by floatValue("render_distance", 64f, 10f..128f)
 
     private val colorRed by intValue("color_red", 230, 0..255)
     private val colorGreen by intValue("color_green", 57, 0..255)
@@ -40,14 +43,21 @@ class ESPModule : Module("esp", ModuleCategory.Visual) {
 
     private val showAllEntities by boolValue("show_all_entities", false)
     private val ignoreBots by boolValue("ignore_bots", true)
+    private val invisibles by boolValue("show_invisibles", false)
     private val boxMode by enumValue("box_mode", BoxMode.Box3D, BoxMode::class.java)
+    private val glowMode by enumValue("glow_mode", GlowMode.NONE, GlowMode::class.java)
+    private val healthMode by enumValue("health_mode", HealthMode.BAR, HealthMode::class.java)
 
     private val tracers by boolValue("tracers", false)
     private val tracerPosition by enumValue("tracer_position", TracerPosition.Bottom, TracerPosition::class.java)
+    private val tracerColor by boolValue("tracer_color_team", true)
 
     private val showNames by boolValue("nametags", true)
     private val showDistance by boolValue("show_distance", true)
     private val showArmor by boolValue("show_armor", true)
+    private val showHealth by boolValue("show_health", true)
+    private val outlineOnly by boolValue("outline_only", false)
+    private val itemHighlight by boolValue("item_highlight", false)
 
 
     private fun Player.isBot(): Boolean {

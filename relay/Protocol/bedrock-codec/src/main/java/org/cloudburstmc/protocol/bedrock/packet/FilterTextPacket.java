@@ -9,8 +9,8 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class FilterTextPacket implements BedrockPacket {
-    public String text;
-    public boolean fromServer;
+    private String text;
+    private boolean fromServer;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

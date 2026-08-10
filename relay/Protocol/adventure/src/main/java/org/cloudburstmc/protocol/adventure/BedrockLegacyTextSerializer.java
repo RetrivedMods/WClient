@@ -56,36 +56,36 @@ public final class BedrockLegacyTextSerializer implements ComponentSerializer<Co
     @Override
     public @NotNull String serialize(@NotNull Component component) {
         String serialize = this.serializer.serialize(component);
-        
+
         if (serialize.length() < 2 || !serialize.contains(String.valueOf(LegacyComponentSerializer.SECTION_CHAR))) {
             return serialize;
         }
-        
+
         StringBuilder builder = new StringBuilder(serialize.length() + 8); // Pre-allocate a bit extra for potential reset codes
         boolean needsReset = false;
-        
+
         for (int i = 0; i < serialize.length(); i++) {
             char stringChar = serialize.charAt(i);
-            
+
             // Only process section characters
             if (stringChar == LegacyComponentSerializer.SECTION_CHAR && i + 1 < serialize.length()) {
                 char formatChar = serialize.charAt(i + 1);
-                
+
                 // Check for style codes that will need reset
                 if (formatChar == 'l' || formatChar == 'k' || formatChar == 'o') {
                     needsReset = true;
                 } else if (needsReset) {
                     // Reset the style if we encounter a color code after a style code
-                    if (Character.isDigit(formatChar) || (formatChar >= 'a' && formatChar <= 'u')) {
+                    if (Character.isDigit(formatChar) || (formatChar >= 'a' && formatChar <= 'v')) {
                         builder.append(LegacyComponentSerializer.SECTION_CHAR).append('r');
                         needsReset = false;
                     }
                 }
             }
-            
+
             builder.append(stringChar);
         }
-        
+
         return builder.toString();
     }
 
@@ -97,7 +97,6 @@ public final class BedrockLegacyTextSerializer implements ComponentSerializer<Co
         formats.remove(CharacterAndFormat.UNDERLINED);
 
         formats.add(CharacterAndFormat.characterAndFormat('g', BedrockNamedTextColor.MINECOIN_GOLD)); // Minecoin Gold
-        // Add the new characters implemented in 1.19.80
         formats.add(CharacterAndFormat.characterAndFormat('h', BedrockNamedTextColor.MATERIAL_QUARTZ)); // Quartz
         formats.add(CharacterAndFormat.characterAndFormat('i', BedrockNamedTextColor.MATERIAL_IRON)); // Iron
         formats.add(CharacterAndFormat.characterAndFormat('j', BedrockNamedTextColor.MATERIAL_NETHERITE)); // Netherite
@@ -108,6 +107,7 @@ public final class BedrockLegacyTextSerializer implements ComponentSerializer<Co
         formats.add(CharacterAndFormat.characterAndFormat('s', BedrockNamedTextColor.MATERIAL_DIAMOND)); // Diamond
         formats.add(CharacterAndFormat.characterAndFormat('t', BedrockNamedTextColor.MATERIAL_LAPIS)); // Lapis
         formats.add(CharacterAndFormat.characterAndFormat('u', BedrockNamedTextColor.MATERIAL_AMETHYST)); // Amethyst
+        formats.add(CharacterAndFormat.characterAndFormat('v', BedrockNamedTextColor.MATERIAL_RESIN)); // Resin
         return formats;
     }
 
@@ -128,6 +128,7 @@ public final class BedrockLegacyTextSerializer implements ComponentSerializer<Co
         public static final BedrockNamedTextColor MATERIAL_DIAMOND = new BedrockNamedTextColor("material_diamond", TextColor.color(44, 186, 168));
         public static final BedrockNamedTextColor MATERIAL_LAPIS = new BedrockNamedTextColor("material_lapis", TextColor.color(33, 73, 123));
         public static final BedrockNamedTextColor MATERIAL_AMETHYST = new BedrockNamedTextColor("material_amethyst", TextColor.color(154, 92, 198));
+        public static final BedrockNamedTextColor MATERIAL_RESIN = new BedrockNamedTextColor("material_resin", TextColor.color(235, 113, 20));
 
         private final String name;
         private final TextColor color;

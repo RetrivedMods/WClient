@@ -19,64 +19,64 @@ import java.util.Set;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PlayerAuthInputPacket implements BedrockPacket {
-    public Vector3f rotation; // head rot after motion
-    public Vector3f position;
-    public Vector2f motion;
-    public final Set<PlayerAuthInputData> inputData = EnumSet.noneOf(PlayerAuthInputData.class);
-    public InputMode inputMode;
-    public ClientPlayMode playMode;
+    private Vector3f rotation; // head rot after motion
+    private Vector3f position;
+    private Vector2f motion;
+    private final Set<PlayerAuthInputData> inputData = EnumSet.noneOf(PlayerAuthInputData.class);
+    private InputMode inputMode;
+    private ClientPlayMode playMode;
     /**
      * @deprecated since v748
      */
-    public Vector3f vrGazeDirection;
-    public long tick;
-    public Vector3f delta;
+    private Vector3f vrGazeDirection;
+    private long tick;
+    private Vector3f delta;
     /**
      * {@link #inputData} must contain {@link PlayerAuthInputData#PERFORM_ITEM_INTERACTION} in order for this to not be null.
      *
      * @since v428
      */
-    public ItemUseTransaction itemUseTransaction;
+    private ItemUseTransaction itemUseTransaction;
     /**
      * {@link #inputData} must contain {@link PlayerAuthInputData#PERFORM_ITEM_STACK_REQUEST} in order for this to not be null.
      *
      * @since v428
      */
-    public ItemStackRequest itemStackRequest;
+    private ItemStackRequest itemStackRequest;
     /**
      * {@link #inputData} must contain {@link PlayerAuthInputData#PERFORM_BLOCK_ACTIONS} in order for this to not be empty.
      *
      * @since v428
      */
-    public final List<PlayerBlockActionData> playerActions = new ObjectArrayList<>();
+    private final List<PlayerBlockActionData> playerActions = new ObjectArrayList<>();
     /**
      * @since v527
      */
-    public InputInteractionModel inputInteractionModel;
+    private InputInteractionModel inputInteractionModel;
     /**
      * @since v748
      */
-    public Vector2f interactRotation;
+    private Vector2f interactRotation;
     /**
      * @since 575
      */
-    public Vector2f analogMoveVector;
+    private Vector2f analogMoveVector;
     /**
      * @since 649
      */
-    public long predictedVehicle;
+    private long predictedVehicle;
     /**
      * @since 662
      */
-    public Vector2f vehicleRotation;
+    private Vector2f vehicleRotation;
     /**
      * @since v748
      */
-    public Vector3f cameraOrientation;
+    private Vector3f cameraOrientation;
     /**
      * @since v766
      */
-    public Vector2f rawMoveVector;
+    private Vector2f rawMoveVector;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

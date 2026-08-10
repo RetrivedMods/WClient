@@ -12,11 +12,11 @@ import java.util.UUID;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PlayerSkinPacket implements BedrockPacket {
-    public UUID uuid;
-    public SerializedSkin skin;
-    public String newSkinName;
-    public String oldSkinName;
-    public boolean trustedSkin;
+    private UUID uuid;
+    private SerializedSkin skin;
+    private String newSkinName;
+    private String oldSkinName;
+    private boolean trustedSkin;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

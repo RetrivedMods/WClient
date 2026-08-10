@@ -9,11 +9,11 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class VideoStreamConnectPacket implements BedrockPacket {
-    public String address;
-    public float screenshotFrequency;
-    public Action action;
-    public int width;
-    public int height;
+    private String address;
+    private float screenshotFrequency;
+    private Action action;
+    private int width;
+    private int height;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

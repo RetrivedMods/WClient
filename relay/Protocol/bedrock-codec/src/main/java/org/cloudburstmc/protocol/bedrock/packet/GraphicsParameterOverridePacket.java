@@ -3,6 +3,7 @@ package org.cloudburstmc.protocol.bedrock.packet;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.data.GraphicsOverrideParameterType;
 import org.cloudburstmc.protocol.common.PacketSignal;
@@ -19,10 +20,25 @@ import java.util.Map;
 @ToString(doNotUseGetters = true)
 public class GraphicsParameterOverridePacket implements BedrockPacket {
 
-    public String biomeIdentifier;
-    public GraphicsOverrideParameterType parameterType;
-    public Map<Float, Vector3f> values;
-    public boolean reset;
+    private String biomeIdentifier;
+    private GraphicsOverrideParameterType parameterType;
+    private Map<Float, Vector3f> values;
+    private boolean reset;
+    /**
+     * @since v924
+     */
+    @Nullable
+    private Float floatValue;
+    /**
+     * @since v924
+     */
+    @Nullable
+    private Vector3f vec3Value;
+    /**
+     * @since v1001
+     */
+    @Nullable
+    private String playerIdentifier;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

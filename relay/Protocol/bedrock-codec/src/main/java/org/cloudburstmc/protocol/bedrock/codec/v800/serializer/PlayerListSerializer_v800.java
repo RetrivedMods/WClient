@@ -14,13 +14,13 @@ public class PlayerListSerializer_v800 extends PlayerListSerializer_v649 {
     @Override
     protected void writeEntryBase(ByteBuf buffer, BedrockCodecHelper helper, PlayerListPacket.Entry entry) {
         super.writeEntryBase(buffer, helper, entry);
-        buffer.writeIntLE(entry.getColor());
+        buffer.writeIntLE(entry.getColor().getRGB());
     }
 
     @Override
     protected PlayerListPacket.Entry readEntryBase(ByteBuf buffer, BedrockCodecHelper helper) {
         PlayerListPacket.Entry entry = super.readEntryBase(buffer, helper);
-        entry.setColor(buffer.readIntLE());
+        entry.setColor(new Color(buffer.readIntLE(), true));
         return entry;
     }
 }

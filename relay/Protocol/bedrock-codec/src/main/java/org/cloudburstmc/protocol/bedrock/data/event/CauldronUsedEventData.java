@@ -12,4 +12,9 @@ public class CauldronUsedEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.CAULDRON_USED;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 5;
+    }
 }

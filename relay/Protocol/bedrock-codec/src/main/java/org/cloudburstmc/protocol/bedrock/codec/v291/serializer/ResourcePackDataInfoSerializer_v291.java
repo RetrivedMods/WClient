@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodecHelper;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketSerializer;
 import org.cloudburstmc.protocol.bedrock.packet.ResourcePackDataInfoPacket;
+import org.cloudburstmc.protocol.common.util.Preconditions;
 import org.cloudburstmc.protocol.common.util.VarInts;
 
 import java.util.UUID;
@@ -28,7 +29,7 @@ public class ResourcePackDataInfoSerializer_v291 implements BedrockPacketSeriali
 
     @Override
     public void deserialize(ByteBuf buffer, BedrockCodecHelper helper, ResourcePackDataInfoPacket packet) {
-        String[] packInfo = helper.readString(buffer).split("_");
+        String[] packInfo = helper.readStringMaxLen(buffer, 100).split("_", 3);
         packet.setPackId(UUID.fromString(packInfo[0]));
         if (packInfo.length > 1) {
             packet.setPackVersion(packInfo[1]);
@@ -36,7 +37,9 @@ public class ResourcePackDataInfoSerializer_v291 implements BedrockPacketSeriali
         packet.setMaxChunkSize(buffer.readIntLE());
         packet.setChunkCount(buffer.readIntLE());
         packet.setCompressedPackSize(buffer.readLongLE());
-        byte[] hash = new byte[VarInts.readUnsignedInt(buffer)];
+        int length = VarInts.readUnsignedInt(buffer);
+        Preconditions.checkArgument(buffer.isReadable(length), "Not enough readable bytes");
+        byte[] hash = new byte[length];
         buffer.readBytes(hash);
         packet.setHash(hash);
     }

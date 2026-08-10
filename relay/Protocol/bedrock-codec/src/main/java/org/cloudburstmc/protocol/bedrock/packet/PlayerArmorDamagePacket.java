@@ -13,8 +13,8 @@ import java.util.Set;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PlayerArmorDamagePacket implements BedrockPacket {
-    public final Set<PlayerArmorDamageFlag> flags = EnumSet.noneOf(PlayerArmorDamageFlag.class);
-    public final int[] damage = new int[5];
+    private final Set<PlayerArmorDamageFlag> flags = EnumSet.noneOf(PlayerArmorDamageFlag.class);
+    private final int[] damage = new int[5];
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

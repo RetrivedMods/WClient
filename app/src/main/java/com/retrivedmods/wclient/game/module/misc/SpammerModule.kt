@@ -20,6 +20,14 @@ class SpammerModule : Module("Spammer", ModuleCategory.Misc) {
     private val delay by intValue("Delay", 1000, 50..10000)
     private val mode by enumValue("Mode", SpamMode.REPEAT, SpamMode::class.java)
     private val randomize by boolValue("Randomize", false)
+    private val antiSpam by boolValue("AntiSpam", false)
+    private val antiSpamDelay by intValue("AntiSpam Delay", 3000, 1000..30000)
+    private val bypassMode by enumValue("Bypass", BypassMode.NONE, BypassMode::class.java)
+    private val prefix by stringValue("Prefix", "", listOf())
+    private val suffix by stringValue("Suffix", "", listOf())
+    private val messagesList by stringValue("Messages", "WClient is Best|WClient on Top|Best Client", listOf())
+    
+    enum class BypassMode { NONE, CHAT_SPLIT, UNICODE, INVISIBLE }
 
 
     private var isSpamming = false
@@ -89,7 +97,7 @@ class SpammerModule : Module("Spammer", ModuleCategory.Misc) {
         textPacket.message = messageToSend
         textPacket.xuid = ""
         textPacket.platformChatId = ""
-        textPacket.needsTranslation = false
+        textPacket.setNeedsTranslation(false)
 
         session.serverBound(textPacket)
 

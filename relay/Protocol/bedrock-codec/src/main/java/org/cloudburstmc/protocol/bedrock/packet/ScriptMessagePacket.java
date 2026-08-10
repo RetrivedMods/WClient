@@ -10,8 +10,8 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @ToString(doNotUseGetters = true)
 public class ScriptMessagePacket implements BedrockPacket {
 
-    public String channel;
-    public String message;
+    private String channel;
+    private String message;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

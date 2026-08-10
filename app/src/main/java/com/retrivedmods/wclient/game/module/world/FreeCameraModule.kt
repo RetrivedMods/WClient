@@ -22,7 +22,13 @@ import kotlin.collections.addAll
 class FreeCameraModule : Module("free_camera", ModuleCategory.World) {
 
     private var originalPosition: Vector3f? = null
-    private val flySpeed by floatValue("speed", 0.15f, 0.1f..1.5f) // Add configurable speed
+    private val flySpeed by floatValue("speed", 0.15f, 0.1f..1.5f)
+    private val verticalSpeed by floatValue("verticalSpeed", 0.15f, 0.1f..3.0f)
+    private val horizontalSpeed by floatValue("horizontalSpeed", 0.3f, 0.1f..5.0f)
+    private val showOriginalPos by boolValue("showOriginalPos", true)
+    private val countdownSeconds by intValue("countdown", 5, 0..10)
+    private val autoReturn by boolValue("autoReturn", true)
+    private val returnDelay by intValue("returnDelay", 60, 10..300)
 
     private val enableFlyNoClipPacket = UpdateAbilitiesPacket().apply {
         playerPermission = PlayerPermission.OPERATOR

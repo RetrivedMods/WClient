@@ -10,4 +10,9 @@ public class PortalBuiltEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.PORTAL_BUILT;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 2;
+    }
 }

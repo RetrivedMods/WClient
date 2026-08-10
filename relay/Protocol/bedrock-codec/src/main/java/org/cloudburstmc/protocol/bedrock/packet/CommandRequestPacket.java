@@ -10,13 +10,13 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CommandRequestPacket implements BedrockPacket {
-    public String command;
-    public CommandOriginData commandOriginData;
-    public boolean internal;
+    private String command;
+    private CommandOriginData commandOriginData;
+    private boolean internal;
     /**
      * @since v567
      */
-    public int version;
+    private int version;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

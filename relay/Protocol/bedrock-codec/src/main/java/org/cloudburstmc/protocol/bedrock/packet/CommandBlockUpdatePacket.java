@@ -11,19 +11,19 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CommandBlockUpdatePacket implements BedrockPacket {
-    public boolean block;
-    public Vector3i blockPosition;
-    public CommandBlockMode mode;
-    public boolean redstoneMode;
-    public boolean conditional;
-    public long minecartRuntimeEntityId;
-    public String command;
-    public String lastOutput;
-    public String name;
-    public String filteredName;
-    public boolean outputTracked;
-    public long tickDelay;
-    public boolean executingOnFirstTick;
+    private boolean block;
+    private Vector3i blockPosition;
+    private CommandBlockMode mode;
+    private boolean redstoneMode;
+    private boolean conditional;
+    private long minecartRuntimeEntityId;
+    private String command;
+    private String lastOutput;
+    private String name;
+    private String filteredName;
+    private boolean outputTracked;
+    private long tickDelay;
+    private boolean executingOnFirstTick;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

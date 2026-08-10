@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Deprecated
 public class SneakCloseToSculkSensorEventData implements EventData {
     public static final SneakCloseToSculkSensorEventData INSTANCE = new SneakCloseToSculkSensorEventData();
 

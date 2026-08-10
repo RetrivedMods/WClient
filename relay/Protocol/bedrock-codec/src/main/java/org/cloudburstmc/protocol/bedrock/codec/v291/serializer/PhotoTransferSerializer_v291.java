@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodecHelper;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketSerializer;
 import org.cloudburstmc.protocol.bedrock.packet.PhotoTransferPacket;
+import org.cloudburstmc.protocol.common.util.Preconditions;
 import org.cloudburstmc.protocol.common.util.VarInts;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -25,7 +26,9 @@ public class PhotoTransferSerializer_v291 implements BedrockPacketSerializer<Pho
     @Override
     public void deserialize(ByteBuf buffer, BedrockCodecHelper helper, PhotoTransferPacket packet) {
         packet.setName(helper.readString(buffer));
-        byte[] data = new byte[VarInts.readUnsignedInt(buffer)];
+        int length = VarInts.readUnsignedInt(buffer);
+        Preconditions.checkArgument(buffer.isReadable(length), "Not enough readable bytes");
+        byte[] data = new byte[length];
         buffer.readBytes(data);
         packet.setData(data);
         packet.setBookId(helper.readString(buffer));

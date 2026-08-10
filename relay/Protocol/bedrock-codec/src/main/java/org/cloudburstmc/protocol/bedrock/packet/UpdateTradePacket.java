@@ -11,17 +11,17 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class UpdateTradePacket implements BedrockPacket {
-    public int containerId;
-    public ContainerType containerType;
-    public int size; // Hardcoded to 0
-    public int tradeTier;
-    public long traderUniqueEntityId;
-    public long playerUniqueEntityId;
-    public CharSequence displayName;
-    public NbtMap offers;
-    public boolean newTradingUi;
-    public boolean recipeAddedOnUpdate;
-    public boolean usingEconomyTrade;
+    private int containerId;
+    private ContainerType containerType;
+    private int size; // Hardcoded to 0
+    private int tradeTier;
+    private long traderUniqueEntityId;
+    private long playerUniqueEntityId;
+    private CharSequence displayName;
+    private NbtMap offers;
+    private boolean newTradingUi;
+    private boolean recipeAddedOnUpdate;
+    private boolean usingEconomyTrade;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

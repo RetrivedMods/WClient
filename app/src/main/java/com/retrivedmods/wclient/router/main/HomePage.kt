@@ -106,7 +106,7 @@ import com.retrivedmods.wclient.service.Services
 import com.retrivedmods.wclient.ui.component.WButton
 import com.retrivedmods.wclient.ui.component.WFloatingActionButton
 import com.retrivedmods.wclient.ui.component.WGlassCard
-import com.retrivedmods.wclient.ui.component.authId
+import com.retrivedmods.wclient.ui.component.youtubeAuthId
 import com.retrivedmods.wclient.ui.theme.WColors
 import com.retrivedmods.wclient.util.LocalSnackbarHostState
 import com.retrivedmods.wclient.util.MinecraftUtils
@@ -738,7 +738,7 @@ private fun HomeLinksRow() {
     ) {
         WGlassCard(
             onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, "https://www.youtube.com/channel/$authId".toUri())
+                val intent = Intent(Intent.ACTION_VIEW, "https://www.youtube.com/channel/$youtubeAuthId".toUri())
                 context.startActivity(intent)
             },
             modifier = Modifier.fillMaxWidth(),

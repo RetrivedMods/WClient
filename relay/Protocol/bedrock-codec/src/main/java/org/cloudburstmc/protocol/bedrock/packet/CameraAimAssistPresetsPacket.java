@@ -19,16 +19,16 @@ public class CameraAimAssistPresetsPacket implements BedrockPacket {
     /**
      * @deprecated since v800 (1.21.80). Use {@link #categoryDefinitions} instead.
      */
-    public final List<CameraAimAssistCategories> categories = new ObjectArrayList<>();
+    private final List<CameraAimAssistCategories> categories = new ObjectArrayList<>();
     /**
      * @since v800 (1.21.80)
      */
-    public final List<CameraAimAssistCategory> categoryDefinitions = new ObjectArrayList<>();
-    public final List<CameraAimAssistPresetDefinition> presets = new ObjectArrayList<>();
+    private final List<CameraAimAssistCategory> categoryDefinitions = new ObjectArrayList<>();
+    private final List<CameraAimAssistPresetDefinition> presets = new ObjectArrayList<>();
     /**
      * @since v776
      */
-    public CameraAimAssistOperation operation;
+    private CameraAimAssistOperation operation;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

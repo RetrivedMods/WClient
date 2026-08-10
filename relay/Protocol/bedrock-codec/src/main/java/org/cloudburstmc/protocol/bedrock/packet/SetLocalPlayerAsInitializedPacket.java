@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetLocalPlayerAsInitializedPacket implements BedrockPacket {
-    public long runtimeEntityId;
+    private long runtimeEntityId;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

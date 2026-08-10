@@ -5,157 +5,55 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.view.WindowManager
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.retrivedmods.wclient.auth.VerificationManager
 import com.retrivedmods.wclient.game.ModuleManager
-import com.retrivedmods.wclient.navigation.Navigation
-import com.retrivedmods.wclient.ui.component.LoadingScreen
-import com.retrivedmods.wclient.ui.component.VerificationDialog
 import com.retrivedmods.wclient.ui.theme.WClientTheme
-import com.retrivedmods.wclient.util.SoundUtil
+import com.retrivedmods.wclient.router.main.MainScreen
+import android.os.Bundle
+import android.view.WindowManager
+import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private val storagePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        if (allGranted) {
-            Toast.makeText(
-                this,
-                "Storage permissions granted - You can now export configs",
-                Toast.LENGTH_SHORT
-            ).show()
-        } else {
-            Toast.makeText(
-                this,
-                "Storage permissions are required to export configs to external storage",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
+    ) { _ -> }
 
-    @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        SoundUtil.load(applicationContext)
-
-
-        ModuleManager.loadConfig()
-
         enableEdgeToEdge()
         setupImmersiveMode()
         checkBatteryOptimizations()
 
-        requestStoragePermissions()
-
         setContent {
             WClientTheme {
-                var showLoading by remember { mutableStateOf(true) }
-                var showVerificationDialog by remember { mutableStateOf(false) }
-                var verifying by remember { mutableStateOf(false) }
-                var wclientId by remember { mutableStateOf("") }
-
-                if (showLoading) {
-                    LoadingScreen(
-                        onDone = {
-                            lifecycleScope.launch {
-                                wclientId = VerificationManager.getWClientId(this@MainActivity)
-
-                                if (VerificationManager.isWhitelisted(this@MainActivity, wclientId)) {
-                                    showLoading = false
-                                    return@launch
-                                }
-
-                                if (VerificationManager.isVerified(this@MainActivity, wclientId)) {
-                                    showLoading = false
-                                    return@launch
-                                }
-
-                                showLoading = false
-                                showVerificationDialog = true
-                            }
-                        }
-                    )
-                } else if (showVerificationDialog) {
-                    VerificationDialog(
-                        wclientId = wclientId,
-                        onVerifyClick = {
-                            lifecycleScope.launch {
-                                verifying = true
-                                try {
-                                    val verifyUrl = VerificationManager.requestVerification(
-                                        this@MainActivity,
-                                        wclientId
-                                    )
-
-                                    VerificationManager.openInAppBrowser(
-                                        this@MainActivity,
-                                        verifyUrl
-                                    )
-
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "Complete verification in the browser, then return to this app.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-
-                                    VerificationManager.pollVerificationStatus(
-                                        this@MainActivity,
-                                        wclientId
-                                    ) { verified, reason ->
-                                        verifying = false
-                                        if (verified) {
-                                            showVerificationDialog = false
-                                            Toast.makeText(
-                                                this@MainActivity,
-                                                "Welcome - You are now verified!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } else {
-                                            Toast.makeText(
-                                                this@MainActivity,
-                                                "Verification failed: ${reason ?: "unknown"}",
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                        }
-                                    }
-                                } catch (t: Throwable) {
-                                    verifying = false
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "Verification request failed: ${t.message}",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                        }
-                    )
-                } else {
-                    if (verifying) {
-                        LoadingScreen(onDone = {})
-                    } else {
-                        Navigation()
-                    }
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainScreen()
                 }
             }
+        }
+
+        lifecycleScope.launch {
+            requestStoragePermissions()
         }
     }
 
@@ -177,7 +75,7 @@ class MainActivity : ComponentActivity() {
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
             startActivity(
                 Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = "package:$packageName".toUri()
+                    data = Uri.parse("package:$packageName")
                 }
             )
         }
@@ -222,8 +120,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        VerificationManager.cancelAll()
-
         ModuleManager.saveConfig()
     }
 }

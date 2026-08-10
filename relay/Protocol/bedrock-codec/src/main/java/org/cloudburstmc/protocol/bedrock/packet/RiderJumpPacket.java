@@ -12,7 +12,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class RiderJumpPacket implements BedrockPacket {
-    public int jumpStrength;
+    private int jumpStrength;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

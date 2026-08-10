@@ -225,23 +225,33 @@ public class EncryptionUtils {
 
     public static ChainValidationResult validatePayload(AuthPayload payload)
             throws JoseException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidJwtException {
+        ChainValidationResult result;
+
         if (payload instanceof CertificateChainPayload) {
             CertificateChainPayload chainPayload = (CertificateChainPayload) payload;
             List<String> chain = chainPayload.getChain();
             if (chain == null || chain.isEmpty()) {
                 throw new IllegalStateException("Certificate chain is empty");
             }
-            return validateChain(chain);
+            result = validateChain(chain);
         } else if (payload instanceof TokenPayload) {
             TokenPayload tokenPayload = (TokenPayload) payload;
             String token = tokenPayload.getToken();
             if (token == null || token.isEmpty()) {
                 throw new IllegalStateException("Token is empty");
             }
-            return validateToken(payload.getAuthType(), token);
+            result = validateToken(payload.getAuthType(), token);
         } else {
             throw new IllegalArgumentException("Unsupported AuthPayload type: " + payload.getClass().getName());
         }
+
+        if (payload.getAuthType() == AuthType.FULL) {
+            if (result.identityClaims().extraData == null || result.identityClaims().extraData.xuid == null || result.identityClaims().extraData.displayName == null) {
+                throw new IllegalStateException("Missing extraData for full auth");
+            }
+        }
+
+        return result;
     }
 
     public static ChainValidationResult validateChain(List<String> chain)

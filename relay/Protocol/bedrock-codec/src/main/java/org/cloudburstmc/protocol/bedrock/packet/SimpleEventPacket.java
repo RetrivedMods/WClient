@@ -10,7 +10,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SimpleEventPacket implements BedrockPacket {
-    public SimpleEventType event;
+    private SimpleEventType event;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

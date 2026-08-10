@@ -141,5 +141,17 @@ public enum ParticleType implements LevelEventType {
     /**
      * @since v843
      */
-    GREEN_FLAME
+    GREEN_FLAME,
+    /**
+     * @since v944
+     */
+    PAUSE_MOB_GROWTH,
+    /**
+     * @since v944
+     */
+    RESET_MOB_GROWTH,
+    /**
+     * @since v975
+     */
+    SULFUR_CUBE,
 }

@@ -8,12 +8,12 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = false)
 public class NpcDialoguePacket implements BedrockPacket {
 
-    public long uniqueEntityId;
-    public Action action;
-    public String dialogue;
-    public String sceneName;
-    public String npcName;
-    public String actionJson;
+    private long uniqueEntityId;
+    private Action action;
+    private String dialogue;
+    private String sceneName;
+    private String npcName;
+    private String actionJson;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

@@ -14,33 +14,33 @@ public class ResourcePacksInfoPacket implements BedrockPacket {
     /**
      * @deprecated since v729
      */
-    public final List<Entry> behaviorPackInfos = new ObjectArrayList<>();
-    public final List<Entry> resourcePackInfos = new ObjectArrayList<>();
-    public boolean forcedToAccept;
+    private final List<Entry> behaviorPackInfos = new ObjectArrayList<>();
+    private final List<Entry> resourcePackInfos = new ObjectArrayList<>();
+    private boolean forcedToAccept;
     /**
      * @since v662
      */
-    public boolean hasAddonPacks;
-    public boolean scriptingEnabled;
+    private boolean hasAddonPacks;
+    private boolean scriptingEnabled;
     /**
      * @since v448
      * @deprecated since v729
      */
-    public boolean forcingServerPacksEnabled;
+    private boolean forcingServerPacksEnabled;
     /**
      * @since v766
      */
-    public UUID worldTemplateId;
+    private UUID worldTemplateId;
     /**
      * @since v766
      */
-    public String worldTemplateVersion;
+    private String worldTemplateVersion;
     /**
      * Force the client to disable vibrant visuals, even if the client supports it.
      *
      * @since v818
      */
-    public boolean vibrantVisualsForceDisabled;
+    private boolean vibrantVisualsForceDisabled;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {
@@ -54,22 +54,22 @@ public class ResourcePacksInfoPacket implements BedrockPacket {
     @Data
     @AllArgsConstructor
     public static class Entry {
-        public UUID packId;
-        public String packVersion;
-        public long packSize;
-        public String contentKey;
-        public String subPackName;
-        public String contentId;
-        public boolean scripting;
-        public boolean raytracingCapable;
+        private UUID packId;
+        private String packVersion;
+        private long packSize;
+        private String contentKey;
+        private String subPackName;
+        private String contentId;
+        private boolean scripting;
+        private boolean raytracingCapable;
         /**
          * @since v712
          */
-        public boolean addonPack;
+        private boolean addonPack;
         /**
          * @since v748
          */
-        public String cdnUrl;
+        private String cdnUrl;
     }
 
     @Override

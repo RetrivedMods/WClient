@@ -11,4 +11,9 @@ public class PortalUsedEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.PORTAL_USED;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 3;
+    }
 }

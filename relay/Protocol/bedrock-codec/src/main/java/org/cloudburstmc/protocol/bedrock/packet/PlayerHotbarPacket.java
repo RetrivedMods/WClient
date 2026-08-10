@@ -9,9 +9,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PlayerHotbarPacket implements BedrockPacket {
-    public int selectedHotbarSlot;
-    public int containerId;
-    public boolean selectHotbarSlot;
+    private int selectedHotbarSlot;
+    private int containerId;
+    private boolean selectHotbarSlot;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

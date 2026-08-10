@@ -3,20 +3,20 @@ package org.cloudburstmc.protocol.bedrock.packet;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.cloudburstmc.protocol.bedrock.data.datastore.DataStoreUpdate;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
-import java.util.UUID;
-
+/**
+ * Applies a single update to the server data store from the client
+ *
+ * @since v897
+ */
 @Data
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ServerboundDataStorePacket implements BedrockPacket {
 
-    public String dataStoreName;
-    public String property;
-    public String path;
-    public Object data;
-    public int updateCount;
+    private DataStoreUpdate update = new DataStoreUpdate();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

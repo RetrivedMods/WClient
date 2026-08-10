@@ -10,7 +10,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ServerPlayerPostMovePositionPacket implements BedrockPacket {
-    public Vector3f position;
+    private Vector3f position;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

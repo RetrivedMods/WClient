@@ -49,7 +49,8 @@ public class BedrockCodecHelper_v407 extends BedrockCodecHelper_v390 {
                 VarInts.readLong(buffer),
                 EntityLinkData.Type.byId(buffer.readUnsignedByte()),
                 buffer.readBoolean(),
-                buffer.readBoolean()
+                buffer.readBoolean(),
+                0f
         );
     }
 

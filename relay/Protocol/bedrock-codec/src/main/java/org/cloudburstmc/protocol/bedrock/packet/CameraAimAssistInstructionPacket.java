@@ -11,9 +11,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CameraAimAssistInstructionPacket implements BedrockPacket {
-    public String presetId;
-    public AimAssistAction action;
-    public boolean allowAimAssist;
+    private String presetId;
+    private AimAssistAction action;
+    private boolean allowAimAssist;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

@@ -11,4 +11,9 @@ public class CopperWaxedOrUnwaxedEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.COPPER_WAXED_OR_UNWAXED;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 17;
+    }
 }

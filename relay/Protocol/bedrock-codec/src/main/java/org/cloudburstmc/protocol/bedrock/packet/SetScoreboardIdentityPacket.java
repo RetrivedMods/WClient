@@ -14,8 +14,8 @@ import java.util.UUID;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetScoreboardIdentityPacket implements BedrockPacket {
-    public final List<Entry> entries = new ObjectArrayList<>();
-    public Action action;
+    private final List<Entry> entries = new ObjectArrayList<>();
+    private Action action;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {
@@ -33,8 +33,8 @@ public class SetScoreboardIdentityPacket implements BedrockPacket {
 
     @Value
     public static class Entry {
-        public final long scoreboardId;
-        public final UUID uuid;
+        private final long scoreboardId;
+        private final UUID uuid;
     }
 
     @Override

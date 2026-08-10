@@ -9,8 +9,8 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ShowCreditsPacket implements BedrockPacket {
-    public long runtimeEntityId;
-    public Status status;
+    private long runtimeEntityId;
+    private Status status;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

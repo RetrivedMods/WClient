@@ -12,9 +12,9 @@ import java.util.UUID;
 @ToString(doNotUseGetters = true)
 public class ServerboundPackSettingChangePacket implements BedrockPacket {
 
-    public UUID packId;
-    public String packSettingName;
-    public Object packSettingValue;
+    private UUID packId;
+    private String packSettingName;
+    private Object packSettingValue;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

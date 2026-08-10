@@ -10,4 +10,9 @@ public class BellUsedEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.BELL_USED;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 12;
+    }
 }

@@ -13,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class AvailableCommandsPacket implements BedrockPacket {
-    public final List<CommandData> commands = new ObjectArrayList<>();
+    private final List<CommandData> commands = new ObjectArrayList<>();
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

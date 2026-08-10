@@ -10,9 +10,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class RespawnPacket implements BedrockPacket {
-    public Vector3f position;
-    public State state;
-    public long runtimeEntityId; // Only used server bound and pretty pointless
+    private Vector3f position;
+    private State state;
+    private long runtimeEntityId; // Only used server bound and pretty pointless
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

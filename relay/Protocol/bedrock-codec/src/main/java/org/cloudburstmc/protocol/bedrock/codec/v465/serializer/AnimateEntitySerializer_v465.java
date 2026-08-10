@@ -18,7 +18,7 @@ public class AnimateEntitySerializer_v465 extends AnimateEntitySerializer_v419 {
         helper.writeString(buffer, packet.getAnimation());
         helper.writeString(buffer, packet.getNextState());
         helper.writeString(buffer, packet.getStopExpression());
-        buffer.writeInt(packet.getStopExpressionVersion());
+        buffer.writeIntLE(packet.getStopExpressionVersion());
         helper.writeString(buffer, packet.getController());
         buffer.writeFloatLE(packet.getBlendOutTime());
 
@@ -36,7 +36,7 @@ public class AnimateEntitySerializer_v465 extends AnimateEntitySerializer_v419 {
         packet.setAnimation(helper.readString(buffer));
         packet.setNextState(helper.readString(buffer));
         packet.setStopExpression(helper.readString(buffer));
-        packet.setStopExpressionVersion(buffer.readInt());
+        packet.setStopExpressionVersion(buffer.readIntLE());
         packet.setController(helper.readString(buffer));
         packet.setBlendOutTime(buffer.readFloatLE());
 

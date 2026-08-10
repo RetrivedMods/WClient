@@ -44,7 +44,6 @@ public class DebugDrawerSerializer_v818 implements BedrockPacketSerializer<Debug
     }
 
     protected void writeShape(ByteBuf buffer, BedrockCodecHelper helper, DebugShape shape) {
-        VarInts.writeUnsignedLong(buffer, shape.getId());
         writeCommonShapeData(buffer, helper, shape);
 
         switch (shape.getType()) {
@@ -106,6 +105,7 @@ public class DebugDrawerSerializer_v818 implements BedrockPacketSerializer<Debug
     }
 
     protected void writeCommonShapeData(ByteBuf buffer, BedrockCodecHelper helper, DebugShape shape) {
+        VarInts.writeUnsignedLong(buffer, shape.getId());
         helper.writeOptionalNull(buffer, shape.getType(), (buf, type) -> buf.writeByte(type.ordinal()));
         helper.writeOptionalNull(buffer, shape.getPosition(), WRITE_VECTOR3F);
         helper.writeOptionalNull(buffer, shape.getScale(), ByteBuf::writeFloatLE);

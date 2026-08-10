@@ -9,6 +9,7 @@ import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketSerializer;
 import org.cloudburstmc.protocol.bedrock.data.MapDecoration;
 import org.cloudburstmc.protocol.bedrock.data.MapTrackedObject;
 import org.cloudburstmc.protocol.bedrock.packet.ClientboundMapItemDataPacket;
+import org.cloudburstmc.protocol.common.util.Preconditions;
 import org.cloudburstmc.protocol.common.util.VarInts;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class ClientboundMapItemDataSerializer_v354 implements BedrockPacketSeria
         }
         List<MapDecoration> decorations = packet.getDecorations();
         List<MapTrackedObject> trackedObjects = packet.getTrackedObjects();
-        if (!decorations.isEmpty() && !trackedObjects.isEmpty()) {
+        if (!decorations.isEmpty() || !trackedObjects.isEmpty()) {
             type |= FLAG_DECORATION_UPDATE;
         }
         LongList trackedEntityIds = packet.getTrackedEntityIds();
@@ -107,13 +108,12 @@ public class ClientboundMapItemDataSerializer_v354 implements BedrockPacketSeria
 
         VarInts.writeUnsignedInt(buffer, trackedObjects.size());
         for (MapTrackedObject object : trackedObjects) {
+            buffer.writeIntLE(object.getType().ordinal());
             switch (object.getType()) {
                 case BLOCK:
-                    buffer.writeIntLE(object.getType().ordinal());
                     helper.writeBlockPosition(buffer, object.getPosition());
                     break;
                 case ENTITY:
-                    buffer.writeIntLE(object.getType().ordinal());
                     VarInts.writeLong(buffer, object.getEntityId());
                     break;
             }
@@ -178,6 +178,7 @@ public class ClientboundMapItemDataSerializer_v354 implements BedrockPacketSeria
         packet.setYOffset(VarInts.readInt(buffer));
 
         int length = VarInts.readUnsignedInt(buffer);
+        Preconditions.checkArgument(buffer.isReadable(length), "Not enough readable bytes");
         int[] colors = new int[length];
         for (int i = 0; i < length; i++) {
             colors[i] = VarInts.readUnsignedInt(buffer);

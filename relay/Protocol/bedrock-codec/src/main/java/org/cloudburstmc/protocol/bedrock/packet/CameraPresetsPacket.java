@@ -14,7 +14,7 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CameraPresetsPacket implements BedrockPacket {
-    public final List<CameraPreset> presets = new ObjectArrayList<>();
+    private final List<CameraPreset> presets = new ObjectArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

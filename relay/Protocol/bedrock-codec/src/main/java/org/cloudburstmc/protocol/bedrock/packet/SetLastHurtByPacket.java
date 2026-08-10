@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetLastHurtByPacket implements BedrockPacket {
-    public int entityTypeId;
+    private int entityTypeId;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

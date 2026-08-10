@@ -13,11 +13,11 @@ import java.util.Optional;
 @ToString(doNotUseGetters = true)
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class SpawnParticleEffectPacket implements BedrockPacket {
-    public int dimensionId;
-    public long uniqueEntityId = -1;
-    public Vector3f position;
-    public String identifier;
-    public Optional<String> molangVariablesJson;
+    private int dimensionId;
+    private long uniqueEntityId = -1;
+    private Vector3f position;
+    private String identifier;
+    private Optional<String> molangVariablesJson;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

@@ -14,7 +14,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ItemFrameDropItemPacket implements BedrockPacket {
-    public Vector3i blockPosition;
+    private Vector3i blockPosition;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

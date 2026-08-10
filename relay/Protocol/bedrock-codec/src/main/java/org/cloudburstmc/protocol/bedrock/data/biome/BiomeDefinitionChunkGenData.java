@@ -2,6 +2,7 @@ package org.cloudburstmc.protocol.bedrock.data.biome;
 
 import lombok.Value;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cloudburstmc.protocol.bedrock.data.VillageType;
 
 import java.util.List;
 
@@ -38,5 +39,20 @@ public class BiomeDefinitionChunkGenData {
      * @since v859
      */
     @Nullable
-    BiomeReplacementData biomeReplacementData;
+    List<BiomeReplacementData> biomeReplacements;
+    /**
+     * @since v924
+     */
+    @Nullable
+    VillageType villageType;
+    /**
+     * @since v975
+     */
+    @Nullable
+    BiomeSurfaceBuilderData surfaceBuilderData;
+    /**
+     * @since v975
+     */
+    @Nullable
+    BiomeSurfaceBuilderData subsurfaceBuilderData;
 }

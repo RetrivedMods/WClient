@@ -14,15 +14,15 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class NetworkChunkPublisherUpdatePacket implements BedrockPacket {
-    public Vector3i position;
-    public int radius;
+    private Vector3i position;
+    private int radius;
     /**
      * Lets the client know which chunks have been saved, and need
      * requesting whilst client chunk generation is enabled.
      *
      * @since 1.19.20
      */
-    public final List<Vector2i> savedChunks = new ObjectArrayList<>();
+    private final List<Vector2i> savedChunks = new ObjectArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

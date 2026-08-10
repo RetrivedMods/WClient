@@ -49,7 +49,7 @@ public class BedrockCodecHelper_v291 extends BaseBedrockCodecHelper {
         int type = buffer.readUnsignedByte();
         boolean immediate = buffer.readBoolean();
 
-        return new EntityLinkData(from, to, EntityLinkData.Type.values()[type], immediate);
+        return new EntityLinkData(from, to, EntityLinkData.Type.values()[type], immediate, false, 0f);
     }
 
     @Override
@@ -147,6 +147,16 @@ public class BedrockCodecHelper_v291 extends BaseBedrockCodecHelper {
 
         writeArray(buffer, item.getCanPlace(), this::writeString);
         writeArray(buffer, item.getCanBreak(), this::writeString);
+    }
+
+    @Override
+    public ItemData readNetworkItemStackDescriptor(ByteBuf buffer) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void writeNetworkItemStackDescriptor(ByteBuf buffer, ItemData item) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

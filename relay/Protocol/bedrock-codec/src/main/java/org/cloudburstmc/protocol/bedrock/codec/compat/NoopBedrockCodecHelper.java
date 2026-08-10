@@ -59,6 +59,16 @@ public class NoopBedrockCodecHelper extends BaseBedrockCodecHelper {
     }
 
     @Override
+    public ItemData readNetworkItemStackDescriptor(ByteBuf buffer) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void writeNetworkItemStackDescriptor(ByteBuf buffer, ItemData item) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ItemData readItemInstance(ByteBuf buffer) {
         throw new UnsupportedOperationException();
     }

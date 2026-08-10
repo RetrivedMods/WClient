@@ -14,16 +14,16 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ResourcePackStackPacket implements BedrockPacket {
-    public boolean forcedToAccept;
-    public final List<Entry> behaviorPacks = new ObjectArrayList<>();
-    public final List<Entry> resourcePacks = new ObjectArrayList<>();
-    public String gameVersion;
-    public final List<ExperimentData> experiments = new ObjectArrayList<>();
-    public boolean experimentsPreviouslyToggled;
+    private boolean forcedToAccept;
+    private final List<Entry> behaviorPacks = new ObjectArrayList<>();
+    private final List<Entry> resourcePacks = new ObjectArrayList<>();
+    private String gameVersion;
+    private final List<ExperimentData> experiments = new ObjectArrayList<>();
+    private boolean experimentsPreviouslyToggled;
     /**
      * @since v671
      */
-    public boolean hasEditorPacks;
+    private boolean hasEditorPacks;
 
 
     @Override
@@ -37,9 +37,9 @@ public class ResourcePackStackPacket implements BedrockPacket {
 
     @Value
     public static class Entry {
-        public final String packId;
-        public final String packVersion;
-        public final String subPackName;
+        private final String packId;
+        private final String packVersion;
+        private final String subPackName;
     }
 
     @Override

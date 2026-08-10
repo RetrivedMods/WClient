@@ -26,7 +26,7 @@ public class ResourcePackChunkDataSerializer_v291 implements BedrockPacketSerial
 
     @Override
     public void deserialize(ByteBuf buffer, BedrockCodecHelper helper, ResourcePackChunkDataPacket packet) {
-        String[] packInfo = helper.readString(buffer).split("_");
+        String[] packInfo = helper.readStringMaxLen(buffer, 100).split("_", 3);
         packet.setPackId(UUID.fromString(packInfo[0]));
         if (packInfo.length > 1) {
             packet.setPackVersion(packInfo[1]);

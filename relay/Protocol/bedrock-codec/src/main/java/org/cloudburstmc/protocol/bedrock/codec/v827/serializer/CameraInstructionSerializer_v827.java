@@ -14,23 +14,27 @@ public class CameraInstructionSerializer_v827 extends CameraInstructionSerialize
     @Override
     public void serialize(ByteBuf buffer, BedrockCodecHelper helper, CameraInstructionPacket packet) {
         super.serialize(buffer, helper, packet);
-        helper.writeOptionalNull(buffer, packet.getFovInstruction(), (buf, fovInstruction) -> {
-            buf.writeFloatLE(fovInstruction.getFov());
-            buf.writeFloatLE(fovInstruction.getEaseTime());
-            buf.writeByte(fovInstruction.getEaseType().ordinal());
-            buf.writeBoolean(fovInstruction.isClear());
-        });
+        helper.writeOptionalNull(buffer, packet.getFovInstruction(), this::writeFovInstruction);
     }
 
     @Override
     public void deserialize(ByteBuf buffer, BedrockCodecHelper helper, CameraInstructionPacket packet) {
         super.deserialize(buffer, helper, packet);
-        packet.setFovInstruction(helper.readOptional(buffer, null, buf -> {
-            float fow = buf.readFloatLE();
-            float easeTime = buf.readFloatLE();
-            CameraEase easeType = CameraEase.values()[buf.readUnsignedByte()];
-            boolean fovClear = buf.readBoolean();
-            return new CameraFovInstruction(fow, easeTime, easeType, fovClear);
-        }));
+        packet.setFovInstruction(helper.readOptional(buffer, null, this::readFovInstruction));
+    }
+
+    protected void writeFovInstruction(ByteBuf buffer, BedrockCodecHelper helper, CameraFovInstruction fovInstruction) {
+        buffer.writeFloatLE(fovInstruction.getFov());
+        buffer.writeFloatLE(fovInstruction.getEaseTime());
+        buffer.writeByte(fovInstruction.getEaseType().ordinal());
+        buffer.writeBoolean(fovInstruction.isClear());
+    }
+
+    protected CameraFovInstruction readFovInstruction(ByteBuf buffer, BedrockCodecHelper helper) {
+        float fow = buffer.readFloatLE();
+        float easeTime = buffer.readFloatLE();
+        CameraEase easeType = CameraEase.values()[buffer.readUnsignedByte()];
+        boolean fovClear = buffer.readBoolean();
+        return new CameraFovInstruction(fow, easeTime, easeType, fovClear);
     }
 }

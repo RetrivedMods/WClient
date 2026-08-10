@@ -3,21 +3,41 @@ package org.cloudburstmc.protocol.bedrock.packet;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.cloudburstmc.protocol.bedrock.data.diagnostics.EntityDiagnosticTimingInfo;
+import org.cloudburstmc.protocol.bedrock.data.diagnostics.MemoryCategoryCounter;
+import org.cloudburstmc.protocol.bedrock.data.diagnostics.SystemDiagnosticTimingInfo;
+import org.cloudburstmc.protocol.bedrock.data.diagnostics.WhiskerScopeDataSummary;
 import org.cloudburstmc.protocol.common.PacketSignal;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ServerboundDiagnosticsPacket implements BedrockPacket{
-    public float avgFps;
-    public float avgServerSimTickTimeMS;
-    public float avgClientSimTickTimeMS;
-    public float avgBeginFrameTimeMS;
-    public float avgInputTimeMS;
-    public float avgRenderTimeMS;
-    public float avgEndFrameTimeMS;
-    public float avgRemainderTimePercent;
-    public float avgUnaccountedTimePercent;
+    private float avgFps;
+    private float avgServerSimTickTimeMS;
+    private float avgClientSimTickTimeMS;
+    private float avgBeginFrameTimeMS;
+    private float avgInputTimeMS;
+    private float avgRenderTimeMS;
+    private float avgEndFrameTimeMS;
+    private float avgRemainderTimePercent;
+    private float avgUnaccountedTimePercent;
+    private final List<MemoryCategoryCounter> memoryCategoryValues = new ArrayList<>();
+    /**
+     * @since v975
+     */
+    private final List<EntityDiagnosticTimingInfo> entityDiagnostics = new ArrayList<>();
+    /**
+     * @since v975
+     */
+    private final List<SystemDiagnosticTimingInfo> systemDiagnostics = new ArrayList<>();
+    /**
+     * @since v1001
+     */
+    private final List<WhiskerScopeDataSummary> whiskerScopes = new ArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

@@ -17,24 +17,24 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ClientboundMapItemDataPacket implements BedrockPacket {
-    public final LongList trackedEntityIds = new LongArrayList();
-    public final List<MapTrackedObject> trackedObjects = new ObjectArrayList<>();
-    public final List<MapDecoration> decorations = new ObjectArrayList<>();
-    public long uniqueMapId;
-    public int dimensionId;
-    public boolean locked;
+    private final LongList trackedEntityIds = new LongArrayList();
+    private final List<MapTrackedObject> trackedObjects = new ObjectArrayList<>();
+    private final List<MapDecoration> decorations = new ObjectArrayList<>();
+    private long uniqueMapId;
+    private int dimensionId;
+    private boolean locked;
     /**
      * The world-relative position of the map's origin.
      *
      * @since 1.19.20
      */
-    public Vector3i origin;
-    public int scale;
-    public int height;
-    public int width;
-    public int xOffset;
-    public int yOffset;
-    public int[] colors;
+    private Vector3i origin;
+    private int scale;
+    private int height;
+    private int width;
+    private int xOffset;
+    private int yOffset;
+    private int[] colors;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

@@ -21,7 +21,7 @@ public class MotionPredictionHintsPacket implements BedrockPacket {
      * @param runtimeEntityId runtime ID
      * @return runtime ID
      */
-    public long runtimeEntityId;
+    private long runtimeEntityId;
 
     /**
      * Motion to set onto the specified entity
@@ -29,7 +29,7 @@ public class MotionPredictionHintsPacket implements BedrockPacket {
      * @param motion motion of entity
      * @return motion of entity
      */
-    public Vector3f motion;
+    private Vector3f motion;
 
     /**
      * If the entity is on the ground. (Not falling or jumping)
@@ -37,7 +37,7 @@ public class MotionPredictionHintsPacket implements BedrockPacket {
      * @param onGround is entity on the ground
      * @return is entity on the ground
      */
-    public boolean onGround;
+    private boolean onGround;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

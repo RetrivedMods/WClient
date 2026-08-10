@@ -13,4 +13,9 @@ public class ItemUsedEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.ITEM_USED_EVENT;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 20;
+    }
 }

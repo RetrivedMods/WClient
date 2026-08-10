@@ -10,7 +10,7 @@ import org.cloudburstmc.protocol.bedrock.codec.v448.serializer.ResourcePacksInfo
 import org.cloudburstmc.protocol.bedrock.packet.ResourcePacksInfoPacket;
 import org.cloudburstmc.protocol.common.util.VarInts;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.cloudburstmc.protocol.common.util.Preconditions.checkArgument;
@@ -62,7 +62,7 @@ public class ResourcePacksInfoSerializer_v618 extends ResourcePacksInfoSerialize
             return;
         }
 
-        Map<String, String> cdnUrls = new HashMap<>();
+        Map<String, String> cdnUrls = new LinkedHashMap<>();
         for (int i = 0; i < size; i++) {
             String idVersion = helper.readString(buffer);
             String url = helper.readString(buffer);

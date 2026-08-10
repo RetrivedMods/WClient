@@ -9,7 +9,6 @@ object ClientIdentification {
     fun generateRealisticClientGUID(): Long {
         val timestamp = System.currentTimeMillis()
         val random = Random.nextLong(0, 0xFFFFFF)
-
         return (timestamp shl 24) or random
     }
 
@@ -32,11 +31,11 @@ object ClientIdentification {
     }
 
     fun getRealisticMTUSizes(): Array<Int> {
-        return arrayOf(1464, 1200, 576)
+        return arrayOf(1472, 1464, 1200, 1024, 576)
     }
 
     fun getMinecraftProtocolVersion(): Int {
-        return 11
+        return 767
     }
 
     fun getEnhancedClientConfig(): ClientConfig {
@@ -47,7 +46,9 @@ object ClientIdentification {
             unconnectedMagic = createMinecraftUnconnectedMagic(),
             internalAddresses = generateInternalAddresses(),
             compatibilityMode = true,
-            useRealisticTiming = true
+            useRealisticTiming = true,
+            connectionTimeout = 30000L,
+            lan_discovery_enabled = true
         )
     }
 
@@ -59,7 +60,9 @@ object ClientIdentification {
             unconnectedMagic = createMinecraftUnconnectedMagic(),
             internalAddresses = generateInternalAddresses(),
             compatibilityMode = true,
-            useRealisticTiming = false
+            useRealisticTiming = false,
+            connectionTimeout = 30000L,
+            lan_discovery_enabled = true
         )
     }
 
@@ -68,7 +71,7 @@ object ClientIdentification {
     }
 
     fun getRealisticSessionTimeout(): Long {
-        return Random.nextLong(15000, 25000)
+        return Random.nextLong(25000, 35000)
     }
 
     data class ClientConfig(
@@ -78,7 +81,9 @@ object ClientIdentification {
         val unconnectedMagic: ByteBuf,
         val internalAddresses: List<String>,
         val compatibilityMode: Boolean,
-        val useRealisticTiming: Boolean
+        val useRealisticTiming: Boolean,
+        val connectionTimeout: Long = 30000L,
+        val lan_discovery_enabled: Boolean = true
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -93,6 +98,8 @@ object ClientIdentification {
             if (internalAddresses != other.internalAddresses) return false
             if (compatibilityMode != other.compatibilityMode) return false
             if (useRealisticTiming != other.useRealisticTiming) return false
+            if (connectionTimeout != other.connectionTimeout) return false
+            if (lan_discovery_enabled != other.lan_discovery_enabled) return false
 
             return true
         }
@@ -105,6 +112,8 @@ object ClientIdentification {
             result = 31 * result + internalAddresses.hashCode()
             result = 31 * result + compatibilityMode.hashCode()
             result = 31 * result + useRealisticTiming.hashCode()
+            result = 31 * result + connectionTimeout.hashCode()
+            result = 31 * result + lan_discovery_enabled.hashCode()
             return result
         }
     }

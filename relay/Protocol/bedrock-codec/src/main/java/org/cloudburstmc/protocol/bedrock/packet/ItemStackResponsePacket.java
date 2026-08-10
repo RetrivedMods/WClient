@@ -19,7 +19,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @ToString(doNotUseGetters = true)
 public class ItemStackResponsePacket implements BedrockPacket {
-    public final List<ItemStackResponse> entries = new ArrayList<>();
+    private final List<ItemStackResponse> entries = new ArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

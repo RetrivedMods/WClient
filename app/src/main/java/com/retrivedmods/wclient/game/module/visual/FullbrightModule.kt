@@ -10,6 +10,12 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 class FullbrightModule : Module("fullbright", ModuleCategory.Visual) {
 
     private val amplifierValue by intValue("amplifier", 1, 1..5)
+    private val mode by enumValue("mode", FullbrightMode.NIGHT_VISION, FullbrightMode::class.java)
+    private val fadeTime by intValue("fadeTime", 0, 0..5000)
+    private val antiFlash by boolValue("antiFlash", true)
+    private val renewInterval by intValue("renewInterval", 20, 5..100)
+    
+    enum class FullbrightMode { NIGHT_VISION, GAMMA, BOTH }
 
     override fun onDisabled() {
         super.onDisabled()

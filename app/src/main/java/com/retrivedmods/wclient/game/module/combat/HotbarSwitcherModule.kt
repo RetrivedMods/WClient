@@ -67,7 +67,7 @@ class HotbarSwitcherModule : Module("switcher", ModuleCategory.Combat) {
         val packet = PlayerHotbarPacket()
         packet.selectedHotbarSlot = slot
         packet.containerId = 0
-        packet.selectHotbarSlot = true
+        packet.setSelectHotbarSlot(true)
 
         session.clientBound(packet)
     }

@@ -10,13 +10,13 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = false)
 @ToString(doNotUseGetters = true)
 public class GameTestRequestPacket implements BedrockPacket {
-    public int maxTestsPerBatch;
-    public int repeatCount;
-    public int rotation;
-    public boolean stoppingOnFailure;
-    public Vector3i testPos;
-    public int testsPerRow;
-    public String testName;
+    private int maxTestsPerBatch;
+    private int repeatCount;
+    private int rotation;
+    private boolean stoppingOnFailure;
+    private Vector3i testPos;
+    private int testsPerRow;
+    private String testName;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

@@ -14,12 +14,12 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class ChangeMobPropertyPacket implements BedrockPacket {
-    public long uniqueEntityId;
-    public String property;
-    public boolean boolValue;
-    public String stringValue;
-    public int intValue;
-    public float floatValue;
+    private long uniqueEntityId;
+    private String property;
+    private boolean boolValue;
+    private String stringValue;
+    private int intValue;
+    private float floatValue;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

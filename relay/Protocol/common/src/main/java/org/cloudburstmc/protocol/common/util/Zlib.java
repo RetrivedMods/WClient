@@ -20,28 +20,22 @@ public class Zlib {
 
     private static final int CHUNK = 8192;
 
+    private final boolean raw;
     private final FastThreadLocal<Inflater> inflaterLocal;
     private final FastThreadLocal<Deflater> deflaterLocal;
-    private final FastThreadLocal<byte[]> chunkBytes;
 
     private Zlib(boolean raw) {
-        // Required for Android API versions prior to 26.
-        this.inflaterLocal = new FastThreadLocal() {
+        this.raw = raw;
+        this.inflaterLocal = new FastThreadLocal<Inflater>() {
             @Override
-            public Inflater initialValue() {
-                return new Inflater(raw);
+            protected Inflater initialValue() {
+                return new Inflater(Zlib.this.raw);
             }
         };
-        this.deflaterLocal = new FastThreadLocal() {
+        this.deflaterLocal = new FastThreadLocal<Deflater>() {
             @Override
             protected Deflater initialValue() {
-                return new Deflater(7, raw);
-            }
-        };
-        this.chunkBytes = new FastThreadLocal() {
-            @Override
-            protected byte[] initialValue() {
-                return new byte[CHUNK];
+                return new Deflater(7, Zlib.this.raw);
             }
         };
     }
@@ -62,33 +56,24 @@ public class Zlib {
 
             Inflater inflater = inflaterLocal.get();
             inflater.reset();
-            ByteBuffer input = source.internalNioBuffer(source.readerIndex(), source.readableBytes());
-            if (input.hasArray()) {
-                inflater.setInput(input.array(), input.arrayOffset() + input.position(), input.remaining());
-            } else {
-                byte[] bytes = new byte[input.remaining()];
-                input.get(bytes);
-                inflater.setInput(bytes);
-            }
-            inflater.finished();
+            ByteBuffer nioBuffer = source.internalNioBuffer(source.readerIndex(), source.readableBytes());
+            inflater.setInput(nioBuffer.array(), nioBuffer.arrayOffset() + nioBuffer.position(), nioBuffer.remaining());
 
+            byte[] output = new byte[CHUNK];
             while (!inflater.finished()) {
-                decompressed.ensureWritable(CHUNK);
-                int index = decompressed.writerIndex();
-                int written = inflate(inflater, decompressed.internalNioBuffer(index, CHUNK));
+                int written = inflater.inflate(output);
                 if (written < 1) {
                     break;
                 }
-                decompressed.writerIndex(index + written);
+                decompressed.writeBytes(output, 0, written);
                 if (maxSize > 0 && decompressed.writerIndex() >= maxSize) {
                     throw new DataFormatException("Inflated data exceeds maximum size");
                 }
             }
+            decompressed.retain();
             return decompressed;
-        } catch (DataFormatException e) {
-            decompressed.release();
-            throw e;
         } finally {
+            decompressed.release();
             if (source != null && source != buffer) {
                 source.release();
             }
@@ -117,20 +102,13 @@ public class Zlib {
             Deflater deflater = deflaterLocal.get();
             deflater.reset();
             deflater.setLevel(level);
-            ByteBuffer input = source.internalNioBuffer(source.readerIndex(), source.readableBytes());
-            if (input.hasArray()) {
-                deflater.setInput(input.array(), input.arrayOffset() + input.position(), input.remaining());
-            } else {
-                byte[] bytes = new byte[input.remaining()];
-                input.get(bytes);
-                deflater.setInput(bytes);
-            }
+            ByteBuffer nioBuffer = source.internalNioBuffer(source.readerIndex(), source.readableBytes());
+            deflater.setInput(nioBuffer.array(), nioBuffer.arrayOffset() + nioBuffer.position(), nioBuffer.remaining());
 
+            byte[] output = new byte[CHUNK];
             while (!deflater.finished()) {
-                int index = destination.writerIndex();
-                destination.ensureWritable(CHUNK);
-                int written = deflate(deflater, destination.internalNioBuffer(index, CHUNK));
-                destination.writerIndex(index + written);
+                int written = deflater.deflate(output);
+                destination.writeBytes(output, 0, written);
             }
 
             if (destination != compressed) {
@@ -143,37 +121,6 @@ public class Zlib {
             if (destination != null && destination != compressed) {
                 destination.release();
             }
-        }
-    }
-
-    private int inflate(Inflater inflater, ByteBuffer output) throws DataFormatException {
-        if (output.hasArray()) {
-            return inflater.inflate(output.array(), output.arrayOffset() + output.position(), output.remaining());
-        } else {
-            int startPos = output.position();
-            byte[] chunkBytes = this.chunkBytes.get();
-            while (output.remaining() > 0 && !inflater.finished()) {
-                int length = Math.min(output.remaining(), CHUNK);
-                int result = inflater.inflate(chunkBytes, 0, length);
-                output.put(chunkBytes, 0, result);
-            }
-            return output.position() - startPos;
-        }
-    }
-
-    private int deflate(Deflater deflater, ByteBuffer output) {
-        deflater.finish();
-        if (output.hasArray()) {
-            return deflater.deflate(output.array(), output.arrayOffset() + output.position(), output.remaining());
-        } else {
-            int startPos = output.position();
-            byte[] chunkBytes = this.chunkBytes.get();
-            while (output.remaining() > 0 && !deflater.finished()) {
-                int length = Math.min(output.remaining(), CHUNK);
-                int result = deflater.deflate(chunkBytes, 0, length);
-                output.put(chunkBytes, 0, result);
-            }
-            return output.position() - startPos;
         }
     }
 }

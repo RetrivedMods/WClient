@@ -17,12 +17,12 @@ public class SubClientLoginPacket implements BedrockPacket {
      * The JWT payload signed by Minecraft's authentication server.
      * Assuming this is a valid signature, it can be trusted to contain the player's identity and other information.
      */
-    public AuthPayload authPayload;
+    private AuthPayload authPayload;
     /**
      * The JWT payload signed by the client.
      * The client can modify this, so it should not be trusted.
      */
-    public String clientJwt;
+    private String clientJwt;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

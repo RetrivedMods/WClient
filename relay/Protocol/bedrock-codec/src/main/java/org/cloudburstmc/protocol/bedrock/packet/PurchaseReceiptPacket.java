@@ -12,7 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PurchaseReceiptPacket implements BedrockPacket {
-    public final List<String> receipts = new ObjectArrayList<>();
+    private final List<String> receipts = new ObjectArrayList<>();
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

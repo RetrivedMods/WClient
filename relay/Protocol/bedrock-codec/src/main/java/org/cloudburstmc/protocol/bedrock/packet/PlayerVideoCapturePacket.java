@@ -9,9 +9,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PlayerVideoCapturePacket implements BedrockPacket {
-    public Action action;
-    public int frameRate;
-    public String filePrefix;
+    private Action action;
+    private int frameRate;
+    private String filePrefix;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

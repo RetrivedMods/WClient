@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetPlayerGameTypePacket implements BedrockPacket {
-    public int gamemode;
+    private int gamemode;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

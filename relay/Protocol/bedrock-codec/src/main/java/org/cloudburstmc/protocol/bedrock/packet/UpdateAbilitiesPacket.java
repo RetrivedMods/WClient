@@ -16,10 +16,10 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class UpdateAbilitiesPacket implements BedrockPacket, PlayerAbilityHolder {
-    public long uniqueEntityId;
-    public PlayerPermission playerPermission;
-    public CommandPermission commandPermission;
-    public List<AbilityLayer> abilityLayers = new ObjectArrayList<>();
+    private long uniqueEntityId;
+    private PlayerPermission playerPermission;
+    private CommandPermission commandPermission;
+    private List<AbilityLayer> abilityLayers = new ObjectArrayList<>();
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

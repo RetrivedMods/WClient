@@ -3,6 +3,7 @@ package org.cloudburstmc.protocol.bedrock.data.event;
 import lombok.Value;
 
 @Value
+@Deprecated
 public class PatternRemovedEventData implements EventData {
     private final int itemId;
     private final int auxValue;

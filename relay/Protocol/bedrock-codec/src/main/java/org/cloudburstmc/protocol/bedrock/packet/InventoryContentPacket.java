@@ -15,21 +15,21 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class InventoryContentPacket implements BedrockPacket {
-    public List<ItemData> contents = new ObjectArrayList<>();
-    public int containerId;
+    private List<ItemData> contents = new ObjectArrayList<>();
+    private int containerId;
     /**
      * @since v712
      */
-    public FullContainerName containerNameData = new FullContainerName(ContainerSlotType.ANVIL_INPUT, null);
+    private FullContainerName containerNameData = new FullContainerName(ContainerSlotType.ANVIL_INPUT, null);
     /**
      * @since v729
      * @deprecated since v748. Use storageItem ItemData size instead.
      */
-    public int dynamicContainerSize;
+    private int dynamicContainerSize;
     /**
      * @since v748
      */
-    public ItemData storageItem = ItemData.AIR;
+    private ItemData storageItem = ItemData.AIR;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

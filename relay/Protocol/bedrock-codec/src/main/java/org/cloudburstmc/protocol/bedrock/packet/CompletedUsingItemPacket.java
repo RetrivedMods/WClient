@@ -10,8 +10,8 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CompletedUsingItemPacket implements BedrockPacket {
-    public int itemId;
-    public ItemUseType type;
+    private int itemId;
+    private ItemUseType type;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

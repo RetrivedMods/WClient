@@ -13,11 +13,11 @@ import java.util.UUID;
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = false)
 @ToString(doNotUseGetters = true, exclude = {"data"})
 public class ResourcePackChunkDataPacket extends AbstractReferenceCounted implements BedrockPacket {
-    public UUID packId;
-    public String packVersion;
-    public int chunkIndex;
-    public long progress;
-    public ByteBuf data;
+    private UUID packId;
+    private String packVersion;
+    private int chunkIndex;
+    private long progress;
+    private ByteBuf data;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

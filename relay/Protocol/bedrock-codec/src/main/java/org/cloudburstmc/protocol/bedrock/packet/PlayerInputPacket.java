@@ -13,9 +13,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PlayerInputPacket implements BedrockPacket {
-    public Vector2f inputMotion;
-    public boolean jumping;
-    public boolean sneaking;
+    private Vector2f inputMotion;
+    private boolean jumping;
+    private boolean sneaking;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

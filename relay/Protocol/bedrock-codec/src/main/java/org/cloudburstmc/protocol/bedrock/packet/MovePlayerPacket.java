@@ -12,15 +12,15 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class MovePlayerPacket implements BedrockPacket {
-    public long runtimeEntityId;
-    public Vector3f position;
-    public Vector3f rotation;
-    public Mode mode;
-    public boolean onGround;
-    public long ridingRuntimeEntityId;
-    public TeleportationCause teleportationCause;
-    public int entityType;
-    public long tick;
+    private long runtimeEntityId;
+    private Vector3f position;
+    private Vector3f rotation;
+    private Mode mode;
+    private boolean onGround;
+    private long ridingRuntimeEntityId;
+    private TeleportationCause teleportationCause;
+    private int entityType;
+    private long tick;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {
@@ -45,9 +45,9 @@ public class MovePlayerPacket implements BedrockPacket {
         COMMAND,
         BEHAVIOR;
 
-        public static final InternalLogger log = InternalLoggerFactory.getInstance(TeleportationCause.class);
+        private static final InternalLogger log = InternalLoggerFactory.getInstance(TeleportationCause.class);
 
-        public static final TeleportationCause[] VALUES = values();
+        private static final TeleportationCause[] VALUES = values();
 
         public static TeleportationCause byId(int id) {
             if (id >= 0 && id < VALUES.length) {

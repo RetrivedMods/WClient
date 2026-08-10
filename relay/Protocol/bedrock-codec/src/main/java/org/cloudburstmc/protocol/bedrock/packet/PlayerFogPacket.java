@@ -22,7 +22,7 @@ public class PlayerFogPacket implements BedrockPacket {
      * @param fogStack list of fog effects
      * @return list of fog effects
      */
-    public final List<String> fogStack = new ObjectArrayList<>();
+    private final List<String> fogStack = new ObjectArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

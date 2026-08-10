@@ -23,6 +23,11 @@ class ACAModule : Module("ACA", ModuleCategory.Combat) {
     private var tpYLevel by intValue("yOffset", 0, -10..10)
 
     private var distanceToKeep by floatValue("keep_distance", 2.0f, 1f..10f)
+    private var alwaysSwing by boolValue("always_swing", true)
+    private var multiTarget by boolValue("multi_target", true)
+    private var maxTargets by intValue("max_targets", 5, 1..20)
+    private var invisibleCheck by boolValue("invisible_check", false)
+    private var autoBlock by boolValue("auto_block", false)
 
     private var lastAttackTime = 0L
     private var tpCooldown = 0L
@@ -70,7 +75,7 @@ class ACAModule : Module("ACA", ModuleCategory.Combat) {
             position = newPosition
             rotation = entity.vec3Rotation
             mode = MovePlayerPacket.Mode.NORMAL
-            onGround = false
+            setOnGround(false)
             tick = session.localPlayer.tickExists
         }
 

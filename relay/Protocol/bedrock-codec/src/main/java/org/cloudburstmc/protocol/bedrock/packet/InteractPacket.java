@@ -10,9 +10,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class InteractPacket implements BedrockPacket {
-    public Action action;
-    public long runtimeEntityId;
-    public Vector3f mousePosition;
+    private Action action;
+    private long runtimeEntityId;
+    private Vector3f mousePosition;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

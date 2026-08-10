@@ -126,13 +126,14 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
     }
 
     fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
-        val textPacket = TextPacket()
-        textPacket.type = type
-        textPacket.sourceName = ""
-        textPacket.message = message
-        textPacket.xuid = ""
-        textPacket.platformChatId = ""
-        textPacket.filteredMessage = ""
+        val textPacket = TextPacket().apply {
+            this.type = type
+            sourceName = ""
+            setMessage(message)
+            xuid = ""
+            platformChatId = ""
+            filteredMessage = ""
+        }
         clientBound(textPacket)
     }
 

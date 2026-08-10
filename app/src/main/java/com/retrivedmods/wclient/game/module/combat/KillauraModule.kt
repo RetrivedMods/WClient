@@ -19,7 +19,14 @@ class KillauraModule : Module("killaura", ModuleCategory.Combat) {
     private var playersOnly by boolValue("players_only", true)
     private var mobsOnly by boolValue("mobs_only", false)
     private var antiBot by boolValue("anti_bot", true)
-
+    private var alwaysSwing by boolValue("always_swing", true)
+    private var raytraceCheck by boolValue("raytrace", true)
+    private var rotationMode by enumValue("rotation", RotationMode.NORMAL, RotationMode::class.java)
+    private var multiTarget by boolValue("multi_target", true)
+    private var targetSwitchDelay by intValue("switch_delay", 50, 0..500)
+    private var autoBlock by boolValue("auto_block", false)
+    private var invisibleCheck by boolValue("invisible_check", false)
+    private var maxTargets by intValue("max_targets", 3, 1..10)
 
     private var tpAuraEnabled by boolValue("tp_aura", false)
     private var teleportBehind by boolValue("tp_behind", false)
@@ -31,6 +38,8 @@ class KillauraModule : Module("killaura", ModuleCategory.Combat) {
     private var strafe by boolValue("strafe", false)
     private val strafeSpeed by floatValue("strafe_speed", 2.5f, 1f..4f)
     private val strafeRadius by floatValue("strafe_radius", 2.5f, 1f..6f)
+    
+    enum class RotationMode { NORMAL, SILENT, NONE }
 
 
 
@@ -149,7 +158,7 @@ class KillauraModule : Module("killaura", ModuleCategory.Combat) {
                 position = tpPos
                 rotation = entity.vec3Rotation
                 mode = MovePlayerPacket.Mode.NORMAL
-                onGround = false
+                setOnGround(false)
                 tick = player.tickExists
             }
         )
@@ -170,7 +179,7 @@ class KillauraModule : Module("killaura", ModuleCategory.Combat) {
                 position = pos.add(x.toFloat(), 0f, z.toFloat())
                 rotation = Vector3f.ZERO
                 mode = MovePlayerPacket.Mode.NORMAL
-                onGround = true
+                setOnGround(true)
                 tick = session.localPlayer.tickExists
             }
         )

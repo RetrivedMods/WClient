@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Deprecated
 public class ExtractHoneyEventData implements EventData {
     public static final ExtractHoneyEventData INSTANCE = new ExtractHoneyEventData();
 

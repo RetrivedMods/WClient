@@ -6,6 +6,9 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.crafting.CraftingDataTyp
 
 import static org.cloudburstmc.protocol.common.util.Preconditions.checkArgument;
 
+/**
+ * @deprecated since v975
+ */
 @Getter
 @ToString
 @EqualsAndHashCode

@@ -10,15 +10,15 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class MobArmorEquipmentPacket implements BedrockPacket {
-    public long runtimeEntityId;
-    public ItemData helmet;
-    public ItemData chestplate;
-    public ItemData leggings;
-    public ItemData boots;
+    private long runtimeEntityId;
+    private ItemData helmet;
+    private ItemData chestplate;
+    private ItemData leggings;
+    private ItemData boots;
     /**
      * @since v712
      */
-    public ItemData body;
+    private ItemData body;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

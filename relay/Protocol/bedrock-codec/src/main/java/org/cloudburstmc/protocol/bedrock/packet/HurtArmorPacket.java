@@ -9,12 +9,12 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class HurtArmorPacket implements BedrockPacket {
-    public int cause;
-    public int damage;
+    private int cause;
+    private int damage;
     /**
      * @since v465
      */
-    public long armorSlots;
+    private long armorSlots;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

@@ -72,5 +72,17 @@ public enum ContainerSlotType {
     /**
      * @since v712
      */
-    DYNAMIC_CONTAINER
+    DYNAMIC_CONTAINER,
+    /**
+     * @since v944
+     */
+    RECIPE_FOOD_CONTAINER,
+    /**
+     * @since v944
+     */
+    RECIPE_BLOCKS_CONTAINER,
+    /**
+     * @since v944
+     */
+    RECIPE_FURNACE_ITEMS_CONTAINER,
 }

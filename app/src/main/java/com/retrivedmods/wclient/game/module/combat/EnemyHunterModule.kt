@@ -106,7 +106,7 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
             position = newPosition
             rotation = rotationVec
             mode = MovePlayerPacket.Mode.NORMAL
-            onGround = false
+            setOnGround(false)
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })

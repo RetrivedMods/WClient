@@ -14,7 +14,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = false)
 @ToString(doNotUseGetters = true)
 public class ClientCacheMissResponsePacket extends AbstractReferenceCounted implements BedrockPacket {
-    public final Long2ObjectMap<ByteBuf> blobs = new Long2ObjectLinkedOpenHashMap<>();
+    private final Long2ObjectMap<ByteBuf> blobs = new Long2ObjectLinkedOpenHashMap<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

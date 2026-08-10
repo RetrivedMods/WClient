@@ -233,19 +233,18 @@ public class EventSerializer_v291 implements BedrockPacketSerializer<EventPacket
 
     protected SlashCommandExecutedEventData readSlashCommandExecuted(ByteBuf buffer, BedrockCodecHelper helper) {
         int successCount = VarInts.readInt(buffer);
-        VarInts.readInt(buffer);
+        int errorCount = VarInts.readInt(buffer);
         String commandName = helper.readString(buffer);
-        List<String> outputMessages = Arrays.asList(helper.readString(buffer).split(";"));
-        return new SlashCommandExecutedEventData(commandName, successCount, outputMessages);
+        List<String> outputMessages = Arrays.asList(helper.readStringMaxLen(buffer, 2048).split(";"));
+        return new SlashCommandExecutedEventData(commandName, successCount, errorCount, outputMessages);
     }
 
     protected void writeSlashCommandExecuted(ByteBuf buffer, BedrockCodecHelper helper, EventData eventData) {
         SlashCommandExecutedEventData event = (SlashCommandExecutedEventData) eventData;
         VarInts.writeInt(buffer, event.getSuccessCount());
-        List<String> outputMessages = event.getOutputMessages();
-        VarInts.writeInt(buffer, outputMessages.size());
+        VarInts.writeInt(buffer, event.getErrorCount());
         helper.writeString(buffer, event.getCommandName());
-        helper.writeString(buffer, String.join(";", outputMessages));
+        helper.writeString(buffer, String.join(";", event.getOutputMessages()));
     }
 
     protected FishBucketedEventData readFishBucketed(ByteBuf buffer, BedrockCodecHelper helper) {

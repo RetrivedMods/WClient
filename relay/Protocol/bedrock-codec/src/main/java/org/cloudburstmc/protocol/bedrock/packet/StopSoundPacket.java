@@ -9,12 +9,12 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class StopSoundPacket implements BedrockPacket {
-    public String soundName;
-    public boolean stoppingAllSound;
+    private String soundName;
+    private boolean stoppingAllSound;
     /**
      * @since v712
      */
-    public boolean stopMusicLegacy;
+    private boolean stopMusicLegacy;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

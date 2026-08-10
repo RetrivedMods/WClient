@@ -10,7 +10,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true, exclude = "definitions")
 public class CompressedBiomeDefinitionListPacket implements BedrockPacket {
-    public NbtMap definitions;
+    private NbtMap definitions;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

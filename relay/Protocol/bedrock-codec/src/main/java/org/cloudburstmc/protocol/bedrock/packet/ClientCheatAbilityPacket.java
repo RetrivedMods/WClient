@@ -25,10 +25,10 @@ import java.util.List;
 @ToString(doNotUseGetters = true)
 public class ClientCheatAbilityPacket implements BedrockPacket, PlayerAbilityHolder {
 
-    public long uniqueEntityId;
-    public PlayerPermission playerPermission;
-    public CommandPermission commandPermission;
-    public List<AbilityLayer> abilityLayers = new ObjectArrayList<>();
+    private long uniqueEntityId;
+    private PlayerPermission playerPermission;
+    private CommandPermission commandPermission;
+    private List<AbilityLayer> abilityLayers = new ObjectArrayList<>();
 
     @Override
     public BedrockPacketType getPacketType() {

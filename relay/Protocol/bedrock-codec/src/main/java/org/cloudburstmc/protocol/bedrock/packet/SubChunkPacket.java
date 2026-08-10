@@ -15,13 +15,13 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = false)
 @ToString(doNotUseGetters = true)
 public class SubChunkPacket extends AbstractReferenceCounted implements BedrockPacket {
-    public int dimension;
-    public boolean cacheEnabled;
+    private int dimension;
+    private boolean cacheEnabled;
     /**
      * @since v485
      */
-    public Vector3i centerPosition;
-    public List<SubChunkData> subChunks = new ObjectArrayList<>();
+    private Vector3i centerPosition;
+    private List<SubChunkData> subChunks = new ObjectArrayList<>();
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

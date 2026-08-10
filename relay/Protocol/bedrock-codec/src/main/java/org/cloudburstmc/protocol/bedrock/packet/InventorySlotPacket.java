@@ -12,22 +12,22 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class InventorySlotPacket implements BedrockPacket {
-    public int containerId;
-    public int slot;
-    public ItemData item;
+    private int containerId;
+    private int slot;
+    private ItemData item;
     /**
      * @since v712
      */
-    public FullContainerName containerNameData = new FullContainerName(ContainerSlotType.ANVIL_INPUT, null);
+    private FullContainerName containerNameData = new FullContainerName(ContainerSlotType.ANVIL_INPUT, null);
     /**
      * @since v729
      * @deprecated since v748. Use storageItem ItemData size instead.
      */
-    public int dynamicContainerSize;
+    private int dynamicContainerSize;
     /**
      * @since v748
      */
-    public ItemData storageItem = ItemData.AIR;
+    private ItemData storageItem = ItemData.AIR;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

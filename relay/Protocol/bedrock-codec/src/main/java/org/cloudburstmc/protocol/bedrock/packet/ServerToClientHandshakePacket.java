@@ -12,7 +12,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @ToString(doNotUseGetters = true)
 @NoEncryption // This is sent in plain text to complete the Diffie Hellman key exchange.
 public class ServerToClientHandshakePacket implements BedrockPacket {
-    public String jwt;
+    private String jwt;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

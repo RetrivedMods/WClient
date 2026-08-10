@@ -38,7 +38,7 @@ public class AvailableCommandsSerializer_v898 extends AvailableCommandsSerialize
         helper.writeArray(buffer, commandData.getSubcommands(), (buf, subcommand) -> {
             int index = subCommands.indexOf(subcommand);
             checkArgument(index > -1, "Invalid subcommand index: " + subcommand);
-            buf.writeShortLE(index);
+            buf.writeIntLE(index);
         });
 
         CommandOverloadData[] overloads = commandData.getOverloads();

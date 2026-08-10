@@ -9,9 +9,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class CreatePhotoPacket implements BedrockPacket {
-    public long id;
-    public String photoName;
-    public String photoItemName;
+    private long id;
+    private String photoName;
+    private String photoItemName;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

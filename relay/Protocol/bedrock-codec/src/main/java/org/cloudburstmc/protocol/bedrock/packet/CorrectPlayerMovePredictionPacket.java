@@ -22,7 +22,7 @@ public class CorrectPlayerMovePredictionPacket implements BedrockPacket {
      * @param position reported position
      * @return reported position
      */
-    public Vector3f position;
+    private Vector3f position;
 
     /**
      * Difference in client and server prediction
@@ -30,7 +30,7 @@ public class CorrectPlayerMovePredictionPacket implements BedrockPacket {
      * @param delta position difference
      * @return position difference
      */
-    public Vector3f delta;
+    private Vector3f delta;
 
     /**
      * If the client is on the ground. (Not falling or jumping)
@@ -38,7 +38,7 @@ public class CorrectPlayerMovePredictionPacket implements BedrockPacket {
      * @param onGround is client on the ground
      * @return is client on the ground
      */
-    public boolean onGround;
+    private boolean onGround;
 
     /**
      * The tick which is being corrected by the server.
@@ -46,26 +46,26 @@ public class CorrectPlayerMovePredictionPacket implements BedrockPacket {
      * @param tick to be corrected
      * @return to be corrected
      */
-    public long tick;
+    private long tick;
 
     /**
      * @since 649
      *
      * The type of prediction player sends.
      */
-    public PredictionType predictionType = PredictionType.PLAYER;
+    private PredictionType predictionType = PredictionType.PLAYER;
 
     /**
      * @since 671
      *
      * The rotation of the vehicle.
      */
-    public Vector2f vehicleRotation;
+    private Vector2f vehicleRotation;
 
     /**
      * @since v712
      */
-    public Float vehicleAngularVelocity;
+    private Float vehicleAngularVelocity;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

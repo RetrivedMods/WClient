@@ -3,6 +3,7 @@ package org.cloudburstmc.protocol.bedrock.data.event;
 import lombok.Value;
 
 @Value
+@Deprecated
 public class MovementCorrectedEventData implements EventData {
     private final float positionDelta;
     private final float cheatingScore;

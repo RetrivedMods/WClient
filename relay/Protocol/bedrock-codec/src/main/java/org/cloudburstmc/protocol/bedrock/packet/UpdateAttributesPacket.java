@@ -13,9 +13,9 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class UpdateAttributesPacket implements BedrockPacket {
-    public long runtimeEntityId;
-    public List<AttributeData> attributes = new ObjectArrayList<>();
-    public long tick;
+    private long runtimeEntityId;
+    private List<AttributeData> attributes = new ObjectArrayList<>();
+    private long tick;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

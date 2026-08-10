@@ -9,12 +9,12 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class TransferPacket implements BedrockPacket {
-    public String address;
-    public int port;
+    private String address;
+    private int port;
     /**
      * @since v729
      */
-    public boolean reloadWorld;
+    private boolean reloadWorld;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

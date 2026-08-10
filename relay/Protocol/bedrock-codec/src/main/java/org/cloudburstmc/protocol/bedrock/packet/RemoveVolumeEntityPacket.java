@@ -7,11 +7,11 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @Data
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = false)
 public class RemoveVolumeEntityPacket implements BedrockPacket {
-    public int id;
+    private int id;
     /**
      * @since v503
      */
-    public int dimension;
+    private int dimension;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

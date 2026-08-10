@@ -13,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @ToString(doNotUseGetters = true)
 public class ItemStackRequestPacket implements BedrockPacket {
-    public final List<ItemStackRequest> requests = new ArrayList<>();
+    private final List<ItemStackRequest> requests = new ArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

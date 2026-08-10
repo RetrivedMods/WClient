@@ -12,11 +12,11 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetPlayerInventoryOptionsPacket implements BedrockPacket {
-    public InventoryTabLeft leftTab;
-    public InventoryTabRight rightTab;
-    public boolean filtering;
-    public InventoryLayout layout;
-    public InventoryLayout craftingLayout;
+    private InventoryTabLeft leftTab;
+    private InventoryTabRight rightTab;
+    private boolean filtering;
+    private InventoryLayout layout;
+    private InventoryLayout craftingLayout;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

@@ -10,14 +10,14 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class NpcRequestPacket implements BedrockPacket {
-    public long runtimeEntityId;
-    public NpcRequestType requestType;
-    public String command;
-    public int actionType;
+    private long runtimeEntityId;
+    private NpcRequestType requestType;
+    private String command;
+    private int actionType;
     /**
      * @since v448
      */
-    public String sceneName;
+    private String sceneName;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

@@ -9,6 +9,11 @@ import org.cloudburstmc.protocol.bedrock.packet.SetTimePacket
 class TimeShiftModule : Module("time_shift", ModuleCategory.World) {
 
     private val time by intValue("time", 6000, 0..24000)
+    private val frozenTime by boolValue("frozenTime", false)
+    private val timeSpeed by floatValue("timeSpeed", 1.0f, 0.1f..10.0f)
+    private val syncWithServer by boolValue("syncWithServer", false)
+    private val showTime by boolValue("showTime", false)
+    private val transition by boolValue("smoothTransition", true)
     private var lastTimeUpdate = 0L
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {

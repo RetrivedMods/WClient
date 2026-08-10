@@ -17,4 +17,9 @@ public class EntityInteractEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.ENTITY_INTERACT;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 1;
+    }
 }

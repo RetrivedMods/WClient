@@ -10,6 +10,15 @@ import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
 
 class AirJumpModule : Module("air_jump", ModuleCategory.Motion) {
 
+    private var jumpHeight by floatValue("jumpHeight", 0.42f, 0.1f..3.0f)
+    private var multiJump by intValue("multiJump", 1, 1..20)
+    private var onlyOnGround by boolValue("onlyOnGround", false)
+    private var jumpMode by enumValue("jumpMode", JumpMode.NORMAL, JumpMode::class.java)
+    
+    enum class JumpMode { NORMAL, BOOST, STEP }
+
+    private var jumpCount = 0
+
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) {
             return

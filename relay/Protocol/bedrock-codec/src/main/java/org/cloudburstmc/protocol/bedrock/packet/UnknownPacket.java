@@ -12,8 +12,8 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @Data
 @EqualsAndHashCode(doNotUseGetters = true)
 public final class UnknownPacket implements BedrockPacket, BedrockPacketSerializer<UnknownPacket>, ReferenceCounted {
-    public int packetId;
-    public ByteBuf payload;
+    private int packetId;
+    private ByteBuf payload;
 
     @Override
     public void serialize(ByteBuf buffer, BedrockCodecHelper helper, UnknownPacket packet) {

@@ -3,6 +3,7 @@ package org.cloudburstmc.protocol.bedrock.data.event;
 import lombok.Value;
 
 @Value
+@Deprecated
 public class PetDiedEventData implements EventData {
     private final boolean ownerKilled;
     private final long killerUniqueEntityId;

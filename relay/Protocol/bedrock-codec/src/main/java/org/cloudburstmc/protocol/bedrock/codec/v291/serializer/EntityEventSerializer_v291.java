@@ -16,7 +16,7 @@ public class EntityEventSerializer_v291 implements BedrockPacketSerializer<Entit
 
     private static final InternalLogger log = InternalLoggerFactory.getInstance(EntityEventSerializer_v291.class);
 
-    private final TypeMap<EntityEventType> typeMap;
+    protected final TypeMap<EntityEventType> typeMap;
 
     @Override
     public void serialize(ByteBuf buffer, BedrockCodecHelper helper, EntityEventPacket packet) {

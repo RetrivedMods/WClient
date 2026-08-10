@@ -9,15 +9,18 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class BossEventPacket implements BedrockPacket {
-    public long bossUniqueEntityId;
-    public Action action;
-    public long playerUniqueEntityId;
-    public CharSequence title;
-    public CharSequence filteredTitle = "";
-    public float healthPercentage;
-    public int darkenSky;
-    public int color;
-    public int overlay;
+    private long bossUniqueEntityId;
+    private Action action;
+    private long playerUniqueEntityId;
+    private CharSequence title = "";
+    private CharSequence filteredTitle = "";
+    private float healthPercentage;
+    /**
+     * @deprecated since v1001
+     */
+    private int darkenSky;
+    private int color; // PINK|BLUE|RED|GREEN|YELLOW|PURPLE|REBECCA_PURPLE|WHITE
+    private int overlay; // PROGRESS|NOTCHED_6|NOTCHED_10|NOTCHED_12|NOTCHED_20
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

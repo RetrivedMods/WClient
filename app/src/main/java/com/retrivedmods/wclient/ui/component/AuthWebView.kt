@@ -14,9 +14,8 @@ import net.raphimc.minecraftauth.MinecraftAuth
 import net.raphimc.minecraftauth.step.msa.StepMsaDeviceCode
 import kotlin.concurrent.thread
 
-val auth = "UCxb4pcHvdYpqv7i5Xt9mOUw"
-
-val authId = "$auth"
+val youtubeChannelId = "UCxb4pcHvdYpqv7i5Xt9mOUw"
+val youtubeAuthId = "$youtubeChannelId"
 
 
 @SuppressLint("SetJavaScriptEnabled")

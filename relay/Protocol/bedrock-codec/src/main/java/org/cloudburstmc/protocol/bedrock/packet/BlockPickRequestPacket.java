@@ -10,9 +10,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class BlockPickRequestPacket implements BedrockPacket {
-    public Vector3i blockPosition;
-    public boolean addUserData;
-    public int hotbarSlot;
+    private Vector3i blockPosition;
+    private boolean addUserData;
+    private int hotbarSlot;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

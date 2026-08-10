@@ -12,4 +12,9 @@ public class BossKilledEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.BOSS_KILLED;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 7;
+    }
 }

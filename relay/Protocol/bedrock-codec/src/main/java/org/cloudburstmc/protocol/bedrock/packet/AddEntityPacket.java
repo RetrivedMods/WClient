@@ -18,28 +18,28 @@ import java.util.List;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class AddEntityPacket implements BedrockPacket {
-    public List<AttributeData> attributes = new ObjectArrayList<>();
-    public EntityDataMap metadata = new EntityDataMap();
-    public List<EntityLinkData> entityLinks = new ObjectArrayList<>();
-    public long uniqueEntityId;
-    public long runtimeEntityId;
-    public String identifier;
-    public int entityType;
-    public Vector3f position;
-    public Vector3f motion;
-    public Vector2f rotation;
+    private List<AttributeData> attributes = new ObjectArrayList<>();
+    private EntityDataMap metadata = new EntityDataMap();
+    private List<EntityLinkData> entityLinks = new ObjectArrayList<>();
+    private long uniqueEntityId;
+    private long runtimeEntityId;
+    private String identifier;
+    private int entityType;
+    private Vector3f position;
+    private Vector3f motion;
+    private Vector2f rotation;
     /**
      * @since v534
      */
-    public float headRotation;
+    private float headRotation;
     /**
      * @since v534
      */
-    public float bodyRotation;
+    private float bodyRotation;
     /**
      * @since v557
      */
-    public final EntityProperties properties = new EntityProperties();
+    private final EntityProperties properties = new EntityProperties();
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

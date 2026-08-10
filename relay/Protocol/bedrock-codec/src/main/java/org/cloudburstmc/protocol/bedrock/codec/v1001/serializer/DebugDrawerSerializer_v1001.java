@@ -1,0 +1,215 @@
+package org.cloudburstmc.protocol.bedrock.codec.v1001.serializer;
+
+import io.netty.buffer.ByteBuf;
+import org.cloudburstmc.math.vector.Vector3f;
+import org.cloudburstmc.protocol.bedrock.codec.BedrockCodecHelper;
+import org.cloudburstmc.protocol.bedrock.codec.v975.serializer.DebugDrawerSerializer_v975;
+import org.cloudburstmc.protocol.bedrock.data.debugshape.*;
+import org.cloudburstmc.protocol.common.util.VarInts;
+
+import java.awt.Color;
+
+public class DebugDrawerSerializer_v1001 extends DebugDrawerSerializer_v975 {
+
+    public static final DebugDrawerSerializer_v1001 INSTANCE = new DebugDrawerSerializer_v1001();
+
+
+    @Override
+    protected void writeShape(ByteBuf buffer, BedrockCodecHelper helper, DebugShape shape) {
+        DebugShape.Type type = shape.getType();
+        if (type != null) {
+            switch (type) {
+                case ARROW:
+                case BOX:
+                case CIRCLE:
+                case LINE:
+                case SPHERE:
+                case TEXT:
+                    super.writeShape(buffer, helper, shape);
+                    return;
+            }
+        }
+
+        writeCommonShapeData(buffer, helper, shape);
+
+        VarInts.writeUnsignedInt(buffer, toPayloadType(type));
+        if (type == null) {
+            return;
+        }
+
+        switch (type) {
+            case CYLINDER:
+                DebugCylinder cylinder = (DebugCylinder) shape;
+                helper.writeVector2f(buffer, cylinder.getRadiusX());
+                helper.writeVector2f(buffer, cylinder.getRadiusZ());
+                buffer.writeFloatLE(cylinder.getHeight());
+                buffer.writeByte(cylinder.getSegments());
+                break;
+            case PYRAMID:
+                DebugPyramid pyramid = (DebugPyramid) shape;
+                buffer.writeFloatLE(pyramid.getWidth());
+                helper.writeOptionalNull(buffer, pyramid.getDepth(), ByteBuf::writeFloatLE);
+                buffer.writeFloatLE(pyramid.getHeight());
+                break;
+            case ELLIPSOID:
+                DebugEllipsoid ellipsoid = (DebugEllipsoid) shape;
+                helper.writeVector3f(buffer, ellipsoid.getRadii());
+                buffer.writeByte(ellipsoid.getSegments());
+                break;
+            case CONE:
+                DebugCone cone = (DebugCone) shape;
+                helper.writeVector2f(buffer, cone.getRadii());
+                buffer.writeFloatLE(cone.getHeight());
+                buffer.writeByte(cone.getSegments());
+                break;
+        }
+    }
+
+    @Override
+    protected DebugShape readShape(ByteBuf buffer, BedrockCodecHelper helper) {
+        long id = VarInts.readUnsignedLong(buffer);
+
+        DebugShape.Type type = helper.readOptional(buffer, null, (buf, aHelper) -> SHAPE_TYPES[buf.readUnsignedByte()]);
+        Vector3f position = helper.readOptional(buffer, null, READ_VECTOR3F);
+        Float scale = helper.readOptional(buffer, null, ByteBuf::readFloatLE);
+        Vector3f rotation = helper.readOptional(buffer, null, READ_VECTOR3F);
+        Float totalTimeLeft = helper.readOptional(buffer, null, ByteBuf::readFloatLE);
+        Float maximumRenderDistance = helper.readOptional(buffer, null, ByteBuf::readFloatLE);
+        Color color = helper.readOptional(buffer, null, READ_COLOR);
+        Integer dimension = helper.readOptional(buffer, -1, VarInts::readInt);
+        Long attachedToEntityId = helper.readOptional(buffer, null, VarInts::readUnsignedLong);
+        VarInts.readUnsignedInt(buffer); // Unused payload type
+
+        if (type == null) {
+            return new DebugShape(id, dimension);
+        }
+
+        DebugShape shape;
+        switch (type) {
+            case ARROW:
+                shape = new DebugArrow();
+                break;
+            case BOX:
+                shape = new DebugBox();
+                break;
+            case CIRCLE:
+                shape = new DebugCircle();
+                break;
+            case LINE:
+                shape = new DebugLine();
+                break;
+            case SPHERE:
+                shape = new DebugSphere();
+                break;
+            case TEXT:
+                shape = new DebugText();
+                break;
+            case CYLINDER:
+                shape = new DebugCylinder();
+                break;
+            case PYRAMID:
+                shape = new DebugPyramid();
+                break;
+            case ELLIPSOID:
+                shape = new DebugEllipsoid();
+                break;
+            case CONE:
+                shape = new DebugCone();
+                break;
+            default:
+                throw new IllegalStateException("Unknown debug shape type");
+        }
+
+        shape.setId(id);
+        shape.setDimension(dimension);
+        shape.setPosition(position);
+        shape.setScale(scale);
+        shape.setRotation(rotation);
+        shape.setTotalTimeLeft(totalTimeLeft);
+        shape.setColor(color);
+        shape.setAttachedToEntityId(attachedToEntityId);
+        shape.setMaximumRenderDistance(maximumRenderDistance);
+
+        switch (type) {
+            case ARROW:
+                DebugArrow arrow = (DebugArrow) shape;
+                arrow.setArrowEndPosition(helper.readOptional(buffer, null, READ_VECTOR3F));
+                arrow.setArrowHeadLength(helper.readOptional(buffer, null, ByteBuf::readFloatLE));
+                arrow.setArrowHeadRadius(helper.readOptional(buffer, null, ByteBuf::readFloatLE));
+                arrow.setArrowHeadSegments(helper.readOptional(buffer, null, buf -> (int) buf.readUnsignedByte()));
+                return arrow;
+            case BOX:
+                DebugBox box = (DebugBox) shape;
+                box.setBoxBounds(helper.readVector3f(buffer));
+                return box;
+            case CIRCLE:
+                DebugCircle circle = (DebugCircle) shape;
+                circle.setSegments((int) buffer.readUnsignedByte());
+                return circle;
+            case LINE:
+                DebugLine line = (DebugLine) shape;
+                line.setLineEndPosition(helper.readVector3f(buffer));
+                return line;
+            case SPHERE:
+                DebugSphere sphere = (DebugSphere) shape;
+                sphere.setSegments((int) buffer.readUnsignedByte());
+                return sphere;
+            case TEXT:
+                DebugText text = (DebugText) shape;
+                text.setText(helper.readString(buffer));
+                text.setUseRotation(buffer.readBoolean());
+                text.setBackgroundColor(helper.readOptional(buffer, null, (buf, h) -> new Color(buf.readIntLE(), true)));
+                text.setDepthTest(buffer.readBoolean());
+                text.setShowBackface(buffer.readBoolean());
+                text.setShowTextBackface(buffer.readBoolean());
+                return text;
+            case CYLINDER:
+                DebugCylinder cylinder = (DebugCylinder) shape;
+                cylinder.setRadiusX(helper.readVector2f(buffer));
+                cylinder.setRadiusZ(helper.readVector2f(buffer));
+                cylinder.setHeight(buffer.readFloatLE());
+                cylinder.setSegments(buffer.readUnsignedByte());
+                return cylinder;
+            case PYRAMID:
+                DebugPyramid pyramid = (DebugPyramid) shape;
+                pyramid.setWidth(buffer.readFloatLE());
+                pyramid.setDepth(helper.readOptional(buffer, null, ByteBuf::readFloatLE));
+                pyramid.setHeight(buffer.readFloatLE());
+                return pyramid;
+            case ELLIPSOID:
+                DebugEllipsoid ellipsoid = (DebugEllipsoid) shape;
+                ellipsoid.setRadii(helper.readVector3f(buffer));
+                ellipsoid.setSegments(buffer.readUnsignedByte());
+                return ellipsoid;
+            case CONE:
+                DebugCone cone = (DebugCone) shape;
+                cone.setRadii(helper.readVector2f(buffer));
+                cone.setHeight(buffer.readFloatLE());
+                cone.setSegments(buffer.readUnsignedByte());
+                return cone;
+            default:
+                throw new IllegalStateException("Unknown debug shape type");
+        }
+    }
+
+    @Override
+    protected int toPayloadType(DebugShape.Type type) {
+        if (type == null) {
+            return 0;
+        }
+
+        switch (type) {
+            case ARROW: return 1;
+            case TEXT: return 2;
+            case BOX: return 3;
+            case LINE: return 4;
+            case SPHERE:
+            case CIRCLE: return 5;
+            case CYLINDER: return 6;
+            case PYRAMID: return 7;
+            case ELLIPSOID: return 8;
+            case CONE: return 9;
+            default: throw new IllegalStateException("Unknown debug shape type");
+        }
+    }
+}

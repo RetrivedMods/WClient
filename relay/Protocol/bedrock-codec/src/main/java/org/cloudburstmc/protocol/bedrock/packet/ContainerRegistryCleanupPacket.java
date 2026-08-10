@@ -16,7 +16,7 @@ public class ContainerRegistryCleanupPacket implements BedrockPacket {
     /**
      * A list of full containers to cleanup.
      */
-    public final List<FullContainerName> containers = new ObjectArrayList<>();
+    private final List<FullContainerName> containers = new ObjectArrayList<>();
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

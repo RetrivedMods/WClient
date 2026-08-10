@@ -3,6 +3,7 @@ package org.cloudburstmc.protocol.bedrock.data.event;
 import lombok.Value;
 
 @Value
+@Deprecated
 public class AgentCommandEventData implements EventData {
     private final AgentResult result;
     private final String command;

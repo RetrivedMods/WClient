@@ -10,4 +10,9 @@ public class CodeBuilderActionEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.CODE_BUILDER_ACTION;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 18;
+    }
 }

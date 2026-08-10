@@ -10,11 +10,11 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class MobEquipmentPacket implements BedrockPacket {
-    public long runtimeEntityId;
-    public ItemData item;
-    public int inventorySlot;
-    public int hotbarSlot;
-    public int containerId;
+    private long runtimeEntityId;
+    private ItemData item;
+    private int inventorySlot;
+    private int hotbarSlot;
+    private int containerId;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

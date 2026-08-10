@@ -12,4 +12,9 @@ public class CauldronInteractEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.CAULDRON_INTERACT;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 10;
+    }
 }

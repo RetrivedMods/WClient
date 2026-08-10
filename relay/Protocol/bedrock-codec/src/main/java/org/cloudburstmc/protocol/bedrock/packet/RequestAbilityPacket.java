@@ -10,10 +10,10 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class RequestAbilityPacket implements BedrockPacket {
-    public Ability ability;
-    public Ability.Type type;
-    public boolean boolValue;
-    public float floatValue;
+    private Ability ability;
+    private Ability.Type type;
+    private boolean boolValue;
+    private float floatValue;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

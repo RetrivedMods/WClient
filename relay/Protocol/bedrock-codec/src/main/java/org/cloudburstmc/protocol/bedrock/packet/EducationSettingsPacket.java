@@ -13,25 +13,25 @@ import java.util.Optional;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class EducationSettingsPacket implements BedrockPacket {
-    public String codeBuilderUri;
-    public String codeBuilderTitle;
-    public boolean canResizeCodeBuilder;
+    private String codeBuilderUri;
+    private String codeBuilderTitle;
+    private boolean canResizeCodeBuilder;
     /**
      * @since v465
      */
-    public boolean disableLegacyTitle;
+    private boolean disableLegacyTitle;
     /**
      * @since v465
      */
-    public String postProcessFilter;
+    private String postProcessFilter;
     /**
      * @since v465
      */
-    public String screenshotBorderPath;
-    public OptionalBoolean entityCapabilities;
-    public Optional<String> overrideUri;
-    public boolean quizAttached;
-    public OptionalBoolean externalLinkSettings;
+    private String screenshotBorderPath;
+    private OptionalBoolean entityCapabilities;
+    private Optional<String> overrideUri;
+    private boolean quizAttached;
+    private OptionalBoolean externalLinkSettings;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

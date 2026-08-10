@@ -927,4 +927,80 @@ public interface BedrockPacketHandler extends PacketHandler {
     default PacketSignal handle(ServerboundDataStorePacket packet) {
         return PacketSignal.UNHANDLED;
     }
+
+    default PacketSignal handle(ClientboundDataStorePacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(CameraAimAssistActorPriorityPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(CameraSplinePacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ClientboundDataDrivenUICloseScreenPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ClientboundDataDrivenUIReloadPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ClientboundDataDrivenUIShowScreenPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ClientboundTextureShiftPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(VoxelShapesPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ResourcePacksReadyForValidationPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(LocatorBarPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(PartyChangedPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ServerboundDataDrivenScreenClosedPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(SyncWorldClocksPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ClientboundAttributeLayerSyncPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ServerStoreInfoPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ServerPresenceInfoPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(ClientboundUpdateSoundDataPacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(SendPartyDestinationCookiePacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
+
+    default PacketSignal handle(PartyDestinationCookieResponsePacket packet) {
+        return PacketSignal.UNHANDLED;
+    }
 }

@@ -9,6 +9,7 @@ import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketSerializer;
 import org.cloudburstmc.protocol.bedrock.data.MapDecoration;
 import org.cloudburstmc.protocol.bedrock.data.MapTrackedObject;
 import org.cloudburstmc.protocol.bedrock.packet.ClientboundMapItemDataPacket;
+import org.cloudburstmc.protocol.common.util.Preconditions;
 import org.cloudburstmc.protocol.common.util.VarInts;
 
 import java.util.List;
@@ -142,6 +143,7 @@ public class ClientboundMapItemDataSerializer_v291 implements BedrockPacketSeria
             packet.setYOffset(VarInts.readInt(buffer));
 
             int length = VarInts.readUnsignedInt(buffer);
+            Preconditions.checkArgument(buffer.isReadable(length), "Not enough readable bytes");
             int[] colors = new int[length];
             for (int i = 0; i < length; i++) {
                 colors[i] = VarInts.readUnsignedInt(buffer);

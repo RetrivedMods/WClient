@@ -12,4 +12,9 @@ public class MobBornEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.MOB_BORN;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 9;
+    }
 }

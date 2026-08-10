@@ -12,13 +12,13 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class AddItemEntityPacket implements BedrockPacket {
-    public EntityDataMap metadata = new EntityDataMap();
-    public long uniqueEntityId;
-    public long runtimeEntityId;
-    public ItemData itemInHand;
-    public Vector3f position;
-    public Vector3f motion;
-    public boolean fromFishing;
+    private EntityDataMap metadata = new EntityDataMap();
+    private long uniqueEntityId;
+    private long runtimeEntityId;
+    private ItemData itemInHand;
+    private Vector3f position;
+    private Vector3f motion;
+    private boolean fromFishing;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

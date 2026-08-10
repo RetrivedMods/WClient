@@ -15,7 +15,13 @@ class InfiniteAuraModule : Module("InfiniteAura", ModuleCategory.Combat) {
     private var cpsValue by intValue("CPS", 12, 1..20)
     private var behindOffset by floatValue("Behind Offset", 2.0f, 0.5f..5.0f)
     private var playersOnly by boolValue("Players Only", true)
+    private var mobsOnly by boolValue("Mobs Only", false)
     private var silentLagbacks by boolValue("Silent Lagbacks", true)
+    private var rangeValue by floatValue("Range", 20f, 5f..50f)
+    private var alwaysSwing by boolValue("Always Swing", true)
+    private var multiTarget by boolValue("Multi Target", true)
+    private var maxTargets by intValue("Max Targets", 3, 1..10)
+    private var autoDisableOnLagback by boolValue("Auto Disable Lagback", true)
 
     private var lastAttackTime = 0L
     private var lastLagbackTime = 0L

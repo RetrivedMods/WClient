@@ -12,10 +12,10 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class StructureTemplateDataRequestPacket implements BedrockPacket {
-    public String name;
-    public Vector3i position;
-    public StructureSettings settings;
-    public StructureTemplateRequestOperation operation;
+    private String name;
+    private Vector3i position;
+    private StructureSettings settings;
+    private StructureTemplateRequestOperation operation;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

@@ -10,7 +10,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetEntityLinkPacket implements BedrockPacket {
-    public EntityLinkData entityLink;
+    private EntityLinkData entityLink;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

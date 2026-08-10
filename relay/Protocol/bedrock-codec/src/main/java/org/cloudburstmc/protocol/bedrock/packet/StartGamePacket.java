@@ -21,111 +21,119 @@ import java.util.UUID;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true, exclude = {"itemDefinitions", "blockPalette"})
 public class StartGamePacket implements BedrockPacket {
-    public final List<GameRuleData<?>> gamerules = new ObjectArrayList<>();
-    public long uniqueEntityId;
-    public long runtimeEntityId;
-    public GameType playerGameType;
-    public Vector3f playerPosition;
-    public Vector2f rotation;
+    private final List<GameRuleData<?>> gamerules = new ObjectArrayList<>();
+    private long uniqueEntityId;
+    private long runtimeEntityId;
+    private GameType playerGameType;
+    private Vector3f playerPosition;
+    private Vector2f rotation;
     // Level settings start
-    public long seed;
-    public SpawnBiomeType spawnBiomeType;
-    public String customBiomeName;
-    public int dimensionId;
-    public int generatorId;
-    public GameType levelGameType;
-    public int difficulty;
-    public Vector3i defaultSpawn;
-    public boolean achievementsDisabled;
-    public int dayCycleStopTime;
-    public int eduEditionOffers;
-    public boolean eduFeaturesEnabled;
-    public String educationProductionId;
-    public float rainLevel;
-    public float lightningLevel;
-    public boolean platformLockedContentConfirmed;
-    public boolean multiplayerGame;
-    public boolean broadcastingToLan;
-    public GamePublishSetting xblBroadcastMode;
-    public GamePublishSetting platformBroadcastMode;
-    public boolean commandsEnabled;
-    public boolean texturePacksRequired;
-    public final List<ExperimentData> experiments = new ObjectArrayList<>();
-    public boolean experimentsPreviouslyToggled;
-    public boolean bonusChestEnabled;
-    public boolean startingWithMap;
-    public boolean trustingPlayers;
-    public PlayerPermission defaultPlayerPermission;
-    public int serverChunkTickRange;
-    public boolean behaviorPackLocked;
-    public boolean resourcePackLocked;
-    public boolean fromLockedWorldTemplate;
-    public boolean usingMsaGamertagsOnly;
-    public boolean fromWorldTemplate;
-    public boolean worldTemplateOptionLocked;
-    public boolean onlySpawningV1Villagers;
-    public String vanillaVersion;
-    public int limitedWorldWidth;
-    public int limitedWorldHeight;
-    public boolean netherType;
+    private long seed;
+    private SpawnBiomeType spawnBiomeType;
+    private String customBiomeName;
+    private int dimensionId;
+    private int generatorId;
+    private GameType levelGameType;
+    private int difficulty;
+    private Vector3i defaultSpawn;
+    private boolean achievementsDisabled;
+    private int dayCycleStopTime;
+    private int eduEditionOffers;
+    private boolean eduFeaturesEnabled;
+    private String educationProductionId;
+    private float rainLevel;
+    private float lightningLevel;
+    private boolean platformLockedContentConfirmed;
+    private boolean multiplayerGame;
+    private boolean broadcastingToLan;
+    private GamePublishSetting xblBroadcastMode;
+    private GamePublishSetting platformBroadcastMode;
+    private boolean commandsEnabled;
+    private boolean texturePacksRequired;
+    private final List<ExperimentData> experiments = new ObjectArrayList<>();
+    private boolean experimentsPreviouslyToggled;
+    private boolean bonusChestEnabled;
+    private boolean startingWithMap;
+    private boolean trustingPlayers;
+    private PlayerPermission defaultPlayerPermission;
+    private int serverChunkTickRange;
+    private boolean behaviorPackLocked;
+    private boolean resourcePackLocked;
+    private boolean fromLockedWorldTemplate;
+    private boolean usingMsaGamertagsOnly;
+    private boolean fromWorldTemplate;
+    private boolean worldTemplateOptionLocked;
+    private boolean onlySpawningV1Villagers;
+    private String vanillaVersion;
+    private int limitedWorldWidth;
+    private int limitedWorldHeight;
+    private boolean netherType;
     /**
      * @since v465
      */
-    public EduSharedUriResource eduSharedUriResource = EduSharedUriResource.EMPTY;
-    public OptionalBoolean forceExperimentalGameplay;
+    private EduSharedUriResource eduSharedUriResource = EduSharedUriResource.EMPTY;
+    private OptionalBoolean forceExperimentalGameplay;
     /**
      * @since 1.19.20
      */
-    public ChatRestrictionLevel chatRestrictionLevel;
+    private ChatRestrictionLevel chatRestrictionLevel;
     /**
      * @since 1.19.20
      */
-    public boolean disablingPlayerInteractions;
+    private boolean disablingPlayerInteractions;
     /**
      * @since 1.19.20
      */
-    public boolean disablingPersonas;
+    private boolean disablingPersonas;
     /**
      * @since 1.19.20
      */
-    public boolean disablingCustomSkins;
+    private boolean disablingCustomSkins;
+    /**
+     * @since v1001
+     */
+    private int serverEditorConnectionPolicy;
+    /**
+     * @since v1001
+     */
+    private boolean allowAnonymousBlockDropsInEditorWorlds;
     // Level settings end
-    public String levelId;
-    public CharSequence levelName;
-    public String premiumWorldTemplateId;
-    public boolean trial;
+    private String levelId;
+    private CharSequence levelName;
+    private String premiumWorldTemplateId;
+    private boolean trial;
     // SyncedPlayerMovementSettings start
     /**
      * @deprecated since v818. {@link AuthoritativeMovementMode#SERVER_WITH_REWIND} is now the default movement mode.
      */
-    public AuthoritativeMovementMode authoritativeMovementMode;
-    public int rewindHistorySize;
+    private AuthoritativeMovementMode authoritativeMovementMode;
+    private int rewindHistorySize;
     boolean serverAuthoritativeBlockBreaking;
     // SyncedPlayerMovementSettings end
-    public long currentTick;
-    public int enchantmentSeed;
-    public NbtList<NbtMap> blockPalette;
-    public final List<BlockPropertyData> blockProperties = new ObjectArrayList<>();
+    private long currentTick;
+    private int enchantmentSeed;
+    private NbtList<NbtMap> blockPalette;
+    private final List<BlockPropertyData> blockProperties = new ObjectArrayList<>();
     /**
      * @deprecated since v776. Use ItemComponentPacket instead.
      */
-    public List<ItemDefinition> itemDefinitions = new ObjectArrayList<>();
-    public String multiplayerCorrelationId;
+    private List<ItemDefinition> itemDefinitions = new ObjectArrayList<>();
+    private String multiplayerCorrelationId;
     /**
      * @since v407
      */
-    public boolean inventoriesServerAuthoritative;
+    private boolean inventoriesServerAuthoritative;
     /**
      * The name of the server software.
      * Used for telemetry within the Bedrock client.
      *
      * @since v440
      */
-    public String serverEngine;
+    private String serverEngine;
     /**
      * @since v527
      */
-    public NbtMap playerPropertyData;
+    private NbtMap playerPropertyData;
     /**
      * A XXHash64 of all block states by their compound tag.
      * <b>The exact way this is calculated is not currently known.</b>
@@ -134,68 +142,76 @@ public class StartGamePacket implements BedrockPacket {
      *
      * @since v475
      */
-    public long blockRegistryChecksum;
+    private long blockRegistryChecksum;
     /**
      * @since v527
      */
-    public UUID worldTemplateId;
+    private UUID worldTemplateId;
     /**
      * @since v534
      */
-    public WorldType editorWorldType = WorldType.NON_EDITOR;
+    private WorldType editorWorldType = WorldType.NON_EDITOR;
     /**
      * Enables client side chunk generation
      *
      * @since 1.19.20
      */
-    public boolean clientSideGenerationEnabled;
+    private boolean clientSideGenerationEnabled;
     /**
      * @since v567
      */
-    public boolean emoteChatMuted;
+    private boolean emoteChatMuted;
     /**
      * Whether block runtime IDs should be replaced by 32-bit integer hashes of NBT block state.
      * Unlike runtime IDs, this hashes should be persistent across versions and should make support for data-driven/custom blocks easier.
      *
      * @since v582
      */
-    public boolean blockNetworkIdsHashed;
+    private boolean blockNetworkIdsHashed;
     /**
      * @since v582
      */
-    public boolean createdInEditor;
+    private boolean createdInEditor;
     /**
      * @since v582
      */
-    public boolean exportedFromEditor;
+    private boolean exportedFromEditor;
     /**
      * @since v589
      */
-    public NetworkPermissions networkPermissions = NetworkPermissions.DEFAULT;
+    private NetworkPermissions networkPermissions = NetworkPermissions.DEFAULT;
     /**
      * @since v671
      */
-    public boolean hardcore;
+    private boolean hardcore;
     /**
      * @since v685
      */
-    public String serverId;
+    private String serverId;
     /**
      * @since v685
      */
-    public String worldId;
+    private String worldId;
     /**
      * @since v685
      */
-    public String scenarioId;
+    private String scenarioId;
     /**
      * @since v818
      */
-    public String ownerId;
+    private String ownerId;
     /**
      * @since v827
      */
-    public boolean tickDeathSystemsEnabled;
+    private boolean tickDeathSystemsEnabled;
+    /**
+     * @since v924
+     */
+    private ServerConfigurationJoinInfo serverConfigurationJoinInfo;
+    /**
+     * @since v1001
+     */
+    private boolean isLoggingChat;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

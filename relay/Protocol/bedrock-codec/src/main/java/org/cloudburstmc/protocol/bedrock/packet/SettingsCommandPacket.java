@@ -9,8 +9,8 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SettingsCommandPacket implements BedrockPacket {
-    public String command;
-    public boolean suppressingOutput;
+    private String command;
+    private boolean suppressingOutput;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

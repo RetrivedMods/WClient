@@ -10,4 +10,9 @@ public class AchievementAwardedEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.ACHIEVEMENT_AWARDED;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 0;
+    }
 }

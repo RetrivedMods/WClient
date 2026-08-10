@@ -12,9 +12,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class LabTablePacket implements BedrockPacket {
-    public LabTableType type;
-    public Vector3i position;
-    public LabTableReactionType reactionType;
+    private LabTableType type;
+    private Vector3i position;
+    private LabTableReactionType reactionType;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

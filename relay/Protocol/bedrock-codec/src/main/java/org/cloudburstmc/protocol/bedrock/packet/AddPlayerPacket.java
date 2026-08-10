@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.data.AbilityLayer;
+import org.cloudburstmc.protocol.bedrock.data.BuildPlatform;
 import org.cloudburstmc.protocol.bedrock.data.GameType;
 import org.cloudburstmc.protocol.bedrock.data.PlayerAbilityHolder;
 import org.cloudburstmc.protocol.bedrock.data.PlayerPermission;
@@ -23,30 +24,30 @@ import java.util.UUID;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class AddPlayerPacket implements BedrockPacket, PlayerAbilityHolder {
-    public EntityDataMap metadata = new EntityDataMap();
-    public List<EntityLinkData> entityLinks = new ObjectArrayList<>();
-    public UUID uuid;
-    public String username;
-    public long uniqueEntityId;
-    public long runtimeEntityId;
-    public String platformChatId;
-    public Vector3f position;
-    public Vector3f motion;
-    public Vector3f rotation;
-    public ItemData hand;
-    public AdventureSettingsPacket adventureSettings = new AdventureSettingsPacket();
-    public String deviceId;
-    public int buildPlatform;
-    public GameType gameType;
+    private EntityDataMap metadata = new EntityDataMap();
+    private List<EntityLinkData> entityLinks = new ObjectArrayList<>();
+    private UUID uuid;
+    private String username;
+    private long uniqueEntityId;
+    private long runtimeEntityId;
+    private String platformChatId;
+    private Vector3f position;
+    private Vector3f motion;
+    private Vector3f rotation;
+    private ItemData hand;
+    private AdventureSettingsPacket adventureSettings = new AdventureSettingsPacket();
+    private String deviceId;
+    private BuildPlatform buildPlatform = BuildPlatform.UNKNOWN;
+    private GameType gameType;
 
     /**
      * @since v534
      */
-    public List<AbilityLayer> abilityLayers = new ObjectArrayList<>();
+    private List<AbilityLayer> abilityLayers = new ObjectArrayList<>();
     /**
      * @since v557
      */
-    public final EntityProperties properties = new EntityProperties();
+    private final EntityProperties properties = new EntityProperties();
 
     public void setUniqueEntityId(long uniqueEntityId) {
         this.uniqueEntityId = uniqueEntityId;

@@ -28,6 +28,15 @@ class TargetHudModule : Module("targethud", ModuleCategory.Visual) {
     private val showDistance by boolValue("Show Distance", true)
     private val showStatus by boolValue("Show Status", true)
     private val backgroundOpacity by floatValue("Background Opacity", 0.6f, 0.0f..1.0f)
+    private val displayMode by enumValue("Display Mode", DisplayMode.DETAILED, DisplayMode::class.java)
+    private val healthBar by boolValue("Health Bar", true)
+    private val armorDisplay by boolValue("Armor Display", true)
+    private val effectsDisplay by boolValue("Effects Display", true)
+    private val animationEnabled by boolValue("Animation", true)
+    private val showWeapon by boolValue("Show Weapon", true)
+    private val textShadow by boolValue("Text Shadow", true)
+    
+    enum class DisplayMode { SIMPLE, DETAILED, COMPACT }
 
     override fun onEnabled() {
         super.onEnabled()

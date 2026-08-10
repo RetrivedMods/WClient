@@ -12,6 +12,12 @@ import org.cloudburstmc.protocol.bedrock.packet.UpdateAbilitiesPacket
 
 class ZoomModule : Module("zoom", ModuleCategory.Visual) {
 
+    private var zoomLevel by floatValue("zoomLevel", 7.0f, 1.0f..20.0f)
+    private var smoothZoom by boolValue("smoothZoom", true)
+    private var scrollZoom by boolValue("scrollZoom", false)
+    private var showZoomIndicator by boolValue("showIndicator", true)
+    private var cinematic by boolValue("cinematic", false)
+
     // Packet to enable zooming
     private val enableZoomPacket = UpdateAbilitiesPacket().apply {
         playerPermission = PlayerPermission.OPERATOR
@@ -30,7 +36,7 @@ class ZoomModule : Module("zoom", ModuleCategory.Visual) {
                     Ability.OPERATOR_COMMANDS
                 )
             )
-            walkSpeed = 7.0f
+            walkSpeed = zoomLevel
         })
     }
 

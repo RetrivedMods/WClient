@@ -10,9 +10,9 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class RequestPermissionsPacket implements BedrockPacket {
-    public long uniqueEntityId;
-    public PlayerPermission permissions;
-    public int customPermissions;
+    private long uniqueEntityId;
+    private PlayerPermission permissions;
+    private int customPermissions;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

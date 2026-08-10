@@ -31,12 +31,15 @@ public class DebugDrawerSerializer_v859 extends DebugDrawerSerializer_v818 {
 
     @Override
     protected void writeShape(ByteBuf buffer, BedrockCodecHelper helper, DebugShape shape) {
-        VarInts.writeUnsignedLong(buffer, shape.getId());
         writeCommonShapeData(buffer, helper, shape);
-        VarInts.writeInt(buffer, shape.getDimension());
-        VarInts.writeUnsignedInt(buffer, toPayloadType(shape.getType()));
 
-        switch (shape.getType()) {
+        DebugShape.Type type = shape.getType();
+        VarInts.writeUnsignedInt(buffer, toPayloadType(type));
+        if (type == null) {
+            return;
+        }
+
+        switch (type) {
             case ARROW:
                 DebugArrow arrow = (DebugArrow) shape;
                 helper.writeOptionalNull(buffer, arrow.getArrowEndPosition(), WRITE_VECTOR3F);
@@ -65,6 +68,13 @@ public class DebugDrawerSerializer_v859 extends DebugDrawerSerializer_v818 {
                 helper.writeString(buffer, text.getText());
                 break;
         }
+    }
+
+    @Override
+    protected void writeCommonShapeData(ByteBuf buffer, BedrockCodecHelper helper, DebugShape shape) {
+        super.writeCommonShapeData(buffer, helper, shape);
+
+        VarInts.writeInt(buffer, shape.getDimension());
     }
 
     @Override

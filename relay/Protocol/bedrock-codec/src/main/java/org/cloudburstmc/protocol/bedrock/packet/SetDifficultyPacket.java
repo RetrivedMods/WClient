@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class SetDifficultyPacket implements BedrockPacket {
-    public int difficulty;
+    private int difficulty;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

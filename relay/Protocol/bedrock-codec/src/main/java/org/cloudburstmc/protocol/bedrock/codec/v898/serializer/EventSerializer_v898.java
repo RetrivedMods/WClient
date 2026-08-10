@@ -26,6 +26,9 @@ public class EventSerializer_v898 extends EventSerializer_v685 {
     public void serialize(ByteBuf buffer, BedrockCodecHelper helper, EventPacket packet) {
         VarInts.writeLong(buffer, packet.getUniqueEntityId());
         EventData eventData = packet.getEventData();
+        if (eventData.getPayloadType() == -1) {
+            throw new UnsupportedOperationException("Deprecated event type " + eventData.getType());
+        }
         VarInts.writeInt(buffer, eventData.getType().ordinal());
         buffer.writeBoolean(packet.isUsePlayerId());
 
@@ -35,7 +38,7 @@ public class EventSerializer_v898 extends EventSerializer_v685 {
             throw new UnsupportedOperationException("Unknown event type " + eventData.getType());
         }
 
-        VarInts.writeUnsignedInt(buffer, eventData.getType().ordinal());
+        VarInts.writeUnsignedInt(buffer, eventData.getPayloadType());
 
         function.accept(buffer, helper, eventData);
     }
@@ -50,7 +53,7 @@ public class EventSerializer_v898 extends EventSerializer_v685 {
 
         packet.setUsePlayerId(buffer.readBoolean());
 
-        VarInts.readUnsignedInt(buffer);
+        VarInts.readUnsignedInt(buffer); //oneOf
 
         BiFunction<ByteBuf, BedrockCodecHelper, EventData> function = this.readers.get(type);
 

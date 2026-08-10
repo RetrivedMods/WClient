@@ -3,6 +3,7 @@ package org.cloudburstmc.protocol.bedrock.packet;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
@@ -10,10 +11,15 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class PlaySoundPacket implements BedrockPacket {
-    public String sound;
-    public Vector3f position;
-    public float volume;
-    public float pitch;
+    private String sound;
+    private Vector3f position;
+    private float volume;
+    private float pitch;
+    /**
+     * @since v975
+     */
+    @Nullable
+    private Long serverSoundHandle;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

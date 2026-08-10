@@ -1,6 +1,7 @@
 package org.cloudburstmc.protocol.bedrock.data.debugshape;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector3f;
@@ -8,32 +9,41 @@ import org.cloudburstmc.math.vector.Vector3f;
 import java.awt.*;
 
 @Getter
+@Data
 @AllArgsConstructor
 public class DebugShape {
 
-    private final long id;
+    private long id;
     /**
      * @since v859
      */
-    private final int dimension;
+    private int dimension;
 
     @Nullable
-    private final Vector3f position;
+    private Vector3f position;
     @Nullable
-    private final Float scale;
+    private Float scale;
     @Nullable
-    private final Vector3f rotation;
+    private Vector3f rotation;
     @Nullable
-    private final Float totalTimeLeft;
+    private Float totalTimeLeft;
     @Nullable
-    private final Color color;
+    private Color color;
+    @Nullable
+    private Long attachedToEntityId;
+    @Nullable
+    private Float maximumRenderDistance;
+
+    public DebugShape() {
+    }
 
     public DebugShape(long id) {
-        this(id, 0, null, null, null, null, null);
+        this(id, 0);
     }
 
     public DebugShape(long id, int dimension) {
-        this(id, dimension, null, null, null, null, null);
+        this.id = id;
+        this.dimension = dimension;
     }
 
     public Type getType() {
@@ -46,6 +56,22 @@ public class DebugShape {
         SPHERE,
         CIRCLE,
         TEXT,
-        ARROW
+        ARROW,
+        /**
+         * @since v1001
+         */
+        CYLINDER,
+        /**
+         * @since v1001
+         */
+        PYRAMID,
+        /**
+         * @since v1001
+         */
+        ELLIPSOID,
+        /**
+         * @since v1001
+         */
+        CONE
     }
 }

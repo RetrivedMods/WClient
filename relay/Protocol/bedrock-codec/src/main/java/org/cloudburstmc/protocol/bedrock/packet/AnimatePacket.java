@@ -13,19 +13,19 @@ import java.util.HashMap;
 @ToString(doNotUseGetters = true)
 public class AnimatePacket implements BedrockPacket {
     /**
-     * @deprecated since v898
+     * @deprecated since v897
      */
-    public float rowingTime;
-    public Action action;
-    public long runtimeEntityId;
+    private float rowingTime;
+    private Action action;
+    private long runtimeEntityId;
     /**
      * @since v859
      */
-    public float data;
+    private float data;
     /**
-     * @since v898
+     * @since v897
      */
-    public SwingSource swingSource = SwingSource.NONE;
+    private SwingSource swingSource = SwingSource.NONE;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {
@@ -63,7 +63,7 @@ public class AnimatePacket implements BedrockPacket {
         DROP_ITEM("dropitem"),
         EVENT("event");
 
-        public static final HashMap<String, SwingSource> BY_NAME = new HashMap<>();
+        private static final HashMap<String, SwingSource> BY_NAME = new HashMap<>(values().length);
 
         static {
             for (SwingSource value : values()) {
@@ -72,7 +72,7 @@ public class AnimatePacket implements BedrockPacket {
         }
 
         @Getter
-        public final String name;
+        private final String name;
 
         SwingSource(String name) {
             this.name = name;

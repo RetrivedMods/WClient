@@ -9,15 +9,15 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class BookEditPacket implements BedrockPacket {
-    public Action action;
-    public int inventorySlot;
-    public int pageNumber;
-    public int secondaryPageNumber;
-    public CharSequence text;
-    public String photoName;
-    public CharSequence title;
-    public CharSequence author;
-    public String xuid;
+    private Action action;
+    private int inventorySlot;
+    private int pageNumber;
+    private int secondaryPageNumber;
+    private CharSequence text;
+    private String photoName;
+    private CharSequence title;
+    private CharSequence author;
+    private String xuid;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

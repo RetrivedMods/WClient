@@ -12,4 +12,9 @@ public class ComposterInteractEventData implements EventData {
     public EventDataType getType() {
         return EventDataType.COMPOSTER_INTERACT;
     }
+
+    @Override
+    public int getPayloadType() {
+        return 11;
+    }
 }

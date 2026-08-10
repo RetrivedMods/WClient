@@ -17,6 +17,14 @@ import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
 class FlyModule : Module("fly", ModuleCategory.Motion) {
 
     private var flySpeed by floatValue("flySpeed", 0.15f, 0.1f..1.5f)
+    private var verticalSpeed by floatValue("verticalSpeed", 0.15f, 0.05f..2.0f)
+    private var horizontalSpeed by floatValue("horizontalSpeed", 0.15f, 0.05f..2.0f)
+    private var glideEnabled by boolValue("glide", false)
+    private var glideFactor by floatValue("glideFactor", 0.5f, 0.1f..1.0f)
+    private var antiKick by boolValue("antiKick", true)
+    private var hoverMode by boolValue("hover", false)
+    private var autoFall by boolValue("autoFall", false)
+    private var fallSpeed by floatValue("fallSpeed", 0.05f, 0.01f..0.5f)
 
     private val enableFlyAbilitiesPacket = UpdateAbilitiesPacket().apply {
         playerPermission = PlayerPermission.OPERATOR

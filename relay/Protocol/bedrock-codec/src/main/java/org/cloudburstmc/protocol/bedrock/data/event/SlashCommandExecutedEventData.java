@@ -8,10 +8,16 @@ import java.util.List;
 public class SlashCommandExecutedEventData implements EventData {
     private final String commandName;
     private final int successCount;
+    private final int errorCount;
     private final List<String> outputMessages;
 
     @Override
     public EventDataType getType() {
         return EventDataType.SLASH_COMMAND_EXECUTED;
+    }
+
+    @Override
+    public int getPayloadType() {
+        return 8;
     }
 }

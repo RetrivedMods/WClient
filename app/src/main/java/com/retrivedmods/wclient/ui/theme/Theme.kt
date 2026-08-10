@@ -17,75 +17,98 @@ import androidx.compose.ui.unit.sp
 
 
 object WColors {
-    // Primary reds
-    val Primary = Color(0xFFEF4444)
-    val PrimaryLight = Color(0xFFF87171)
-    val PrimaryDark = Color(0xFFDC2626)
+    // Primary - vibrant neon red
+    val Primary = Color(0xFFFF1744)
+    val PrimaryLight = Color(0xFFFF616F)
+    val PrimaryDark = Color(0xFFC4001D)
+    val PrimaryGlow = Color(0xFFFF1744).copy(alpha = 0.15f)
     val OnPrimary = Color(0xFFFFFFFF)
 
-    // Secondary for contrast (cool slate)
-    val Secondary = Color(0xFF64748B)
-    val SecondaryVariant = Color(0xFF475569)
-    val SecondaryLight = Color(0xFF94A3B8)
+    // Secondary - cyberpunk purple
+    val Secondary = Color(0xFF7C4DFF)
+    val SecondaryVariant = Color(0xFF651FFF)
+    val SecondaryLight = Color(0xFFB388FF)
+    val SecondaryGlow = Color(0xFF7C4DFF).copy(alpha = 0.12f)
     val OnSecondary = Color(0xFFFFFFFF)
 
-    // Accent red/pink for glow effects
-    val Accent = Color(0xFFF43F5E)
-    val AccentLight = Color(0xFFFB7185)
-    val AccentDark = Color(0xFFBE123C)
+    // Accent - hot pink / neon
+    val Accent = Color(0xFFFF4081)
+    val AccentLight = Color(0xFFFF80AB)
+    val AccentDark = Color(0xFFC51162)
+    val AccentGlow = Color(0xFFFF4081).copy(alpha = 0.12f)
 
+    // Background - deeper dark with subtle blue tint
+    val Background = Color(0xFF08080D)
+    val Surface = Color(0xFF0E0D14)
+    val SurfaceVariant = Color(0xFF1A1822)
+    val SurfaceContainer = Color(0xFF131119)
 
-    val Background = Color(0xFF0B0A10)
-    val Surface = Color(0xFF121016)
-    val SurfaceVariant = Color(0xFF1D1A22)
-    val SurfaceContainer = Color(0xFF17141C)
-
+    // Text
     val OnBackground = Color(0xFFF8FAFC)
-    val OnSurface = Color(0xFFE2E8F0)
-    val OnSurfaceVariant = Color(0xFF9AA3B2)
+    val OnSurface = Color(0xFFE8EAED)
+    val OnSurfaceVariant = Color(0xFF9CA3B0)
 
-    val Error = Color(0xFFFF4D4D)
-    val ErrorLight = Color(0xFFFF8080)
+    // Semantic
+    val Error = Color(0xFFFF1744)
+    val ErrorLight = Color(0xFFFF616F)
+    val Success = Color(0xFF00E676)
+    val SuccessLight = Color(0xFF69F0AE)
+    val Warning = Color(0xFFFFAB00)
+    val WarningLight = Color(0xFFFFD740)
+    val Info = Color(0xFF40C4FF)
+    val InfoLight = Color(0xFF80D8FF)
 
-    val Border = Color(0xFF2B2631)
-    val BorderLight = Color(0xFF3A3441)
+    // UI
+    val Border = Color(0xFF2B2635)
+    val BorderLight = Color(0xFF3D3648)
 
     val Overlay = Color(0x80000000)
 
-
-    val MinimapBackground = Color(0xCC000000)
-    val MinimapGrid = Color(0x66A9A9A9)
-    val MinimapCrosshair = Color(0x80808080)
+    // Minimap - enhanced for visibility
+    val MinimapBackground = Color(0xCC050508)
+    val MinimapGrid = Color(0x55FFFFFF)
+    val MinimapCrosshair = Color(0x80FFFFFF)
     val MinimapPlayerMarker = Color(0xFFFFFFFF)
-    val MinimapNorth = Color(0xFFEF4444)   // match primary red
-    val MinimapEntityClose = Color(0xFFFF3B3B)
-    val MinimapEntityFar = Color(0xFFFFD166)
-    val MinimapZoom = 1.0f
-    val MinimapDotSize = 5
+    val MinimapNorth = Color(0xFFFF1744)
+    val MinimapEntityClose = Color(0xFFFF1744)
+    val MinimapEntityFar = Color(0xFFFFAB00)
+    val MinimapZoom = 1.2f
+    val MinimapDotSize = 6
 }
 
 object ClickGUIColors {
-    val PrimaryBackground = Color(0xFF0B0B11)
-    val SecondaryBackground = Color(0xFF14131B)
+    val PrimaryBackground = Color(0xFF08080D)
+    val SecondaryBackground = Color(0xFF110F18)
 
     val AccentColor = WColors.Primary
     val AccentColorVariant = WColors.AccentLight
 
     val PrimaryText = Color(0xFFFFFFFF)
-    val SecondaryText = Color(0xFF9AA3B2)
+    val SecondaryText = Color(0xFF9CA3B0)
 
-    val PanelBackground = Color(0xF014131A)
-    val PanelBorder = Color(0x60EF4444)
+    val PanelBackground = Color(0xF0100E16)
+    val PanelBorder = Color(0x60FF1744)
 
     val ModuleEnabled = AccentColor
-    val ModuleDisabled = Color(0xFF23222B)
+    val ModuleDisabled = Color(0xFF1F1D28)
+    val ModuleHover = Color(0xFF2A2535)
 
-    val SliderTrack = Color(0xFF2C2933)
+    val SliderTrack = Color(0xFF282530)
     val SliderThumb = AccentColor
     val SliderFill = AccentColor
 
     val CheckboxBorder = AccentColor
     val CheckboxFill = AccentColor
+    
+    val CategoryActive = AccentColor
+    val CategoryInactive = Color(0xFF5A5468)
+    
+    val SearchBackground = Color(0xFF14121C)
+    val SearchText = Color(0xFFE8EAED)
+    val SearchHint = Color(0xFF6B6478)
+    
+    val ScrollbarTrack = Color(0xFF1A1822)
+    val ScrollbarThumb = Color(0xFF3D3648)
 }
 
 private val WDarkColorScheme = darkColorScheme(

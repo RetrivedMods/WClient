@@ -23,7 +23,7 @@ public class CameraShakePacket implements BedrockPacket {
      * @param intensity shake intensity
      * @return shake intensity
      */
-    public float intensity;
+    private float intensity;
 
     /**
      * Amount of time to shake the player's camera.
@@ -31,14 +31,14 @@ public class CameraShakePacket implements BedrockPacket {
      * @param duration seconds to shake
      * @return seconds to shake
      */
-    public float duration;
+    private float duration;
 
-    public CameraShakeType shakeType;
+    private CameraShakeType shakeType;
 
     /**
      * @since v428
      */
-    public CameraShakeAction shakeAction;
+    private CameraShakeAction shakeAction;
 
     @Override
     public PacketSignal handle(BedrockPacketHandler handler) {

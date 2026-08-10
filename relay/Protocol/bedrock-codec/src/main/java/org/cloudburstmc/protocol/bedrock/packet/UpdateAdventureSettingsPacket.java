@@ -9,11 +9,11 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 @EqualsAndHashCode(doNotUseGetters = true)
 @ToString(doNotUseGetters = true)
 public class UpdateAdventureSettingsPacket implements BedrockPacket {
-    public boolean noPvM;
-    public boolean noMvP;
-    public boolean immutableWorld;
-    public boolean showNameTags;
-    public boolean autoJump;
+    private boolean noPvM;
+    private boolean noMvP;
+    private boolean immutableWorld;
+    private boolean showNameTags;
+    private boolean autoJump;
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {
