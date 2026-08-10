@@ -20,9 +20,9 @@ WClient does **not** modify game memory directly and is engineered for compatibi
 
 Prajwal (Founder & Developer)
 
-Flexy H6X (Helper)
+RA Legend (CEO)
 
-RA Legend (Supporter)
+Flexy H6X (Developer)
 
 ## Platform Support
 
