@@ -165,6 +165,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
     private fun placeBlock(pos: Vector3i, slot: Int) {
         val localPlayer = session.localPlayer
         val runtimeId = session.blockMapping.getRuntimeIdByIdentifier(blockIdentifier) ?: return
+        val definitionToPlace = session.blockMapping.getDefinition(runtimeId)
 
         val packet = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
@@ -175,7 +176,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
             itemInHand = localPlayer.inventory.hand
             playerPosition = localPlayer.vec3Position
             clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            blockRuntimeId = runtimeId
+            blockDefinition = definitionToPlace
         }
 
         session.serverBound(packet)
