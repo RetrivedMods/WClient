@@ -76,22 +76,8 @@ class MainActivity : ComponentActivity() {
                 if (showLoading) {
                     LoadingScreen(
                         onDone = {
-                            lifecycleScope.launch {
-                                wclientId = VerificationManager.getWClientId(this@MainActivity)
-
-                                if (VerificationManager.isWhitelisted(this@MainActivity, wclientId)) {
-                                    showLoading = false
-                                    return@launch
-                                }
-
-                                if (VerificationManager.isVerified(this@MainActivity, wclientId)) {
-                                    showLoading = false
-                                    return@launch
-                                }
-
-                                showLoading = false
-                                showVerificationDialog = true
-                            }
+                            // WClient ID verification (ad-gate) disabled - go straight in.
+                            showLoading = false
                         }
                     )
                 } else if (showVerificationDialog) {
