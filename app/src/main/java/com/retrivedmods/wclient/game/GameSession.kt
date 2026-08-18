@@ -33,6 +33,13 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
     lateinit var blockMapping: BlockMapping
     lateinit var itemMapping: ItemMapping
 
+    // Exposed instead of letting other classes do `session::blockMapping.isInitialized`
+    // directly - checking a lateinit property's isInitialized from outside its declaring
+    // class can fail to compile ("Backing field ... is not accessible at this point"),
+    // so we keep the check here where it's always safe and hand out a plain Boolean.
+    val isBlockMappingInitialized: Boolean
+        get() = ::blockMapping.isInitialized
+
     private var startGameReceived = false
 
     fun clientBound(packet: BedrockPacket) {
