@@ -5,23 +5,16 @@ import com.retrivedmods.wclient.game.entity.Entity
 import com.retrivedmods.wclient.game.entity.EntityUnknown
 import com.retrivedmods.wclient.game.entity.Item
 import com.retrivedmods.wclient.game.entity.Player
-import com.retrivedmods.wclient.game.registry.BlockDefinition
-import com.retrivedmods.wclient.game.registry.UnknownBlockDefinition
-import com.retrivedmods.wclient.game.world.chunk.Chunk
+import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.packet.AddEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.AddItemEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.AddPlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.ChangeDimensionPacket
-import org.cloudburstmc.protocol.bedrock.packet.ChunkRadiusUpdatedPacket
-import org.cloudburstmc.protocol.bedrock.packet.LevelChunkPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.RemoveEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import org.cloudburstmc.protocol.bedrock.packet.TakeItemEntityPacket
-import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket
-import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.math.vector.Vector3i
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.pow
@@ -33,25 +26,13 @@ class Level(val session: GameSession) {
 
     val playerMap = ConcurrentHashMap<UUID, PlayerListPacket.Entry>()
 
-    // --- world/chunk block tracking -----------------------------------------------------------
-    // Ported (with real changes, see Chunk/ChunkSection/BlockStorage) from ProtoHax. Only the
-    // "normal" full LevelChunkPacket path is handled - servers using blob (disk) caching or the
-    // newer per-subchunk request system (SubChunkPacket) won't have their blocks tracked here,
-    // since that needs a blob cache we don't implement. UpdateBlockPacket (individual block
-    // changes) IS handled, so blocks placed/broken after a chunk loads stay accurate.
-
-    val chunks = ConcurrentHashMap<Long, Chunk>()
-
-    var is384WorldSupported = false
-        private set
-
-    var viewDistance = -1
+    // Kept for compatibility with ProtoHax-style world/dimension handling.
+    var dimension: Int = 0
         private set
 
     fun onDisconnect() {
         entityMap.clear()
         playerMap.clear()
-        chunks.clear()
     }
 
     fun onPacketBound(packet: BedrockPacket) {
@@ -59,61 +40,7 @@ class Level(val session: GameSession) {
             is StartGamePacket -> {
                 entityMap.clear()
                 playerMap.clear()
-                chunks.clear()
-
-                is384WorldSupported = try {
-                    // 384 height world was introduced in Minecraft 1.18
-                    val parts = packet.vanillaVersion.split(".")
-                    parts.size >= 2 && parts[0] == "1" && (parts[1].toIntOrNull() ?: 0) >= 18
-                } catch (e: Exception) {
-                    true
-                }
-            }
-
-            is LevelChunkPacket -> {
-                if (!session::blockMapping.isInitialized) {
-                    // shouldn't normally happen (StartGamePacket sets blockMapping before Level
-                    // sees it), but guard anyway since a missing mapping would crash chunk parsing
-                    return
-                }
-
-                if (packet.isCachingEnabled || packet.isRequestSubChunks) {
-                    // blob-cache / newer subchunk-request chunk loading isn't supported, see note above
-                    return
-                }
-
-                val chunk = Chunk(packet.chunkX, packet.chunkZ, is384WorldSupported, session.blockMapping)
-                try {
-                    // duplicate() gives us an independent reader index over the same underlying
-                    // memory (refcount shared with the original packet), so parsing here can never
-                    // disturb packet.data's own reader index / the relay's forwarding of the real
-                    // packet to the client.
-                    val buf = packet.data.duplicate()
-                    chunk.read(buf, packet.subChunksLength)
-                    chunks[chunk.hash] = chunk
-                } catch (e: Exception) {
-                    // malformed/unexpected chunk data for this protocol version - skip it rather
-                    // than crash the relay
-                }
-            }
-
-            is UpdateBlockPacket -> {
-                if (packet.dataLayer == 0) {
-                    setBlockIdAt(
-                        packet.blockPosition.x,
-                        packet.blockPosition.y,
-                        packet.blockPosition.z,
-                        packet.definition.runtimeId
-                    )
-                }
-            }
-
-            is ChunkRadiusUpdatedPacket -> {
-                viewDistance = packet.radius
-            }
-
-            is ChangeDimensionPacket -> {
-                chunks.clear()
+                dimension = packet.dimensionId
             }
 
             is AddEntityPacket -> {
@@ -131,7 +58,10 @@ class Level(val session: GameSession) {
             }
 
             is AddItemEntityPacket -> {
-                val entity = Item(packet.runtimeEntityId, packet.uniqueEntityId).apply {
+                val entity = Item(
+                    packet.runtimeEntityId,
+                    packet.uniqueEntityId
+                ).apply {
                     move(packet.position)
                     handleSetData(packet.metadata)
                 }
@@ -173,6 +103,10 @@ class Level(val session: GameSession) {
                 }
             }
 
+            is ChangeDimensionPacket -> {
+                dimension = packet.dimension
+            }
+
             else -> {
                 entityMap.values.forEach { entity ->
                     entity.onPacketBound(packet)
@@ -182,67 +116,53 @@ class Level(val session: GameSession) {
     }
 
     /**
-     * Approximates vanilla explosion damage falloff for every tracked entity (and any [extraEntities]
-     * not currently in [entityMap], e.g. the local player) around [center].
-     *
-     * This does NOT account for block occlusion/exposure (WClient has no local world/chunk state to
-     * raycast against), so it always assumes full exposure (1.0). Real in-game damage will be lower
-     * whenever blocks are between the explosion and the target. Treat the result as an upper-bound
-     * estimate for target/placement selection, not an exact value.
+     * Removes an entity locally and sends the corresponding RemoveEntityPacket
+     * to the server, matching ProtoHax's Level.removeEntity behavior.
+     */
+    fun removeEntity(entity: Entity) {
+        if (entityMap.remove(entity.runtimeEntityId) == null) return
+
+        session.serverBound(RemoveEntityPacket().apply {
+            uniqueEntityId = entity.uniqueEntityId
+        })
+    }
+
+    /**
+     * Simulates vanilla-style explosion damage against tracked entities and
+     * additional entities supplied by the caller.
      */
     fun simulateExplosionDamage(
         center: Vector3f,
         size: Float,
-        extraEntities: List<Entity> = emptyList(),
+        extraEntities: List<Entity>,
         damageCallback: (Entity, Float) -> Unit
     ) {
-        val searchRadiusSq = (size * 2).pow(2)
+        if (size <= 0f) return
 
-        fun evaluate(entity: Entity) {
-            val distSq = entity.distanceSq(center)
-            if (distSq >= searchRadiusSq) return
+        val explosionSearchSizeSq = (size * 2).pow(2)
 
-            val distance = entity.distance(center) / size
-            if (distance <= 1f) {
-                val impact = 1f - distance
-                val damage = ((impact * impact + impact) / 2f) * 8f * size + 1f
-                damageCallback(entity, damage)
+        entityMap.values
+            .filter { it.distanceSq(center) < explosionSearchSizeSq }
+            .forEach { entity ->
+                val distance = entity.distance(center) / size
+
+                if (distance <= 1f) {
+                    val impact = 1f - distance
+                    val damage = ((impact * impact + impact) / 2f) * 8f * size + 1f
+                    damageCallback(entity, damage)
+                }
             }
-        }
 
-        entityMap.values.forEach(::evaluate)
-        extraEntities.forEach(::evaluate)
+        extraEntities
+            .filter { it.distanceSq(center) < explosionSearchSizeSq }
+            .forEach { entity ->
+                val distance = entity.distance(center) / size
+
+                if (distance <= 1f) {
+                    val impact = 1f - distance
+                    val damage = ((impact * impact + impact) / 2f) * 8f * size + 1f
+                    damageCallback(entity, damage)
+                }
+            }
     }
-
-    // --- block query/update helpers -----------------------------------------------------------
-
-    fun getChunkAt(chunkX: Int, chunkZ: Int): Chunk? = chunks[Chunk.hash(chunkX, chunkZ)]
-
-    fun isChunkLoaded(x: Int, z: Int): Boolean = chunks.containsKey(Chunk.hash(x shr 4, z shr 4))
-
-    /**
-     * Runtime id of the block at the given world coordinates, or the air runtime id if the
-     * containing chunk hasn't been loaded/tracked (see the notes on the LevelChunkPacket handling
-     * above for when that can happen).
-     */
-    fun getBlockIdAt(x: Int, y: Int, z: Int): Int {
-        val chunk = getChunkAt(x shr 4, z shr 4)
-            ?: return if (session::blockMapping.isInitialized) session.blockMapping.airId else 0
-        return chunk.getBlockAt(x and 0x0f, y, z and 0x0f)
-    }
-
-    fun getBlockIdAt(pos: Vector3i): Int = getBlockIdAt(pos.x, pos.y, pos.z)
-
-    fun getBlockAt(x: Int, y: Int, z: Int): BlockDefinition {
-        if (!session::blockMapping.isInitialized) return UnknownBlockDefinition(0)
-        return session.blockMapping.getDefinition(getBlockIdAt(x, y, z))
-    }
-
-    fun getBlockAt(pos: Vector3i): BlockDefinition = getBlockAt(pos.x, pos.y, pos.z)
-
-    fun setBlockIdAt(x: Int, y: Int, z: Int, runtimeId: Int) {
-        val chunk = getChunkAt(x shr 4, z shr 4) ?: return
-        chunk.setBlockAt(x and 0x0f, y, z and 0x0f, runtimeId)
-    }
-
 }
