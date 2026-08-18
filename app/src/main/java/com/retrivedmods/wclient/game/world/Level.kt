@@ -71,7 +71,7 @@ class Level(val session: GameSession) {
             }
 
             is LevelChunkPacket -> {
-                if (!session::blockMapping.isInitialized) {
+                if (!session.isBlockMappingInitialized) {
                     // shouldn't normally happen (StartGamePacket sets blockMapping before Level
                     // sees it), but guard anyway since a missing mapping would crash chunk parsing
                     return
@@ -227,14 +227,14 @@ class Level(val session: GameSession) {
      */
     fun getBlockIdAt(x: Int, y: Int, z: Int): Int {
         val chunk = getChunkAt(x shr 4, z shr 4)
-            ?: return if (session::blockMapping.isInitialized) session.blockMapping.airId else 0
+            ?: return if (session.isBlockMappingInitialized) session.blockMapping.airId else 0
         return chunk.getBlockAt(x and 0x0f, y, z and 0x0f)
     }
 
     fun getBlockIdAt(pos: Vector3i): Int = getBlockIdAt(pos.x, pos.y, pos.z)
 
     fun getBlockAt(x: Int, y: Int, z: Int): BlockDefinition {
-        if (!session::blockMapping.isInitialized) return UnknownBlockDefinition(0)
+        if (!session.isBlockMappingInitialized) return UnknownBlockDefinition(0)
         return session.blockMapping.getDefinition(getBlockIdAt(x, y, z))
     }
 
