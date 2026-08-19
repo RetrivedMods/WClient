@@ -34,6 +34,10 @@ dependencies {
     // declared in settings.gradle.kts), which track current Bedrock protocol versions. This is a
     // real version jump (Beta1 -> Beta12) so some packet/codec API usage elsewhere in this project
     // may need small fixes to compile - check the first build's errors.
+    // Needed for net.kyori.adventure.text.Component, which the newer Beta12 protocol
+    // (and relay code referencing it) uses for text.
+    api(libs.adventure.api)
+
     api("org.cloudburstmc.protocol:bedrock-codec:3.0.0.Beta12-SNAPSHOT")
     api("org.cloudburstmc.protocol:bedrock-connection:3.0.0.Beta12-SNAPSHOT")
     api("org.cloudburstmc.protocol:common:3.0.0.Beta12-SNAPSHOT")
