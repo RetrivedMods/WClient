@@ -41,14 +41,30 @@ class AuthWebView @JvmOverloads constructor(
                 httpClient.connectTimeout = 10000
                 httpClient.readTimeout = 10000
 
-                val fullBedrockSession = RealmsAuthFlow.BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS.getFromInput(
-                    httpClient,
-                    StepMsaDeviceCode.MsaDeviceCodeCallback {
-                        post {
-                            loadUrl(it.directVerificationUri)
-                        }
+                val deviceCodeCallback = StepMsaDeviceCode.MsaDeviceCodeCallback {
+                    post {
+                        loadUrl(it.directVerificationUri)
                     }
-                )
+                }
+
+                // Try the Realms-capable auth chain first, but fall back to the plain Bedrock
+                // chain if it fails - accounts without a Realms subscription/entitlement can
+                // fail the extra Realms XSTS step even though normal sign-in would have worked
+                // fine. (AccountManager already does this same fallback for save/load/refresh;
+                // this was the one place it was missing, and the likely cause of "can't sign in"
+                // for anyone without Realms.)
+                val fullBedrockSession = try {
+                    RealmsAuthFlow.BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS.getFromInput(
+                        httpClient,
+                        deviceCodeCallback
+                    )
+                } catch (e: Exception) {
+                    println("Realms-capable sign-in failed, falling back to regular sign-in: ${e.message}")
+                    MinecraftAuth.BEDROCK_DEVICE_CODE_LOGIN.getFromInput(
+                        httpClient,
+                        deviceCodeCallback
+                    )
+                }
                 val containedAccount =
                     AccountManager.accounts.find { it.mcChain.displayName == fullBedrockSession.mcChain.displayName }
                 if (containedAccount != null) {
