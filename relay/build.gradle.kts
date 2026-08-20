@@ -26,7 +26,11 @@ dependencies {
     
     // Use api to expose these to the app module
     api(libs.minecraft.auth)
-    api(project(":relay:Network:transport-raknet"))
+    // NOTE: previously also had `api(project(":relay:Network:transport-raknet"))` here, but the
+    // Beta12 bedrock-connection artifact below already transitively pulls in
+    // org.cloudburstmc.netty:netty-transport-raknet from Maven. Having both on the classpath at
+    // once caused R8 to fail with "RakChannel is defined multiple times" during release builds.
+    // RakChannelFactory/RakChannel usages in relay/src still resolve fine via the Maven artifact.
 
     // Previously vendored locally under relay/Protocol/* (stuck at an old Beta1 snapshot that
     // only understood protocol versions up to ~898 / Bedrock 1.21.130). Switched to the actual
