@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.combat
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -152,7 +154,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         val packet = PlayerHotbarPacket().apply {
             selectedHotbarSlot = slot
             containerId = 0
-            selectHotbarSlot = true
+            setPacketField("selectHotbarSlot", true)
         }
         session.serverBound(packet)
         session.clientBound(packet)

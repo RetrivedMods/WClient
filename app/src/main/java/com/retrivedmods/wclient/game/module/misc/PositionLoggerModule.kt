@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.misc
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -174,8 +176,8 @@ class PositionLoggerModule : Module("position_logger", ModuleCategory.Misc) {
     private fun sendMessage(msg: String) {
         val textPacket = TextPacket().apply {
             type = TextPacket.Type.RAW
-            isNeedsTranslation = false
-            message = msg
+            setPacketField("needsTranslation", false)
+            setPacketField("message", msg)
             xuid = ""
             sourceName = ""
         }

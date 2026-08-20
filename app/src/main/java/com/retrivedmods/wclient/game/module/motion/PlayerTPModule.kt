@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.motion
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -88,7 +90,7 @@ class PlayerTPModule : Module("PlayerTP", ModuleCategory.Motion) {
                 Vector3f.from(derpYaw, derpPitch, 0f)
             else player.vec3Rotation
             mode = MovePlayerPacket.Mode.NORMAL
-            onGround = false
+            setPacketField("onGround", false)
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })

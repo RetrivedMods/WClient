@@ -8,6 +8,7 @@ import com.retrivedmods.wclient.game.registry.BlockMappingProvider
 import com.retrivedmods.wclient.game.registry.ItemMapping
 import com.retrivedmods.wclient.game.registry.ItemMappingProvider
 import com.retrivedmods.wclient.game.world.Level
+import com.retrivedmods.wclient.util.setPacketField
 import com.retrivedmods.wrelay.WRelaySession
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
@@ -136,10 +137,10 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
         val textPacket = TextPacket()
         textPacket.type = type
         textPacket.sourceName = ""
-        textPacket.message = message
+        textPacket.setPacketField("message", message)
         textPacket.xuid = ""
         textPacket.platformChatId = ""
-        textPacket.filteredMessage = ""
+        textPacket.setPacketField("filteredMessage", "")
         clientBound(textPacket)
     }
 

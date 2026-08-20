@@ -3,6 +3,7 @@ package com.retrivedmods.wclient.game.module.combat
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
+import com.retrivedmods.wclient.util.setPacketField
 import org.cloudburstmc.protocol.bedrock.packet.PlayerHotbarPacket
 
 class HotbarSwitcherModule : Module("switcher", ModuleCategory.Combat) {
@@ -67,7 +68,7 @@ class HotbarSwitcherModule : Module("switcher", ModuleCategory.Combat) {
         val packet = PlayerHotbarPacket()
         packet.selectedHotbarSlot = slot
         packet.containerId = 0
-        packet.selectHotbarSlot = true
+        packet.setPacketField("selectHotbarSlot", true)
 
         session.clientBound(packet)
     }

@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.combat
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -92,7 +94,7 @@ class AutoHvHModule : Module("Auto HVH", ModuleCategory.Combat) {
             position = newPosition
             rotation = player.vec3Rotation
             mode = MovePlayerPacket.Mode.NORMAL
-            onGround = false
+            setPacketField("onGround", false)
             ridingRuntimeEntityId = 0
             tick = player.tickExists
         })
