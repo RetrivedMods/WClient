@@ -1,7 +1,7 @@
 package com.retrivedmods.wclient.model
 
 import androidx.compose.runtime.Immutable
-import net.raphimc.minecraftauth.service.realms.model.RealmsWorld
+import net.raphimc.minecraftauth.extra.realms.model.RealmsServer
 
 @Immutable
 data class RealmWorld(
@@ -19,11 +19,11 @@ data class RealmWorld(
     val connectionDetails: RealmConnectionDetails? = null
 ) {
     companion object {
-        fun fromRealmsWorld(realmsWorld: RealmsWorld): RealmWorld {
+        fun fromRealmsWorld(realmsWorld: RealmsServer): RealmWorld {
             return RealmWorld(
                 id = realmsWorld.id,
                 ownerName = realmsWorld.ownerName ?: "Unknown",
-                ownerUuidOrXuid = realmsWorld.ownerUuidOrXuid ?: "",
+                ownerUuidOrXuid = realmsWorld.ownerUid ?: "",
                 name = realmsWorld.name ?: "Unnamed Realm",
                 motd = realmsWorld.motd ?: "",
                 state = RealmState.fromString(realmsWorld.state),

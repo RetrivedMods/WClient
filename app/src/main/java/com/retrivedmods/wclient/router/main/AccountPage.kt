@@ -57,7 +57,7 @@ import com.retrivedmods.wclient.util.getActivityWindow
 import com.retrivedmods.wclient.util.getDialogWindow
 import com.retrivedmods.wclient.util.windowFullScreen
 import kotlinx.coroutines.launch
-import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession.FullBedrockSession
+import com.retrivedmods.wclient.game.AccountManager.WAccount
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +66,7 @@ fun AccountPageContent() {
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         var showAddAccountDropDownMenu by remember { mutableStateOf(false) }
-        var selectedAccountAction: FullBedrockSession? by remember { mutableStateOf(null) }
+        var selectedAccountAction: WAccount? by remember { mutableStateOf(null) }
         var login: Boolean by remember { mutableStateOf(false) }
         val snackbarHostState = LocalSnackbarHostState.current
 
@@ -139,7 +139,7 @@ fun AccountPageContent() {
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer
                             ),
                             headlineContent = {
-                                Text(account.mcChain.displayName)
+                                Text(account.displayName)
                             },
                             supportingContent = {
                                 Row(Modifier.fillMaxWidth()) {

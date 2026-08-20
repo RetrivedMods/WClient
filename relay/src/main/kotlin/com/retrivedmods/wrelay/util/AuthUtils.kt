@@ -3,7 +3,7 @@ package com.retrivedmods.wrelay.util
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.retrivedmods.wrelay.address.WAddress
-import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession.FullBedrockSession
+import net.raphimc.minecraftauth.bedrock.BedrockAuthManager
 import org.jose4j.json.internal.json_simple.JSONObject
 import org.jose4j.jws.JsonWebSignature
 import org.jose4j.jwt.JwtClaims
@@ -30,15 +30,22 @@ object AuthUtils {
         .setPrettyPrinting()
         .create()
 
+    // In MinecraftAuth 4.x, FullBedrockSession.mcChain bundled the mojang/identity JWTs together
+    // with the ECDSA keypair used to self-sign the third chain link. In 5.x those live in two
+    // separate places on BedrockAuthManager: the JWTs come from minecraftCertificateChain, and
+    // the keypair is authManager.sessionKeyPair.
     @OptIn(ExperimentalEncodingApi::class)
-    fun fetchOnlineChain(fullBedrockSession: FullBedrockSession): List<String> {
-        val publicBase64Key = Base64.encode(fullBedrockSession.mcChain.publicKey.encoded)
+    fun fetchOnlineChain(authManager: BedrockAuthManager): List<String> {
+        val certChain = authManager.minecraftCertificateChain.getUpToDate()
+        val sessionKeyPair = authManager.sessionKeyPair
+
+        val publicBase64Key = Base64.encode(sessionKeyPair.public.encoded)
         val consumer = JwtConsumerBuilder()
             .setAllowedClockSkewInSeconds(60)
             .setVerificationKey(mojangPublicKey)
             .build()
 
-        val mojangJws = consumer.process(fullBedrockSession.mcChain.mojangJwt).joseObjects[0] as JsonWebSignature
+        val mojangJws = consumer.process(certChain.mojangJwt).joseObjects[0] as JsonWebSignature
 
         val claimsSet = JwtClaims()
         claimsSet.setClaim("certificateAuthority", true)
@@ -48,28 +55,32 @@ object AuthUtils {
 
         val selfSignedJws = JsonWebSignature()
         selfSignedJws.payload = claimsSet.toJson()
-        selfSignedJws.key = fullBedrockSession.mcChain.privateKey
+        selfSignedJws.key = sessionKeyPair.private
         selfSignedJws.algorithmHeaderValue = "ES384"
         selfSignedJws.setHeader(HeaderParameterNames.X509_URL, publicBase64Key)
 
         val selfSignedJwt = selfSignedJws.compactSerialization
 
-        return listOf(selfSignedJwt, fullBedrockSession.mcChain.mojangJwt, fullBedrockSession.mcChain.identityJwt)
+        return listOf(selfSignedJwt, certChain.mojangJwt, certChain.identityJwt)
     }
 
     @OptIn(ExperimentalEncodingApi::class, ExperimentalUuidApi::class)
     fun fetchOnlineSkinData(
-        fullBedrockSession: FullBedrockSession,
+        authManager: BedrockAuthManager,
         skinData: JSONObject,
         remoteAddress: WAddress
     ): String {
-        val publicKeyBase64 = Base64.encode(fullBedrockSession.mcChain.publicKey.encoded)
+        val certChain = authManager.minecraftCertificateChain.getUpToDate()
+        val sessionKeyPair = authManager.sessionKeyPair
+        val playFabToken = authManager.playFabToken.getUpToDate()
+
+        val publicKeyBase64 = Base64.encode(sessionKeyPair.public.encoded)
 
         val overridedData = HashMap<String, Any>()
-        overridedData["PlayFabId"] = fullBedrockSession.playFabToken.playFabId.lowercase(Locale.ROOT)
+        overridedData["PlayFabId"] = playFabToken.playFabId.lowercase(Locale.ROOT)
         overridedData["DeviceId"] = Uuid.random().toString()
         overridedData["DeviceOS"] = 1
-        overridedData["ThirdPartyName"] = fullBedrockSession.mcChain.displayName
+        overridedData["ThirdPartyName"] = certChain.identityDisplayName
         overridedData["ServerAddress"] = "${remoteAddress.hostName}:${remoteAddress.port}"
 
         skinData.putAll(overridedData)
@@ -78,7 +89,7 @@ object AuthUtils {
         jws.algorithmHeaderValue = "ES384"
         jws.setHeader(HeaderParameterNames.X509_URL, publicKeyBase64)
         jws.payload = skinData.toJSONString()
-        jws.key = fullBedrockSession.mcChain.privateKey
+        jws.key = sessionKeyPair.private
 
         return jws.compactSerialization
     }
