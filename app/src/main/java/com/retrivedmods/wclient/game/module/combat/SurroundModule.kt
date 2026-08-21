@@ -201,7 +201,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         // Use the shared placement implementation copied from ProtoHax.  It supplies
         // the definition of the block being placed and, when required, the
         // server-authoritative inventory action instead of the clicked block definition.
-        val definition = localPlayer.inventory.hand.blockDefinition ?: return
+        val definition = session.blockMapping.getDefinition(localPlayer.inventory.hand.blockDefinition?.runtimeId ?: return)
         localPlayer.placeBlock(pos, refPos, face, definition)
     }
 
