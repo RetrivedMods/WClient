@@ -18,7 +18,6 @@ import org.cloudburstmc.protocol.bedrock.packet.LevelChunkPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.RemoveEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
-import org.cloudburstmc.protocol.bedrock.packet.SubChunkPacket
 import org.cloudburstmc.protocol.bedrock.packet.TakeItemEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket
 import org.cloudburstmc.math.vector.Vector3f
@@ -79,13 +78,7 @@ class Level(val session: GameSession) {
                 }
 
                 if (packet.isCachingEnabled || packet.isRequestSubChunks) {
-                    // blob-cache chunk loading (isCachingEnabled) still isn't supported - servers
-                    // using that will still leave us blind. But isRequestSubChunks (the modern,
-                    // now near-universal loading path where LevelChunkPacket only carries heightmap/
-                    // biome data and actual block data arrives later via individual SubChunkPacket
-                    // responses) IS now handled below, in the SubChunkPacket branch - so don't
-                    // bail out here for that case, just skip the (block-data-less) LevelChunkPacket
-                    // itself.
+                    // blob-cache / newer subchunk-request chunk loading isn't supported, see note above
                     return
                 }
 
@@ -101,43 +94,6 @@ class Level(val session: GameSession) {
                 } catch (e: Exception) {
                     // malformed/unexpected chunk data for this protocol version - skip it rather
                     // than crash the relay
-                }
-            }
-
-            is SubChunkPacket -> {
-                if (!session.isBlockMappingInitialized) return
-
-                // This is the response to the (real, physical) client's own SubChunkRequestPacket,
-                // which we don't send ourselves - we're just observing it pass through the relay.
-                // Protocol semantics (best effort, not verified against a live packet capture):
-                // `centerPosition` is the request's base (chunkX, sectionY, chunkZ) - sectionY as
-                // a *section* index (worldBlockY shr 4), not a block Y - and each SubChunkData's
-                // own `position` is a small relative offset from that base. In the overwhelmingly
-                // common case (a single chunk column, vertical prefetch only) x/z offsets are 0
-                // and only the y offset varies, but we honor x/z too in case a server ever sends
-                // neighboring columns this way.
-                for (subChunkData in packet.subChunks) {
-                    val data = subChunkData.data ?: continue
-                    if (data.readableBytes() <= 0) continue // no data = not found/failed, nothing to store
-
-                    val offset = subChunkData.position
-                    val chunkX = packet.centerPosition.x + offset.x
-                    val chunkZ = packet.centerPosition.z + offset.z
-                    val worldSectionY = packet.centerPosition.y + offset.y
-
-                    val chunk = chunks.getOrPut(Chunk.hash(chunkX, chunkZ)) {
-                        Chunk(chunkX, chunkZ, is384WorldSupported, session.blockMapping)
-                    }
-                    // Chunk.readSubChunk()/getBlockAt() index their sectionStorage array from 0,
-                    // with 384-worlds offset by +4 sections (-64 world Y -> array index 0) - see
-                    // Chunk.getBlockAt()'s `(yIn + 64) shr 4` for the equivalent block-Y-based math.
-                    val sectionIndex = if (is384WorldSupported) worldSectionY + 4 else worldSectionY
-                    try {
-                        chunk.readSubChunk(sectionIndex, data.duplicate())
-                    } catch (e: Exception) {
-                        // malformed/unexpected subchunk data for this protocol version - skip it
-                        // rather than crash the relay
-                    }
                 }
             }
 
@@ -287,6 +243,46 @@ class Level(val session: GameSession) {
     fun setBlockIdAt(x: Int, y: Int, z: Int, runtimeId: Int) {
         val chunk = getChunkAt(x shr 4, z shr 4) ?: return
         chunk.setBlockAt(x and 0x0f, y, z and 0x0f, runtimeId)
+    }
+
+    fun isAir(x: Int, y: Int, z: Int): Boolean = getBlockAt(x, y, z).identifier == "minecraft:air"
+
+    fun isAir(pos: Vector3i): Boolean = isAir(pos.x, pos.y, pos.z)
+
+    /**
+     * Bedrock places a new block adjacent to whatever *existing* block you "click" - not directly
+     * at the position you name - so block-placing modules (Surround, PistonCrystal, ...) need to
+     * find a real, currently non-air neighbor of [pos] to click, and which face of that neighbor
+     * points back at [pos]. Checks straight down first (the common "place on the ground" case),
+     * then up, then the four horizontal neighbors.
+     *
+     * Returns null if [pos] itself isn't currently air (already occupied, or the chunk simply
+     * isn't tracked/loaded yet - see the LevelChunkPacket handling notes above for when that
+     * happens) or if none of its neighbors are known to be solid, e.g. floating in open air.
+     *
+     * @return (position of the block to click, Bedrock face index of that block to click:
+     *   0=down,1=up,2=north,3=south,4=west,5=east) or null
+     */
+    fun findPlacementReference(pos: Vector3i): Pair<Vector3i, Int>? {
+        if (!isAir(pos)) return null
+
+        // (offset to the neighboring block, face of THAT block which points back at pos)
+        val candidates = listOf(
+            Vector3i.from(0, -1, 0) to 1, // below   -> click its UP face
+            Vector3i.from(0, 1, 0) to 0,  // above   -> click its DOWN face
+            Vector3i.from(1, 0, 0) to 4,  // east    -> click its WEST face
+            Vector3i.from(-1, 0, 0) to 5, // west    -> click its EAST face
+            Vector3i.from(0, 0, 1) to 2,  // south   -> click its NORTH face
+            Vector3i.from(0, 0, -1) to 3  // north   -> click its SOUTH face
+        )
+
+        for ((offset, face) in candidates) {
+            val neighborPos = Vector3i.from(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z)
+            if (!isAir(neighborPos)) {
+                return neighborPos to face
+            }
+        }
+        return null
     }
 
 }
