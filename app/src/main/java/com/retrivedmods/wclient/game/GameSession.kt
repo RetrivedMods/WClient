@@ -51,7 +51,26 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
         wRelaySession.serverBound(packet)
     }
 
+    // ComposedPacketHandler's default beforeClientBound()/beforeServerBound() both just call
+    // this single method, so modules previously had no way to tell which direction a packet
+    // was going (e.g. AntiCrystalModule rewriting position needs to only touch outgoing/
+    // server-bound packets, not incoming ones). We now override beforeClientBound/
+    // beforeServerBound below instead, so this is only kept to satisfy the interface and
+    // defaults to treating the packet as server-bound if anything else ends up calling it
+    // directly.
     override fun beforePacketBound(packet: BedrockPacket): Boolean {
+        return handlePacketBound(packet, isClientBound = false)
+    }
+
+    override fun beforeClientBound(packet: BedrockPacket): Boolean {
+        return handlePacketBound(packet, isClientBound = true)
+    }
+
+    override fun beforeServerBound(packet: BedrockPacket): Boolean {
+        return handlePacketBound(packet, isClientBound = false)
+    }
+
+    private fun handlePacketBound(packet: BedrockPacket, isClientBound: Boolean): Boolean {
         when (packet) {
             is StartGamePacket -> {
                 try {
@@ -101,7 +120,7 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
         localPlayer.onPacketBound(packet)
         level.onPacketBound(packet)
 
-        val interceptablePacket = InterceptablePacket(packet)
+        val interceptablePacket = InterceptablePacket(packet, isClientBound)
 
         for (module in ModuleManager.modules) {
             // Set session if not already set
