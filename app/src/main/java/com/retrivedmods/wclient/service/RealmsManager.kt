@@ -1,13 +1,15 @@
 package com.retrivedmods.wclient.service
 
 import android.util.Log
+import com.google.gson.JsonObject
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import net.raphimc.minecraftauth.MinecraftAuth
-import net.raphimc.minecraftauth.service.realms.BedrockRealmsService
-import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession
+import net.raphimc.minecraftauth.extra.realms.model.RealmsServer
+import net.raphimc.minecraftauth.extra.realms.service.impl.BedrockRealmsService
+import com.retrivedmods.wclient.game.AccountManager
 import com.retrivedmods.wclient.model.RealmWorld
 import com.retrivedmods.wclient.model.RealmConnectionDetails
 import com.retrivedmods.wclient.model.RealmState
@@ -17,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap
 object RealmsManager {
 
     private const val TAG = "RealmsManager"
-    private const val CLIENT_VERSION = "1.21.120"
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + CoroutineName("RealmsManagerCoroutine"))
 
@@ -26,37 +27,34 @@ object RealmsManager {
 
     private val connectionCache = ConcurrentHashMap<Long, RealmConnectionDetails>()
 
-    private var currentSession: StepFullBedrockSession.FullBedrockSession? = null
     private var realmsService: BedrockRealmsService? = null
 
-    fun updateSession(session: StepFullBedrockSession.FullBedrockSession?) {
-        currentSession = session
+    fun updateSession(account: AccountManager.WAccount?) {
+        Log.d(TAG, "updateSession called with account: ${account?.displayName}")
 
-        Log.d(TAG, "updateSession called with session: ${session?.mcChain?.displayName}")
-        Log.d(TAG, "Session has realmsXsts: ${session?.realmsXsts != null}")
-
-        if (session?.realmsXsts != null) {
-            try {
-                Log.d(TAG, "Initializing Realms service with client version: $CLIENT_VERSION")
-                val httpClient = MinecraftAuth.createHttpClient()
-                httpClient.connectTimeout = 10000
-                httpClient.readTimeout = 10000
-
-                realmsService = BedrockRealmsService(httpClient, CLIENT_VERSION, session.realmsXsts)
-                Log.d(TAG, "Realms service initialized successfully")
-                refreshRealms()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize Realms service", e)
-                _realmsState.value = RealmsLoadingState.Error("Failed to initialize Realms service: ${e.message}")
-            }
-        } else {
-            Log.w(TAG, "No realmsXsts token available - session: ${session != null}, realmsXsts: ${session?.realmsXsts}")
+        if (account == null) {
             realmsService = null
-            _realmsState.value = if (session == null) {
-                RealmsLoadingState.NoAccount
-            } else {
-                RealmsLoadingState.NotAvailable
-            }
+            _realmsState.value = RealmsLoadingState.NoAccount
+            return
+        }
+
+        try {
+            Log.d(TAG, "Initializing Realms service with client version: ${AccountManager.GAME_VERSION}")
+            val httpClient = MinecraftAuth.createHttpClient()
+
+            // realmsXstsToken is a Holder<XblXstsToken> on BedrockAuthManager - it's fetched
+            // lazily (on first getUpToDate() call from inside BedrockRealmsService), not eagerly
+            // during sign-in, so accounts without Realms access don't fail login over this.
+            realmsService = BedrockRealmsService(
+                httpClient,
+                AccountManager.GAME_VERSION,
+                account.authManager.realmsXstsToken
+            )
+            Log.d(TAG, "Realms service initialized successfully")
+            refreshRealms()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize Realms service", e)
+            _realmsState.value = RealmsLoadingState.Error("Failed to initialize Realms service: ${e.message}")
         }
     }
 
@@ -68,23 +66,23 @@ object RealmsManager {
             return
         }
 
-        Log.d(TAG, "Starting Realms refresh with client version: $CLIENT_VERSION")
+        Log.d(TAG, "Starting Realms refresh")
         _realmsState.value = RealmsLoadingState.Loading
 
         coroutineScope.launch {
             try {
-                Log.d(TAG, "Checking if Realms is available...")
-                val isAvailable = service.isAvailable().get()
-                Log.d(TAG, "Realms availability check result: $isAvailable")
+                Log.d(TAG, "Checking Realms compatibility...")
+                val isCompatible = service.isCompatible()
+                Log.d(TAG, "Realms compatibility check result: $isCompatible")
 
-                if (!isAvailable) {
-                    Log.w(TAG, "Realms not available for client version: $CLIENT_VERSION")
+                if (!isCompatible) {
+                    Log.w(TAG, "Realms not available for this client version")
                     _realmsState.value = RealmsLoadingState.NotAvailable
                     return@launch
                 }
 
                 Log.d(TAG, "Fetching Realms worlds...")
-                val realmsWorlds = service.worlds.get()
+                val realmsWorlds = service.worlds
                 val realmWorldList = realmsWorlds.map { RealmWorld.fromRealmsWorld(it) }
 
                 _realmsState.value = RealmsLoadingState.Success(realmWorldList)
@@ -144,37 +142,38 @@ object RealmsManager {
                     throw IllegalStateException("Realm is not open (current state: ${realm.state})")
                 }
 
-                val realmsWorld = net.raphimc.minecraftauth.service.realms.model.RealmsWorld(
+                val realmsServer = RealmsServer(
                     realm.id,
-                    realm.ownerName,
-                    realm.ownerUuidOrXuid,
                     realm.name,
                     realm.motd,
+                    realm.ownerName,
+                    realm.ownerUuidOrXuid,
                     realm.state.name,
                     realm.expired,
+                    0,
                     realm.worldType,
                     realm.maxPlayers,
                     realm.compatible,
                     realm.activeVersion,
-                    null
+                    JsonObject()
                 )
 
                 Log.d(TAG, "Requesting connection details for Realm ${realm.name} (ID: $realmId)")
-                val address = withContext(Dispatchers.IO) {
-                    service.joinWorld(realmsWorld).get()
+                val joinInfo = withContext(Dispatchers.IO) {
+                    service.joinWorld(realmsServer)
                 }
 
-                Log.d(TAG, "Received raw address from Realms service: '$address'")
+                Log.d(TAG, "Received raw address from Realms service: '${joinInfo.address}'")
 
-                if (address.isBlank()) {
+                if (joinInfo.address.isBlank()) {
                     throw IllegalStateException("Received empty address from Realms service")
                 }
 
                 val connectionDetails = try {
-                    RealmConnectionDetails.fromAddress(address)
+                    RealmConnectionDetails.fromAddress(joinInfo.address)
                 } catch (e: IllegalArgumentException) {
-                    Log.e(TAG, "Failed to parse address '$address': ${e.message}")
-                    throw IllegalStateException("Invalid address format received: $address")
+                    Log.e(TAG, "Failed to parse address '${joinInfo.address}': ${e.message}")
+                    throw IllegalStateException("Invalid address format received: ${joinInfo.address}")
                 }
 
                 connectionCache[realmId] = connectionDetails

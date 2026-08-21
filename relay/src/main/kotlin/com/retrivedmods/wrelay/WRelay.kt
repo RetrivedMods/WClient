@@ -44,7 +44,13 @@ class WRelay(
                 .motd("§cWelcome To WRelay§c")
                 .playerCount(0)
                 .maximumPlayerCount(20)
-                .subMotd("WClient")
+                // Temporary diagnostic: show which codec actually got picked directly in the
+                // server-list sub-motd, since there's no easy way to read Logcat without a PC/
+                // Android Studio. If this still says "v898" after rebuilding with the updated
+                // CodecRegistry.kt, the v2168 registration silently failed (wrong class name) -
+                // if it says "v2168", the codec side is fine and the Block error has some other
+                // cause. Safe to revert to plain "WClient" once this is confirmed.
+                .subMotd("WClient v${DefaultCodec.protocolVersion}")
                 .nintendoLimited(false)
 
     }

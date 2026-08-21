@@ -30,7 +30,7 @@ math = "2.0"
 nbt = "3.0.3.Final"
 snappy = "2.0.2"
 jose4j = "0.9.6"
-minecraft-auth = "4.1.2"
+minecraft-auth = "5.0.0"
 jackson-databind = "2.20.0"
 jackson-annotations = "2.20"
 

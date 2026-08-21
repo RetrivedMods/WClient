@@ -24,8 +24,7 @@ fun RealmsPageContent() {
 
     LaunchedEffect(AccountManager.selectedAccount) {
         val selectedAccount = AccountManager.selectedAccount
-        println("RealmsPage: Selected account changed: ${selectedAccount?.mcChain?.displayName}")
-        println("RealmsPage: Account has Realms support: ${selectedAccount?.realmsXsts != null}")
+        println("RealmsPage: Selected account changed: ${selectedAccount?.displayName}")
         RealmsManager.updateSession(selectedAccount)
     }
 
