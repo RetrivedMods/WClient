@@ -5,6 +5,8 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
+import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerHotbarPacket
 import kotlin.math.floor
@@ -98,8 +100,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
                 val iterator = placeList.iterator()
                 while (iterator.hasNext() && placed < blocksPerTick) {
                     val pos = iterator.next()
-                    place(OBSIDIAN, pos, obsidianSlot)
-                    placed++
+                    if (place(OBSIDIAN, pos, obsidianSlot)) placed++
                 }
             } else {
                 tickCounter++
@@ -188,7 +189,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         return dx * dx + dy * dy + dz * dz
     }
 
-    private fun place(identifier: String, pos: Vector3i, slot: Int) {
+    private fun place(identifier: String, pos: Vector3i, slot: Int): Boolean {
         val localPlayer = session.localPlayer
 
         // Real Bedrock block placement clicks an existing SOLID block's face; the server computes
@@ -196,13 +197,26 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         // = pos (the empty air cell we want to fill) was wrong - there's nothing solid there to
         // click, so the server had nothing valid to place against. Resolve a real solid neighbour
         // to click instead.
-        val (refPos, face) = resolvePlacementReference(pos) ?: return
+        val (refPos, face) = resolvePlacementReference(pos) ?: return false
 
-        // Use the shared placement implementation copied from ProtoHax.  It supplies
-        // the definition of the block being placed and, when required, the
-        // server-authoritative inventory action instead of the clicked block definition.
-        val definition = localPlayer.inventory.hand.blockDefinition ?: return
-        localPlayer.placeBlock(pos, refPos, face, definition)
+        // Latest WClient Scaffold clones a real client ITEM_USE packet. This is important:
+        // newer Bedrock versions carry prediction/trigger/legacy-action fields that are easy
+        // to get wrong when constructing InventoryTransactionPacket from scratch.
+        val packet = (session.lastPlacementTransaction?.clone() ?: InventoryTransactionPacket()).apply {
+            transactionType = InventoryTransactionType.ITEM_USE
+            actionType = 0
+            blockPosition = refPos
+            blockFace = face
+            hotbarSlot = slot
+            itemInHand = localPlayer.inventory.hand
+            playerPosition = localPlayer.vec3Position
+            headPosition = Vector3f.from(localPlayer.vec3Position.x, localPlayer.vec3Position.y + 1.62f, localPlayer.vec3Position.z)
+            clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
+            // Do NOT overwrite blockDefinition: Scaffold keeps the definition from the real
+            // clicked-block transaction when cloning it.
+        }
+        session.serverBound(packet)
+        return true
     }
 
     /**
@@ -229,9 +243,6 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
             containerId = 0
             isSelectHotbarSlot = true
         }
-        // Keep both sides in sync: the server must receive the hotbar change, while
-        // the local inventory tracker also needs the client-bound packet.
-        session.serverBound(packet)
         session.clientBound(packet)
     }
 }

@@ -4,8 +4,7 @@ import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.inventory.AbstractInventory
 import com.retrivedmods.wclient.game.inventory.ContainerInventory
 import com.retrivedmods.wclient.game.inventory.PlayerInventory
-import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition
-import com.retrivedmods.wclient.game.utils.misc.removeNetInfo
+import com.retrivedmods.wclient.game.registry.BlockDefinition
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode
@@ -20,7 +19,6 @@ import org.cloudburstmc.protocol.bedrock.packet.ContainerClosePacket
 import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
-import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import java.util.UUID
@@ -106,16 +104,15 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
      * drop the whole transaction.
      */
     fun placeBlock(target: Vector3i, referencePos: Vector3i, face: Int, definition: BlockDefinition) {
-        // The latest stock WClient does not invent an InventoryTransactionPacket from
-        // scratch: its Scaffold module clones a real client placement transaction and
-        // changes only the placement-specific fields. Reuse the same approach here.
-        val packet = (session.lastBlockPlacementPacket?.clone() ?: InventoryTransactionPacket()).apply {
+        session.level.setBlockIdAt(target.x, target.y, target.z, definition.runtimeId)
+
+        val packet = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
             actionType = 0
             blockPosition = referencePos
             blockFace = face
             hotbarSlot = inventory.heldItemSlot
-            itemInHand = inventory.hand.removeNetInfo()
+            itemInHand = inventory.hand
             playerPosition = vec3Position
             clickPosition = Vector3f.from(
                 Math.random().toFloat(),
@@ -123,7 +120,6 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
                 Math.random().toFloat()
             )
             blockDefinition = definition
-            actions.clear()
 
             if (inventoriesServerAuthoritative) {
                 val current = itemInHand
@@ -142,10 +138,6 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
                 )
             }
         }
-
-        // Keep local world state in sync immediately, as the stock/ProtoHax placement
-        // implementation does. The actual server-bound packet remains authoritative.
-        session.level.setBlockIdAt(target.x, target.y, target.z, definition.runtimeId)
 
         session.serverBound(packet)
     }
