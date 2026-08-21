@@ -25,6 +25,14 @@ class AppContext : Application(), Thread.UncaughtExceptionHandler {
     }
 
     override fun uncaughtException(t: Thread, e: Throwable) {
+        // Suppress known Android 16 Samsung ripple bug where a RippleDrawable
+        // tries to start an animator on a detached view during the draw pass.
+        // This is a framework-level race condition and does not corrupt app state.
+        if (e is IllegalStateException && isRippleOnDetachedView(e)) {
+            android.util.Log.w("WClient", "Suppressed ripple-on-detached-view crash", e)
+            return
+        }
+
         val stackTrace = e.stackTraceToString()
         val deviceInfo = buildString {
             val declaredFields = Build::class.java.declaredFields
@@ -62,5 +70,15 @@ class AppContext : Application(), Thread.UncaughtExceptionHandler {
             })
         })
         Process.killProcess(Process.myPid())
+    }
+
+    private fun isRippleOnDetachedView(e: IllegalStateException): Boolean {
+        if (e.message != "Cannot start this animator on a detached view!") return false
+        // Confirm the crash originates from the RippleDrawable/RippleForeground code path
+        val trace = e.stackTraceToString()
+        return trace.contains("RippleForeground") ||
+            trace.contains("RippleDrawable") ||
+            trace.contains("RippleHostView") ||
+            trace.contains("RippleNode")
     }
 }
