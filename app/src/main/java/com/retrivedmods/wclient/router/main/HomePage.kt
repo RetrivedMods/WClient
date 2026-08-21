@@ -246,7 +246,7 @@ fun HomePageContent() {
                         if (!Settings.canDrawOverlays(context)) {
                             Toast.makeText(context, R.string.request_overlay_permission, Toast.LENGTH_SHORT).show()
                             overlayPermissionLauncher.launch(
-                                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package: ${context.packageName}".toUri())
+                                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri())
                             )
                             return@WFloatingActionButton
                         }
