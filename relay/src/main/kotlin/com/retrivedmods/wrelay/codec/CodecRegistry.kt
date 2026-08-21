@@ -70,6 +70,23 @@ object CodecRegistry {
         registerCodec(859, "1.21.120", "org.cloudburstmc.protocol.bedrock.codec.v859.Bedrock_v859")
         registerCodec(860, "1.21.124", "org.cloudburstmc.protocol.bedrock.codec.v860.Bedrock_v860")
         registerCodec(898, "1.21.130", "org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898")
+        // Added after switching relay/build.gradle.kts from the old vendored codec source to the
+        // upstream org.cloudburstmc.protocol:bedrock-codec:3.0.0.Beta12-SNAPSHOT dependency, which
+        // (per the compiled classes actually found inside a real, working v35.0 release APK's dex)
+        // includes codecs at least up through v2168. This file previously never advertised or
+        // negotiated anything past 898 (1.21.130) even after that dependency swap, because
+        // CodecRegistry loads codecs by exact class name via reflection and simply had no entries
+        // for anything newer - so a real 1.26.44 client (protocol 2168) saw WRelay's RakNet
+        // advertisement claim protocol 898 and refused to connect at the handshake stage
+        // (Block / InitialConnection-90), before any of our game logic ever ran.
+        // Class names below follow the same org.cloudburstmc.protocol.bedrock.codec.v{N}.Bedrock_v{N}
+        // pattern as every entry above; registerCodec() already no-ops with a logged warning if a
+        // class name turns out to be wrong for this snapshot, so a bad guess here is safe, not fatal.
+        registerCodec(924, "1.21.140", "org.cloudburstmc.protocol.bedrock.codec.v924.Bedrock_v924")
+        registerCodec(944, "1.21.150", "org.cloudburstmc.protocol.bedrock.codec.v944.Bedrock_v944")
+        registerCodec(975, "1.21.160", "org.cloudburstmc.protocol.bedrock.codec.v975.Bedrock_v975")
+        registerCodec(1001, "1.21.170", "org.cloudburstmc.protocol.bedrock.codec.v1001.Bedrock_v1001")
+        registerCodec(2168, "1.26.44", "org.cloudburstmc.protocol.bedrock.codec.v2168.Bedrock_v2168")
 
 
         sortedProtocolVersions.sortDescending()
