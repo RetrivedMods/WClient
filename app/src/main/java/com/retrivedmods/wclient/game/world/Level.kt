@@ -18,6 +18,7 @@ import org.cloudburstmc.protocol.bedrock.packet.LevelChunkPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.RemoveEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
+import org.cloudburstmc.protocol.bedrock.packet.SubChunkPacket
 import org.cloudburstmc.protocol.bedrock.packet.TakeItemEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket
 import org.cloudburstmc.math.vector.Vector3f
@@ -78,7 +79,13 @@ class Level(val session: GameSession) {
                 }
 
                 if (packet.isCachingEnabled || packet.isRequestSubChunks) {
-                    // blob-cache / newer subchunk-request chunk loading isn't supported, see note above
+                    // blob-cache chunk loading (isCachingEnabled) still isn't supported - servers
+                    // using that will still leave us blind. But isRequestSubChunks (the modern,
+                    // now near-universal loading path where LevelChunkPacket only carries heightmap/
+                    // biome data and actual block data arrives later via individual SubChunkPacket
+                    // responses) IS now handled below, in the SubChunkPacket branch - so don't
+                    // bail out here for that case, just skip the (block-data-less) LevelChunkPacket
+                    // itself.
                     return
                 }
 
@@ -94,6 +101,43 @@ class Level(val session: GameSession) {
                 } catch (e: Exception) {
                     // malformed/unexpected chunk data for this protocol version - skip it rather
                     // than crash the relay
+                }
+            }
+
+            is SubChunkPacket -> {
+                if (!session.isBlockMappingInitialized) return
+
+                // This is the response to the (real, physical) client's own SubChunkRequestPacket,
+                // which we don't send ourselves - we're just observing it pass through the relay.
+                // Protocol semantics (best effort, not verified against a live packet capture):
+                // `centerPosition` is the request's base (chunkX, sectionY, chunkZ) - sectionY as
+                // a *section* index (worldBlockY shr 4), not a block Y - and each SubChunkData's
+                // own `position` is a small relative offset from that base. In the overwhelmingly
+                // common case (a single chunk column, vertical prefetch only) x/z offsets are 0
+                // and only the y offset varies, but we honor x/z too in case a server ever sends
+                // neighboring columns this way.
+                for (subChunkData in packet.subChunks) {
+                    val data = subChunkData.data ?: continue
+                    if (data.readableBytes() <= 0) continue // no data = not found/failed, nothing to store
+
+                    val offset = subChunkData.position
+                    val chunkX = packet.centerPosition.x + offset.x
+                    val chunkZ = packet.centerPosition.z + offset.z
+                    val worldSectionY = packet.centerPosition.y + offset.y
+
+                    val chunk = chunks.getOrPut(Chunk.hash(chunkX, chunkZ)) {
+                        Chunk(chunkX, chunkZ, is384WorldSupported, session.blockMapping)
+                    }
+                    // Chunk.readSubChunk()/getBlockAt() index their sectionStorage array from 0,
+                    // with 384-worlds offset by +4 sections (-64 world Y -> array index 0) - see
+                    // Chunk.getBlockAt()'s `(yIn + 64) shr 4` for the equivalent block-Y-based math.
+                    val sectionIndex = if (is384WorldSupported) worldSectionY + 4 else worldSectionY
+                    try {
+                        chunk.readSubChunk(sectionIndex, data.duplicate())
+                    } catch (e: Exception) {
+                        // malformed/unexpected subchunk data for this protocol version - skip it
+                        // rather than crash the relay
+                    }
                 }
             }
 
