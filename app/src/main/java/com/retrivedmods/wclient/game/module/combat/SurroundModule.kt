@@ -209,7 +209,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         val packet = PlayerHotbarPacket().apply {
             selectedHotbarSlot = slot
             containerId = 0
-            selectHotbarSlot = true
+            isSelectHotbarSlot = true
         }
         session.clientBound(packet)
     }
