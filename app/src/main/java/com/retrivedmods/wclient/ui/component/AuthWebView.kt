@@ -12,6 +12,7 @@ import com.retrivedmods.wclient.game.RealmsAuthFlow
 import net.raphimc.minecraftauth.MinecraftAuth
 import net.raphimc.minecraftauth.bedrock.BedrockAuthManager
 import net.raphimc.minecraftauth.msa.service.impl.DeviceCodeMsaAuthService
+import java.util.function.Consumer
 import kotlin.concurrent.thread
 
 val auth = "UCxb4pcHvdYpqv7i5Xt9mOUw"
@@ -46,11 +47,11 @@ class AuthWebView @JvmOverloads constructor(
                 val authManager = BedrockAuthManager
                     .create(httpClient, AccountManager.GAME_VERSION)
                     .msaApplicationConfig(RealmsAuthFlow.BEDROCK_ANDROID_APPLICATION_CONFIG)
-                    .login(::DeviceCodeMsaAuthService) { deviceCode ->
+                    .login(::DeviceCodeMsaAuthService, Consumer<net.raphimc.minecraftauth.msa.model.MsaDeviceCode> { deviceCode ->
                         post {
                             loadUrl(deviceCode.directVerificationUri)
                         }
-                    }
+                    })
 
                 AccountManager.addAccount(authManager)
                 callback?.invoke(null)
