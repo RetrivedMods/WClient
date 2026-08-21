@@ -110,12 +110,12 @@ object CodecRegistry {
             // getLatestCodec()/getClosestCodec() silently fall back to an older protocol than
             // the one actually needed - e.g. real 1.26.44 clients seeing WRelay advertise a
             // much older protocol and refusing to connect with "InitialConnection-90: Block"
-            // before any of our game logic even runs. Logging with Log.e (and the class name)
-            // makes that failure visible in `adb logcat` / Android Studio's Logcat instead of
-            // requiring println output that's easy to lose.
-            android.util.Log.e(
-                "CodecRegistry",
-                "Failed to register codec $minecraftVersion (protocol $protocolVersion, class $className): ${e.javaClass.simpleName}: ${e.message}"
+            // before any of our game logic even runs.
+            // (android.util.Log can't be used here: :relay is a plain Kotlin/JVM module with no
+            // Android SDK dependency - only :app has that. println still shows up in `adb logcat`
+            // for an Android process, same as every other log line in this file.)
+            println(
+                "ERROR: Failed to register codec $minecraftVersion (protocol $protocolVersion, class $className): ${e.javaClass.simpleName}: ${e.message}"
             )
         }
     }
