@@ -97,7 +97,7 @@ class NoClipModule : Module("no_clip", ModuleCategory.Motion) {
             if (isEnabled) {
                 var verticalMotion = 0f
 
-                // Space for up, Shift for down
+
                 if (packet.inputData.contains(PlayerAuthInputData.JUMPING)) {
                     verticalMotion = moveSpeed
                 } else if (packet.inputData.contains(PlayerAuthInputData.SNEAKING)) {

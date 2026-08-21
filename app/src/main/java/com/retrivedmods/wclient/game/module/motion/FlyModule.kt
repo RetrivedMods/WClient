@@ -81,7 +81,7 @@ class FlyModule : Module("fly", ModuleCategory.Motion) {
         }
 
         if (packet is PlayerAuthInputPacket) {
-            // Enable/disable flying abilities
+
             if (!canFly && isEnabled) {
                 enableFlyAbilitiesPacket.uniqueEntityId = session.localPlayer.uniqueEntityId
                 session.clientBound(enableFlyAbilitiesPacket)
@@ -93,11 +93,10 @@ class FlyModule : Module("fly", ModuleCategory.Motion) {
                 return
             }
 
-            // Handle vertical movement when enabled
             if (isEnabled) {
                 var verticalMotion = 0f
 
-                // Space for up, Shift for down
+
                 if (packet.inputData.contains(PlayerAuthInputData.JUMPING)) {
                     verticalMotion = flySpeed
                 } else if (packet.inputData.contains(PlayerAuthInputData.SNEAKING)) {

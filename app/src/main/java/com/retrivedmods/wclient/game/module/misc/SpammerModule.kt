@@ -105,7 +105,6 @@ class SpammerModule : Module("Spammer", ModuleCategory.Misc) {
             msg = msg + randomSuffixes.random()
         }
 
-        // Apply mode
         msg = when (mode) {
             SpamMode.REPEAT -> msg
             SpamMode.UPPERCASE -> msg.uppercase()

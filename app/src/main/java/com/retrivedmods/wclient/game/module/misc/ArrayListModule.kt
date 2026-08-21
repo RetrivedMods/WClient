@@ -155,7 +155,7 @@ class ArrayListModule : Module("arraylist", ModuleCategory.Misc) {
     }
 
     enum class FontStyle {
-        NORMAL,      // Default system font
-        MINECRAFT    // Minecraft-style font (requires minecraft.ttf in res/font/)
+        NORMAL,
+        MINECRAFT
     }
 }

@@ -25,9 +25,7 @@ class BhopModule : Module("bhop", ModuleCategory.Motion) {
 
         val currentTime = System.currentTimeMillis()
 
-        // Apply vertical motion adjustments at defined intervals
         if (currentTime - lastMotionTime >= motionInterval) {
-            // Apply upward and downward motion to simulate jumping
 
 
             if (packet is PlayerAuthInputPacket) {
@@ -38,21 +36,20 @@ class BhopModule : Module("bhop", ModuleCategory.Motion) {
                     val motionPacket = SetEntityMotionPacket().apply {
                         runtimeEntityId = session.localPlayer.runtimeEntityId
 
-                        // Alternate vertical motion to simulate jumping up and down
                         motion = Vector3f.from(
-                            session.localPlayer.motionX,  // Keep horizontal motion
-                            if ((currentTime / (motionInterval / times)) % 2 == 0L) jumpHeight else -jumpHeight,  // Alternate between upwards and downwards motion
-                            session.localPlayer.motionZ   // Keep horizontal motion
+                            session.localPlayer.motionX,
+                            if ((currentTime / (motionInterval / times)) % 2 == 0L) jumpHeight else -jumpHeight,
+                            session.localPlayer.motionZ
                         )
                     }
 
 
-                    // Send the motion packet to the server
+
                     session.clientBound(motionPacket)
                 }
             }
 
-            // Update the last motion time
+
             lastMotionTime = currentTime
         }
     }

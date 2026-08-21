@@ -20,11 +20,9 @@ class JetPackModule : Module("jetpack", ModuleCategory.Motion) {
 
         val packet = interceptablePacket.packet
         if (packet is PlayerAuthInputPacket) {
-            // Convert angles to radians
             val yaw = Math.toRadians(packet.rotation.y.toDouble())
             val pitch = Math.toRadians(packet.rotation.x.toDouble())
 
-            // Calculate direction vector based on where player is looking
             val motionX = -sin(yaw) * cos(pitch) * speed
             val motionY = -sin(pitch) * speed
             val motionZ = cos(yaw) * cos(pitch) * speed

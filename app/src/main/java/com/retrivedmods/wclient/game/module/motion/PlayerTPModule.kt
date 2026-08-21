@@ -56,7 +56,7 @@ class PlayerTPModule : Module("PlayerTP", ModuleCategory.Motion) {
         var newY = playerPos.y + dy * ratio
 
         if (jitterEnabled) {
-            val jitter = Random.nextFloat() * 0.5f + 0.5f // range: 0.5 to 1.0
+            val jitter = Random.nextFloat() * 0.5f + 0.5f
             newY += if (Random.nextBoolean()) jitter else -jitter
         }
 

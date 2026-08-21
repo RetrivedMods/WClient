@@ -72,14 +72,13 @@ class EnemyHunterModule : Module("EnemyHunter", ModuleCategory.Combat) {
         }
 
         val motion = if (player.vec3Position.y < 0.5f) {
-            Vector3f.from(0f, 1.2f, 0f) // Anti-void jump
+            Vector3f.from(0f, 1.2f, 0f)
         } else moveVec
 
         val newPosition = player.vec3Position.add(motion)
 
         if (!noClip && isPathBlocked(player.vec3Position, newPosition)) return
 
-        // --- Smooth Rotation ---
         val lookDX = targetPos.x - playerPos.x
         val lookDY = (targetPos.y + yOffset) - playerPos.y
         val lookDZ = targetPos.z - playerPos.z
