@@ -290,11 +290,26 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             authInput.rotation = Vector3f.from(0f, yaw, yaw)
         }
 
+        // Same underlying issue as SurroundModule had: Bedrock's block-place transaction places
+        // the new block adjacent to whatever existing block you "click", not at blockPosition
+        // itself. Clicking the empty target cell directly gets silently dropped server-side.
+        // Figure out which existing block we're clicking and which face of it, such that the
+        // resulting placement lands at `pos`:
+        //  - faceUp: click the block below `pos` from its top (UP) face.
+        //  - pushDir: click the block on the opposite side of `pos` from pushDir, on the face
+        //    that points towards `pos` (i.e. towards pushDir).
+        //  - neither: fall back to the same below/UP behavior as faceUp.
+        val face = if (faceUp) 1 else (pushDir?.let { faceForDirection(it) } ?: 1)
+        val referencePos = when {
+            faceUp || pushDir == null -> Vector3i.from(pos.x, pos.y - 1, pos.z)
+            else -> Vector3i.from(pos.x - pushDir.x, pos.y - pushDir.y, pos.z - pushDir.z)
+        }
+
         val transaction = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
             actionType = 0 // click block / place
-            blockPosition = pos
-            blockFace = if (faceUp) 1 else (pushDir?.let { faceForDirection(it) } ?: 1)
+            blockPosition = referencePos
+            blockFace = face
             hotbarSlot = slot
             itemInHand = localPlayer.inventory.hand
             playerPosition = localPlayer.vec3Position

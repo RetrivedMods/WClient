@@ -169,15 +169,22 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         val runtimeId = session.blockMapping.getRuntimeIdByIdentifier(blockIdentifier) ?: return
         val definitionToPlace = session.blockMapping.getDefinition(runtimeId)
 
+        // Bedrock's block-place transaction works by "clicking" an existing block from a given
+        // face; the new block lands adjacent to that face, not at blockPosition itself. Clicking
+        // the target position directly (as if it already had a block there) means the server sees
+        // us clicking air and silently drops the placement. Click the block below the target from
+        // its top (UP) face instead, so the new block ends up at `pos`.
+        val referencePos = Vector3i.from(pos.x, pos.y - 1, pos.z)
+
         val packet = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
             actionType = 0 // click block / place
-            blockPosition = pos
-            blockFace = 1 // top face, doesn't matter much for a fresh air target
+            blockPosition = referencePos
+            blockFace = 1 // up
             hotbarSlot = slot
             itemInHand = localPlayer.inventory.hand
             playerPosition = localPlayer.vec3Position
-            clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
+            clickPosition = Vector3f.from(0.5f, 1.0f, 0.5f)
             blockDefinition = definitionToPlace
         }
 
