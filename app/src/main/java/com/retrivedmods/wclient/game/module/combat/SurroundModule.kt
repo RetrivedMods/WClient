@@ -1,7 +1,5 @@
 package com.retrivedmods.wclient.game.module.combat
 
-import com.retrivedmods.wclient.util.setPacketField
-
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -14,36 +12,36 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerHotbarPacket
 import kotlin.math.floor
 
 /**
- * Places blocks (obsidian by default) around the player to reduce end crystal / explosion damage.
- *
- * NOTE: unlike the original C++ (Mod-Menu-style) implementation this was ported from, WClient is a
- * relay/proxy client and does not keep a local copy of world block state (no BlockSource / chunk data).
- * Because of that this version can NOT check whether a target position is actually air, replaceable,
- * or already occupied before placing - it just fires placement packets at the 8 positions around the
- * player each tick and lets the server accept or silently reject them, the same way a real client's
- * packet would be validated server-side. "Dynamic" hitbox expansion is also approximated using a fixed
- * player-sized radius per nearby entity (since Entity here has no AABB/hitbox size), not true AABB
- * collision like the original.
+ * Ported from the reference Surround.cpp, now using real block data (session.level.getBlockAt)
+ * instead of blindly firing placements. Follows the same ring-without-corners shape and
+ * dynamic-expansion idea as the original, adapted to what WClient can actually see: entities
+ * don't carry a hitbox width/height here, so "dynamic" expansion uses a flat per-entity margin
+ * check against the ring cells instead of true AABB intersection.
  */
 class SurroundModule : Module("surround", ModuleCategory.Combat) {
 
-    private var blockIdentifier by stringValue("block", "minecraft:obsidian", null)
-
     private var placeDelayTicks by intValue("place_delay", 1, 0..20)
-    private var blocksPerTick by intValue("blocks_per_tick", 4, 1..8)
-    private var placeBelowFeet by boolValue("place_below", true)
+    private var blocksPerTick by intValue("blocks_per_tick", 1, 1..10)
+    private var airPlace by boolValue("air_place", false)
     private var center by boolValue("center", true)
     private var dynamic by boolValue("dynamic", true)
-    private var dynamicRadius by floatValue("dynamic_radius", 3f, 1f..6f)
+    private var dynamicMargin by floatValue("dynamic_margin", 0.6f, 0f..2f)
+    private var placeButton by boolValue("button", true)
+    private var fakeRotation by boolValue("rotate", false)
 
-    private var placeQueue: MutableList<Vector3i> = mutableListOf()
+    private companion object {
+        const val OBSIDIAN = "minecraft:obsidian"
+        const val BUTTON = "minecraft:stone_button"
+    }
+
+    private var placeList: MutableList<Vector3i> = mutableListOf()
     private var tickCounter = 0
     private var oldSlot = -1
     private var hasCentered = false
 
     override fun onEnabled() {
         super.onEnabled()
-        placeQueue = mutableListOf()
+        placeList = mutableListOf()
         tickCounter = 0
         oldSlot = -1
         hasCentered = false
@@ -51,136 +49,168 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
 
     override fun onDisabled() {
         super.onDisabled()
-        placeQueue.clear()
+        placeList.clear()
         if (oldSlot != -1 && isSessionCreated) {
-            restoreSlot()
+            switchToSlot(oldSlot)
         }
         oldSlot = -1
         hasCentered = false
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
-        if (!isEnabled || !isSessionCreated) {
-            return
-        }
-
+        if (!isEnabled || !isSessionCreated) return
         val packet = interceptablePacket.packet
-        if (packet !is PlayerAuthInputPacket) {
-            return
-        }
+        if (packet !is PlayerAuthInputPacket) return
 
         val localPlayer = session.localPlayer
 
-        val obsidianSlot = localPlayer.inventory.searchForItemInHotbar {
-            it.definition?.identifier == blockIdentifier
-        }
-
-        if (obsidianSlot == null) {
-            // nothing to place with, don't spam the server
-            return
-        }
-
-        if (oldSlot == -1) {
-            oldSlot = localPlayer.inventory.heldItemSlot
-        }
-
         if (center && !hasCentered) {
             val pos = localPlayer.vec3Position
-            val centeredPos = Vector3f.from(floor(pos.x) + 0.5f, pos.y, floor(pos.z) + 0.5f)
-            packet.position = centeredPos
+            packet.position = Vector3f.from(floor(pos.x) + 0.5f, pos.y, floor(pos.z) + 0.5f)
             hasCentered = true
         }
 
-        if (placeQueue.isEmpty()) {
-            placeQueue = computePlacements(localPlayer.vec3Position).toMutableList()
+        val obsidianSlot = localPlayer.inventory.searchForItemInHotbar {
+            it.definition?.identifier == OBSIDIAN
         }
 
-        if (tickCounter < placeDelayTicks) {
-            tickCounter++
-            return
-        }
-        tickCounter = 0
+        placeList = computePlaceList()
 
-        if (localPlayer.inventory.heldItemSlot != obsidianSlot) {
-            switchToSlot(obsidianSlot)
+        if (fakeRotation && placeList.isNotEmpty()) {
+            val eye = localPlayer.vec3Position
+            val target = placeList.first()
+            val dx = (target.x + 0.5f) - eye.x
+            val dz = (target.z + 0.5f) - eye.z
+            val yaw = Math.toDegrees(kotlin.math.atan2(-dx.toDouble(), dz.toDouble())).toFloat()
+            packet.rotation = Vector3f.from(packet.rotation.x, yaw, yaw)
         }
 
-        var placed = 0
-        val iterator = placeQueue.iterator()
-        while (iterator.hasNext() && placed < blocksPerTick) {
-            val target = iterator.next()
-            placeBlock(target, obsidianSlot)
-            iterator.remove()
-            placed++
+        if (obsidianSlot != null && placeList.isNotEmpty()) {
+            if (oldSlot == -1) {
+                oldSlot = localPlayer.inventory.heldItemSlot
+            }
+
+            if (tickCounter >= placeDelayTicks) {
+                tickCounter = 0
+                if (localPlayer.inventory.heldItemSlot != obsidianSlot) {
+                    switchToSlot(obsidianSlot)
+                }
+
+                var placed = 0
+                val iterator = placeList.iterator()
+                while (iterator.hasNext() && placed < blocksPerTick) {
+                    val pos = iterator.next()
+                    place(OBSIDIAN, pos, obsidianSlot)
+                    placed++
+                }
+            } else {
+                tickCounter++
+            }
+        }
+
+        if (placeButton) {
+            val buttonSlot = localPlayer.inventory.searchForItemInHotbar {
+                it.definition?.identifier == BUTTON
+            }
+            if (buttonSlot != null) {
+                val buttonPos = Vector3i.from(
+                    floor(localPlayer.vec3Position.x).toInt(),
+                    floor(localPlayer.vec3Position.y).toInt() - 1,
+                    floor(localPlayer.vec3Position.z).toInt()
+                )
+                place(BUTTON, buttonPos, buttonSlot)
+            }
         }
     }
 
-    private fun computePlacements(playerPos: Vector3f): List<Vector3i> {
-        val baseX = floor(playerPos.x).toInt()
-        val baseY = floor(playerPos.y).toInt() - if (placeBelowFeet) 1 else 0
-        val baseZ = floor(playerPos.z).toInt()
+    /** [Surround.cpp]'s canPlaceBlock(): the target itself must be air (or, with airPlace, anything). */
+    private fun canPlaceAt(pos: Vector3i): Boolean {
+        if (airPlace) return true
+        return session.level.getBlockAt(pos).identifier == "minecraft:air"
+    }
 
-        var minX = -1
-        var maxX = 1
-        var minZ = -1
-        var maxZ = 1
+    private fun computePlaceList(): MutableList<Vector3i> {
+        val localPlayer = session.localPlayer
+        val pos = localPlayer.vec3Position
+        val currentPos = Vector3i.from(floor(pos.x).toInt(), floor(pos.y + 0.5f).toInt(), floor(pos.z).toInt())
+
+        var xStart = -1
+        var zStart = -1
+        var xEnd = 1
+        var zEnd = 1
 
         if (dynamic) {
-            val level = session.level
-            level.entityMap.values.forEach { entity ->
-                if (entity.distance(playerPos) > dynamicRadius) return@forEach
-                val dx = entity.posX - playerPos.x
-                val dz = entity.posZ - playerPos.z
-                if (dx > 1.2f) maxX = maxOf(maxX, 2)
-                if (dx < -1.2f) minX = minOf(minX, -2)
-                if (dz > 1.2f) maxZ = maxOf(maxZ, 2)
-                if (dz < -1.2f) minZ = minOf(minZ, -2)
+            session.level.entityMap.values.forEach { entity ->
+                val d = entity.distance(pos)
+                if (d > 4f) return@forEach
+                val dx = entity.posX - pos.x
+                val dz = entity.posZ - pos.z
+                if (dx <= xStart + 1 + dynamicMargin && dx >= xStart - dynamicMargin) xStart -= 1
+                if (dz <= zStart + 1 + dynamicMargin && dz >= zStart - dynamicMargin) zStart -= 1
+                if (dx >= xEnd - 1 - dynamicMargin && dx <= xEnd + dynamicMargin) xEnd += 1
+                if (dz >= zEnd - 1 - dynamicMargin && dz <= zEnd + dynamicMargin) zEnd += 1
             }
         }
 
-        val positions = mutableListOf<Vector3i>()
-        for (x in minX..maxX) {
-            for (z in minZ..maxZ) {
-                if (x == 0 && z == 0) continue
-                // only the ring around the player, skip interior tiles when the box grew beyond 3x3
-                if (x !in -1..1 && z !in -1..1) continue
-                positions.add(Vector3i.from(baseX + x, baseY, baseZ + z))
+        val result = mutableListOf<Vector3i>()
+        for (x in xStart..xEnd) {
+            for (z in zStart..zEnd) {
+                // skip the 4 corners, matching Surround.cpp's ring-without-corners shape
+                if ((x == xStart || x == xEnd) && (z == zStart || z == zEnd)) continue
+
+                if (x > xStart && x < xEnd && z > zStart && z < zEnd) {
+                    // strictly interior cell (only reachable once dynamic expansion has grown the
+                    // box past the base 3x3): floor it in, one level down
+                    val placePos = currentPos.add(x, -1, z)
+                    if (canPlaceAt(placePos)) result.add(placePos)
+                    continue
+                }
+
+                val placePos = currentPos.add(x, 0, z)
+                val below = currentPos.add(x, -1, z)
+                // only bother with the "wall" cell if there's solid ground for it to stand on
+                if (session.level.getBlockAt(below).identifier == "minecraft:air" && !airPlace) continue
+
+                if (canPlaceAt(placePos)) {
+                    result.add(placePos)
+                } else if (canPlaceAt(below)) {
+                    result.add(below)
+                }
             }
         }
-        return positions
+
+        result.sortBy { it.distanceSq(currentPos) }
+        return result
+    }
+
+    private fun Vector3i.distanceSq(other: Vector3i): Int {
+        val dx = x - other.x
+        val dy = y - other.y
+        val dz = z - other.z
+        return dx * dx + dy * dy + dz * dz
+    }
+
+    private fun place(identifier: String, pos: Vector3i, slot: Int) {
+        val localPlayer = session.localPlayer
+        val packet = InventoryTransactionPacket().apply {
+            transactionType = InventoryTransactionType.ITEM_USE
+            actionType = 0
+            blockPosition = pos
+            blockFace = 1
+            hotbarSlot = slot
+            itemInHand = localPlayer.inventory.hand
+            playerPosition = localPlayer.vec3Position
+            clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
+        }
+        session.serverBound(packet)
     }
 
     private fun switchToSlot(slot: Int) {
         val packet = PlayerHotbarPacket().apply {
             selectedHotbarSlot = slot
             containerId = 0
-            setPacketField("selectHotbarSlot", true)
+            isSelectHotbarSlot = true
         }
-        session.serverBound(packet)
         session.clientBound(packet)
-    }
-
-    private fun restoreSlot() {
-        switchToSlot(oldSlot)
-    }
-
-    private fun placeBlock(pos: Vector3i, slot: Int) {
-        val localPlayer = session.localPlayer
-        val runtimeId = session.blockMapping.getRuntimeIdByIdentifier(blockIdentifier) ?: return
-        val definitionToPlace = session.blockMapping.getDefinition(runtimeId)
-
-        val packet = InventoryTransactionPacket().apply {
-            transactionType = InventoryTransactionType.ITEM_USE
-            actionType = 0 // click block / place
-            blockPosition = pos
-            blockFace = 1 // top face, doesn't matter much for a fresh air target
-            hotbarSlot = slot
-            itemInHand = localPlayer.inventory.hand
-            playerPosition = localPlayer.vec3Position
-            clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            blockDefinition = definitionToPlace
-        }
-
-        session.serverBound(packet)
     }
 }
