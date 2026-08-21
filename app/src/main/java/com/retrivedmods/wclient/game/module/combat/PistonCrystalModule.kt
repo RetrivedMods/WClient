@@ -280,7 +280,7 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
 
         // Reuse LocalPlayer.placeBlock so piston placement has the same
         // server-authoritative inventory handling as ProtoHax.
-        val definition = session.blockMapping.getDefinition(localPlayer.inventory.hand.blockDefinition?.runtimeId ?: return true)
+        val definition = localPlayer.inventory.hand.blockDefinition ?: return true
         localPlayer.placeBlock(pos, refPos, face, definition)
         return true
     }

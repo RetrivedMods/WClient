@@ -12,6 +12,8 @@ import com.retrivedmods.wclient.util.setPacketField
 import com.retrivedmods.wrelay.WRelaySession
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
+import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
 import org.cloudburstmc.protocol.bedrock.packet.ItemComponentPacket
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
@@ -21,6 +23,10 @@ import org.cloudburstmc.protocol.common.SimpleDefinitionRegistry
 class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
 
     val localPlayer = LocalPlayer(this)
+
+    /** Last real outgoing block-use transaction, used as a packet template by placement modules. */
+    @Volatile
+    var lastBlockPlacementPacket: InventoryTransactionPacket? = null
     val level = Level(this)
 
     val protocolVersion: Int
@@ -71,6 +77,17 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
     }
 
     private fun handlePacketBound(packet: BedrockPacket, isClientBound: Boolean): Boolean {
+        // The stock WClient decompiled from the latest build clones a real ITEM_USE
+        // transaction and only changes its target/item/position fields. Preserve that
+        // behavior so newer protocol fields (prediction/trigger/etc.) are not lost.
+        if (!isClientBound && packet is InventoryTransactionPacket &&
+            packet.transactionType == InventoryTransactionType.ITEM_USE &&
+            packet.actionType == 0 &&
+            packet.blockPosition != null
+        ) {
+            lastBlockPlacementPacket = packet.clone()
+        }
+
         when (packet) {
             is StartGamePacket -> {
                 try {
