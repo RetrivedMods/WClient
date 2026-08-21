@@ -5,6 +5,7 @@ import com.retrivedmods.wclient.game.inventory.AbstractInventory
 import com.retrivedmods.wclient.game.inventory.ContainerInventory
 import com.retrivedmods.wclient.game.inventory.PlayerInventory
 import com.retrivedmods.wclient.game.registry.BlockDefinition
+import com.retrivedmods.wclient.game.utils.misc.removeNetInfo
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode

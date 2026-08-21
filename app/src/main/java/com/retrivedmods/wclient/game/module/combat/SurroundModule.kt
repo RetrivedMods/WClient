@@ -5,8 +5,6 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
-import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
-import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerHotbarPacket
 import kotlin.math.floor
@@ -200,18 +198,11 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         // to click instead.
         val (refPos, face) = resolvePlacementReference(pos) ?: return
 
-        val packet = InventoryTransactionPacket().apply {
-            transactionType = InventoryTransactionType.ITEM_USE
-            actionType = 0
-            blockPosition = refPos
-            blockFace = face
-            hotbarSlot = slot
-            itemInHand = localPlayer.inventory.hand
-            playerPosition = localPlayer.vec3Position
-            clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            blockDefinition = session.level.getBlockAt(refPos)
-        }
-        session.serverBound(packet)
+        // Use the shared placement implementation copied from ProtoHax.  It supplies
+        // the definition of the block being placed and, when required, the
+        // server-authoritative inventory action instead of the clicked block definition.
+        val definition = localPlayer.inventory.hand.blockDefinition ?: return
+        localPlayer.placeBlock(pos, refPos, face, definition)
     }
 
     /**
@@ -238,6 +229,9 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
             containerId = 0
             isSelectHotbarSlot = true
         }
+        // Keep both sides in sync: the server must receive the hotbar change, while
+        // the local inventory tracker also needs the client-bound packet.
+        session.serverBound(packet)
         session.clientBound(packet)
     }
 }

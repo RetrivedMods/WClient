@@ -10,8 +10,6 @@ import com.retrivedmods.wclient.game.entity.Player
 import com.retrivedmods.wclient.game.friend.FriendManager
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
-import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
-import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerHotbarPacket
 import kotlin.math.floor
@@ -280,18 +278,10 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         // piston's push direction) when possible.
         val (refPos, face) = resolvePlacementReference(pos, preferredFace) ?: return true
 
-        val transaction = InventoryTransactionPacket().apply {
-            transactionType = InventoryTransactionType.ITEM_USE
-            actionType = 0
-            blockPosition = refPos
-            blockFace = face
-            hotbarSlot = slot
-            itemInHand = localPlayer.inventory.hand
-            playerPosition = localPlayer.vec3Position
-            clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            blockDefinition = session.level.getBlockAt(refPos)
-        }
-        session.serverBound(transaction)
+        // Reuse LocalPlayer.placeBlock so piston placement has the same
+        // server-authoritative inventory handling as ProtoHax.
+        val definition = localPlayer.inventory.hand.blockDefinition ?: return true
+        localPlayer.placeBlock(pos, refPos, face, definition)
         return true
     }
 
@@ -338,6 +328,9 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             containerId = 0
             isSelectHotbarSlot = true
         }
+        // The hotbar selection has to reach the server as well as our local
+        // inventory tracker.
+        session.serverBound(packet)
         session.clientBound(packet)
     }
 
