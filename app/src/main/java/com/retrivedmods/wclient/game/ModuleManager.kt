@@ -19,6 +19,8 @@ import com.retrivedmods.wclient.game.module.combat.AutoHvHModule
 import com.retrivedmods.wclient.game.module.combat.AutoTotemModule
 import com.retrivedmods.wclient.game.module.combat.HotbarSwitcherModule
 import com.retrivedmods.wclient.game.module.combat.InfiniteAuraModule
+import com.retrivedmods.wclient.game.module.combat.PistonCrystalModule
+import com.retrivedmods.wclient.game.module.combat.SurroundModule
 import com.retrivedmods.wclient.game.module.misc.ArrayListModule
 import com.retrivedmods.wclient.game.module.motion.NoClipModule
 import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
@@ -99,6 +101,8 @@ object ModuleManager {
             add(AntiKnockbackModule())
 
             add(AntiCrystalModule())
+            add(SurroundModule())
+            add(PistonCrystalModule())
             add(HitAndRunModule())
             add(HitboxModule())
             add(CrystalSmashModule())

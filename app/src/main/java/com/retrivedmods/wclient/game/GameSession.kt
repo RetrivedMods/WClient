@@ -8,10 +8,13 @@ import com.retrivedmods.wclient.game.registry.BlockMappingProvider
 import com.retrivedmods.wclient.game.registry.ItemMapping
 import com.retrivedmods.wclient.game.registry.ItemMappingProvider
 import com.retrivedmods.wclient.game.world.Level
+import com.retrivedmods.wclient.util.setPacketField
 import com.retrivedmods.wrelay.WRelaySession
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.ItemComponentPacket
+import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 import org.cloudburstmc.protocol.common.SimpleDefinitionRegistry
@@ -33,17 +36,58 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
     lateinit var blockMapping: BlockMapping
     lateinit var itemMapping: ItemMapping
 
+    // Exposed instead of letting other classes do `session::blockMapping.isInitialized`
+    // directly - checking a lateinit property's isInitialized from outside its declaring
+    // class can fail to compile ("Backing field ... is not accessible at this point"),
+    // so we keep the check here where it's always safe and hand out a plain Boolean.
+    val isBlockMappingInitialized: Boolean
+        get() = ::blockMapping.isInitialized
+
     private var startGameReceived = false
 
     fun clientBound(packet: BedrockPacket) {
         wRelaySession.clientBound(packet)
     }
 
+    /**
+     * A real ITEM_USE packet captured from the vanilla client. The stock latest WClient
+     * Scaffold clones this packet instead of constructing placement transactions from
+     * scratch, preserving protocol fields such as trigger/prediction and legacy actions.
+     */
+    @Volatile
+    var lastPlacementTransaction: InventoryTransactionPacket? = null
+
     fun serverBound(packet: BedrockPacket) {
         wRelaySession.serverBound(packet)
     }
 
+    // ComposedPacketHandler's default beforeClientBound()/beforeServerBound() both just call
+    // this single method, so modules previously had no way to tell which direction a packet
+    // was going (e.g. AntiCrystalModule rewriting position needs to only touch outgoing/
+    // server-bound packets, not incoming ones). We now override beforeClientBound/
+    // beforeServerBound below instead, so this is only kept to satisfy the interface and
+    // defaults to treating the packet as server-bound if anything else ends up calling it
+    // directly.
     override fun beforePacketBound(packet: BedrockPacket): Boolean {
+        return handlePacketBound(packet, isClientBound = false)
+    }
+
+    override fun beforeClientBound(packet: BedrockPacket): Boolean {
+        return handlePacketBound(packet, isClientBound = true)
+    }
+
+    override fun beforeServerBound(packet: BedrockPacket): Boolean {
+        if (packet is InventoryTransactionPacket &&
+            packet.transactionType == InventoryTransactionType.ITEM_USE &&
+            packet.actionType == 0 &&
+            packet.blockPosition != null
+        ) {
+            lastPlacementTransaction = packet.clone()
+        }
+        return handlePacketBound(packet, isClientBound = false)
+    }
+
+    private fun handlePacketBound(packet: BedrockPacket, isClientBound: Boolean): Boolean {
         when (packet) {
             is StartGamePacket -> {
                 try {
@@ -93,7 +137,7 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
         localPlayer.onPacketBound(packet)
         level.onPacketBound(packet)
 
-        val interceptablePacket = InterceptablePacket(packet)
+        val interceptablePacket = InterceptablePacket(packet, isClientBound)
 
         for (module in ModuleManager.modules) {
             // Set session if not already set
@@ -129,10 +173,10 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
         val textPacket = TextPacket()
         textPacket.type = type
         textPacket.sourceName = ""
-        textPacket.message = message
+        textPacket.setPacketField("message", message)
         textPacket.xuid = ""
         textPacket.platformChatId = ""
-        textPacket.filteredMessage = ""
+        textPacket.setPacketField("filteredMessage", "")
         clientBound(textPacket)
     }
 

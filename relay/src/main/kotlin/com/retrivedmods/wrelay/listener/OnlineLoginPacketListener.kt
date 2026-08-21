@@ -2,9 +2,8 @@ package com.retrivedmods.wrelay.listener
 
 import com.retrivedmods.wrelay.WRelaySession
 import com.retrivedmods.wrelay.util.AuthUtils
-import com.retrivedmods.wrelay.util.refresh
 import net.kyori.adventure.text.Component
-import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession
+import net.raphimc.minecraftauth.bedrock.BedrockAuthManager
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm
 import org.cloudburstmc.protocol.bedrock.data.auth.AuthType
 import org.cloudburstmc.protocol.bedrock.data.auth.CertificateChainPayload
@@ -22,28 +21,26 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 @Suppress("MemberVisibilityCanBePrivate")
 class OnlineLoginPacketListener(
     val wRelaySession: WRelaySession,
-    private var fullBedrockSession: StepFullBedrockSession.FullBedrockSession
+    private val authManager: BedrockAuthManager
 ) : WRelayPacketListener {
 
     private var skinData: JSONObject? = null
 
     override fun beforeClientBound(packet: BedrockPacket): Boolean {
         if (packet is LoginPacket) {
-            if (fullBedrockSession.isExpired) {
-                println("Session expired, attempting to refresh tokens...")
-
-                try {
-                    fullBedrockSession = fullBedrockSession.refresh()
-                    println("Successfully refreshed session for: ${fullBedrockSession.mcChain.displayName}")
-                } catch (e: Exception) {
-                    println("Failed to refresh session: ${e.message}")
-                    e.printStackTrace()
-                    wRelaySession.server.disconnect("Your session has expired and could not be refreshed. Please re-login in the W Client.")
-                    return true
-                }
-            }
-
             println("Processing login packet")
+
+            try {
+                // BedrockAuthManager refreshes its own tokens on demand - calling getUpToDate()
+                // here just makes sure that happens (and surfaces any failure) before we commit
+                // to the login flow, instead of failing partway through connectServer().
+                authManager.minecraftCertificateChain.getUpToDate()
+            } catch (e: Exception) {
+                println("Failed to refresh session: ${e.message}")
+                e.printStackTrace()
+                wRelaySession.server.disconnect("Your session has expired and could not be refreshed. Please re-login in the W Client.")
+                return true
+            }
 
             try {
                 val jws = JsonWebSignature()
@@ -75,10 +72,10 @@ class OnlineLoginPacketListener(
             }
 
             try {
-                val chain = AuthUtils.fetchOnlineChain(fullBedrockSession)
+                val chain = AuthUtils.fetchOnlineChain(authManager)
                 val skinData =
                     AuthUtils.fetchOnlineSkinData(
-                        fullBedrockSession,
+                        authManager,
                         skinData!!,
                         wRelaySession.wRelay.remoteAddress!!
                     )
@@ -105,25 +102,25 @@ class OnlineLoginPacketListener(
                 if (parts.size != 3) {
                     throw Exception("Invalid JWT format")
                 }
-                
+
                 val headerJson = String(java.util.Base64.getUrlDecoder().decode(parts[0]))
                 val payloadJson = String(java.util.Base64.getUrlDecoder().decode(parts[1]))
-                
+
                 val header = JSONObject(JsonUtil.parseJson(headerJson))
                 val payload = JSONObject(JsonUtil.parseJson(payloadJson))
-                
+
                 val x5u = header.get("x5u") as? String ?: throw Exception("Missing x5u in header")
                 val serverKey = EncryptionUtils.parseKey(x5u)
-                
+
                 val saltString = payload.get("salt") as? String ?: throw Exception("Missing salt in payload")
                 val salt = java.util.Base64.getDecoder().decode(saltString)
-                
+
                 val key = EncryptionUtils.getSecretKey(
-                    fullBedrockSession.mcChain.privateKey, 
+                    authManager.sessionKeyPair.private,
                     serverKey,
                     salt
                 )
-                
+
                 wRelaySession.client!!.enableEncryption(key)
                 println("Encryption enabled successfully")
 

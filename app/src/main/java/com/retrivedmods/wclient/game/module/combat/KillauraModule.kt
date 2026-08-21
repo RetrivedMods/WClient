@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.combat
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -149,7 +151,7 @@ class KillauraModule : Module("killaura", ModuleCategory.Combat) {
                 position = tpPos
                 rotation = entity.vec3Rotation
                 mode = MovePlayerPacket.Mode.NORMAL
-                onGround = false
+                setPacketField("onGround", false)
                 tick = player.tickExists
             }
         )
@@ -170,7 +172,7 @@ class KillauraModule : Module("killaura", ModuleCategory.Combat) {
                 position = pos.add(x.toFloat(), 0f, z.toFloat())
                 rotation = Vector3f.ZERO
                 mode = MovePlayerPacket.Mode.NORMAL
-                onGround = true
+                setPacketField("onGround", true)
                 tick = session.localPlayer.tickExists
             }
         )

@@ -1,19 +1,15 @@
 package com.retrivedmods.wclient.game
 
-import net.raphimc.minecraftauth.MinecraftAuth
-import net.raphimc.minecraftauth.step.AbstractStep
-import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession
-import net.raphimc.minecraftauth.util.MicrosoftConstants
+import net.raphimc.minecraftauth.msa.data.MsaConstants
+import net.raphimc.minecraftauth.msa.model.MsaApplicationConfig
 
 object RealmsAuthFlow {
 
-    val BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS: AbstractStep<*, StepFullBedrockSession.FullBedrockSession> = 
-        MinecraftAuth.builder()
-            .withClientId(MicrosoftConstants.BEDROCK_ANDROID_TITLE_ID)
-            .withScope(MicrosoftConstants.SCOPE_TITLE_AUTH)
-            .deviceCode()
-            .withDeviceToken("Android")
-            .sisuTitleAuthentication(MicrosoftConstants.BEDROCK_XSTS_RELYING_PARTY)
-            .buildMinecraftBedrockChainStep(true, true)
+    // Bedrock Android title ID + the "title auth" scope - same values the old MinecraftAuth 4.x
+    // MicrosoftConstants.BEDROCK_ANDROID_TITLE_ID / SCOPE_TITLE_AUTH pointed to. Using a "title"
+    // client ID is what lets BedrockAuthManager also fetch a Realms XSTS token later, on demand -
+    // in 5.x there's no separate "Realms-capable chain" to build up front like there was in 4.x.
+    val BEDROCK_ANDROID_APPLICATION_CONFIG: MsaApplicationConfig =
+        MsaApplicationConfig(MsaConstants.BEDROCK_ANDROID_TITLE_ID, MsaConstants.SCOPE_TITLE_AUTH)
 
 }

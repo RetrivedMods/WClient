@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.misc
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import android.util.Log
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
@@ -86,10 +88,10 @@ class SpammerModule : Module("Spammer", ModuleCategory.Misc) {
         val textPacket = TextPacket()
         textPacket.type = TextPacket.Type.CHAT
         textPacket.sourceName = ""
-        textPacket.message = messageToSend
+        textPacket.setPacketField("message", messageToSend)
         textPacket.xuid = ""
         textPacket.platformChatId = ""
-        textPacket.needsTranslation = false
+        textPacket.setPacketField("needsTranslation", false)
 
         session.serverBound(textPacket)
 

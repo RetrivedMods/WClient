@@ -30,7 +30,7 @@ math = "2.0"
 nbt = "3.0.3.Final"
 snappy = "2.0.2"
 jose4j = "0.9.6"
-minecraft-auth = "4.1.2"
+minecraft-auth = "5.0.0"
 jackson-databind = "2.20.0"
 jackson-annotations = "2.20"
 
@@ -61,6 +61,7 @@ kotlinx-serialization-json-jvm = { module = "org.jetbrains.kotlinx:kotlinx-seria
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 adventure-text-serializer-legacy = { group = "net.kyori", name = "adventure-text-serializer-legacy", version.ref = "adventure" }
+adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
 adventure-text-serializer-json = { group = "net.kyori", name = "adventure-text-serializer-json", version.ref = "adventure" }
 log4j-bom = { group = "org.apache.logging.log4j", name = "log4j-bom", version.ref = "log4j" }
 log4j-api = { group = "org.apache.logging.log4j", name = "log4j-api" }

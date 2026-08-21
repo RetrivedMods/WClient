@@ -4,9 +4,14 @@ import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.inventory.AbstractInventory
 import com.retrivedmods.wclient.game.inventory.ContainerInventory
 import com.retrivedmods.wclient.game.inventory.PlayerInventory
+import com.retrivedmods.wclient.game.registry.BlockDefinition
 import org.cloudburstmc.math.vector.Vector3f
+import org.cloudburstmc.math.vector.Vector3i
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode
 import org.cloudburstmc.protocol.bedrock.data.SoundEvent
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryActionData
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventorySource
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
 import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
@@ -84,6 +89,57 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
                 it.onPacketBound(packet)
             }
         }
+    }
+
+    /**
+     * Places [definition] at [target] by "clicking" the existing block at [referencePos] from
+     * [face] (0=down,1=up,2=north,3=south,4=west,5=east; [target] must equal [referencePos] plus
+     * that face's direction - see Level.findPlacementReference, which computes both). Ported from
+     * ProtoHax's EntityLocalPlayer.placeBlock.
+     *
+     * Predicts the placement into our own world tracking immediately (matching real client/server
+     * behavior - the server doesn't wait for round-trip confirmation before the block "exists"
+     * locally), and - critically - attaches an inventory action for the consumed item when
+     * [inventoriesServerAuthoritative] is true, which most modern servers require or they silently
+     * drop the whole transaction.
+     */
+    fun placeBlock(target: Vector3i, referencePos: Vector3i, face: Int, definition: BlockDefinition) {
+        session.level.setBlockIdAt(target.x, target.y, target.z, definition.runtimeId)
+
+        val packet = InventoryTransactionPacket().apply {
+            transactionType = InventoryTransactionType.ITEM_USE
+            actionType = 0
+            blockPosition = referencePos
+            blockFace = face
+            hotbarSlot = inventory.heldItemSlot
+            itemInHand = inventory.hand
+            playerPosition = vec3Position
+            clickPosition = Vector3f.from(
+                Math.random().toFloat(),
+                Math.random().toFloat(),
+                Math.random().toFloat()
+            )
+            blockDefinition = definition
+
+            if (inventoriesServerAuthoritative) {
+                val current = itemInHand
+                val afterUse = if (current.count > 1) {
+                    current.toBuilder().count(current.count - 1).build()
+                } else {
+                    ItemData.AIR
+                }
+                actions.add(
+                    InventoryActionData(
+                        InventorySource.fromContainerWindowId(0),
+                        hotbarSlot,
+                        current,
+                        afterUse
+                    )
+                )
+            }
+        }
+
+        session.serverBound(packet)
     }
 
     fun swing() {

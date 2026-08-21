@@ -26,6 +26,21 @@ class BlockMapping(
         return definition is UnknownBlockDefinition || getDefinition(definition.runtimeId) == definition
     }
 
+    /**
+     * Returns the first runtime id whose identifier matches [identifier] (e.g. "minecraft:obsidian").
+     * Block states with extra properties share the same base identifier, so this returns
+     * the default/first state found, which is fine for simple full blocks like obsidian.
+     */
+    fun getRuntimeIdByIdentifier(identifier: String): Int? {
+        return runtimeToGameMap.entries.firstOrNull { it.value.identifier == identifier }?.key
+    }
+
+    /**
+     * Runtime id of "minecraft:air", used by chunk/block storage as the default/empty block.
+     * Falls back to 0 if not found (shouldn't happen with a valid mapping).
+     */
+    val airId: Int by lazy { getRuntimeIdByIdentifier("minecraft:air") ?: 0 }
+
     companion object {
         fun read(context: Context, version: Short): BlockMapping {
             val path = "mcpedata/blocks/runtime_block_states_$version.dat"

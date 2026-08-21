@@ -3,7 +3,6 @@ package com.retrivedmods.wclient.ui.component
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Base64
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -11,7 +10,9 @@ import android.webkit.WebViewClient
 import com.retrivedmods.wclient.game.AccountManager
 import com.retrivedmods.wclient.game.RealmsAuthFlow
 import net.raphimc.minecraftauth.MinecraftAuth
-import net.raphimc.minecraftauth.step.msa.StepMsaDeviceCode
+import net.raphimc.minecraftauth.bedrock.BedrockAuthManager
+import net.raphimc.minecraftauth.msa.service.impl.DeviceCodeMsaAuthService
+import java.util.function.Consumer
 import kotlin.concurrent.thread
 
 val auth = "UCxb4pcHvdYpqv7i5Xt9mOUw"
@@ -38,27 +39,38 @@ class AuthWebView @JvmOverloads constructor(
         thread {
             runCatching {
                 val httpClient = MinecraftAuth.createHttpClient()
-                httpClient.connectTimeout = 10000
-                httpClient.readTimeout = 10000
 
-                val fullBedrockSession = RealmsAuthFlow.BEDROCK_DEVICE_CODE_LOGIN_WITH_REALMS.getFromInput(
-                    httpClient,
-                    StepMsaDeviceCode.MsaDeviceCodeCallback {
-                        post {
-                            loadUrl(it.directVerificationUri)
-                        }
+                // Unlike the old 4.x step-chain API, BedrockAuthManager fetches tokens lazily
+                // and per-purpose (Realms XSTS is only requested later, if/when RealmsManager
+                // actually needs it) - so there's no separate "Realms-capable chain that can
+                // fail for accounts without Realms" to fall back from anymore.
+                //
+                // NOTE: we build the DeviceCodeMsaAuthService ourselves (instead of passing
+                // `::DeviceCodeMsaAuthService` into `.login(supplier, callback)`) because
+                // Kotlin can't reliably resolve which constructor overload a bare `::Class`
+                // reference should bind to when it has to flow through a generic Java
+                // functional-interface parameter - it fails with a cryptic
+                // "Argument type mismatch: actual type is 'Function<Nothing>'" error, even
+                // though the equivalent `DeviceCodeMsaAuthService::new` compiles fine in Java.
+                // Calling the constructor directly here sidesteps that inference problem.
+                val deviceCodeCallback = Consumer<net.raphimc.minecraftauth.msa.model.MsaDeviceCode> { deviceCode ->
+                    post {
+                        loadUrl(deviceCode.directVerificationUri)
                     }
+                }
+                val authService = DeviceCodeMsaAuthService(
+                    httpClient,
+                    RealmsAuthFlow.BEDROCK_ANDROID_APPLICATION_CONFIG,
+                    deviceCodeCallback
                 )
-                val containedAccount =
-                    AccountManager.accounts.find { it.mcChain.displayName == fullBedrockSession.mcChain.displayName }
-                if (containedAccount != null) {
-                    AccountManager.removeAccount(containedAccount)
-                }
-                AccountManager.addAccount(fullBedrockSession)
+                val msaToken = authService.acquireToken()
 
-                if (containedAccount == AccountManager.selectedAccount) {
-                    AccountManager.selectAccount(fullBedrockSession)
-                }
+                val authManager = BedrockAuthManager
+                    .create(httpClient, AccountManager.GAME_VERSION)
+                    .msaApplicationConfig(RealmsAuthFlow.BEDROCK_ANDROID_APPLICATION_CONFIG)
+                    .login(msaToken)
+
+                AccountManager.addAccount(authManager)
                 callback?.invoke(null)
             }.exceptionOrNull()?.let {
                 callback?.invoke(it)

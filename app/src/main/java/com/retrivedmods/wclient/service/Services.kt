@@ -144,7 +144,7 @@ object Services {
                     ).capture(remoteAddress = remoteAddress) {
                         initModules(this)
                         listeners.add(AutoCodecPacketListener(this))
-                        selectedAccount?.let { OnlineLoginPacketListener(this, it) }
+                        selectedAccount?.authManager?.let { OnlineLoginPacketListener(this, it) }
                             ?.let { listeners.add(it) }
                         listeners.add(GamingPacketHandler(this))
                     }
@@ -155,7 +155,7 @@ object Services {
                     ) {
                         initModules(this)
                         listeners.add(AutoCodecPacketListener(this))
-                        selectedAccount?.let { OnlineLoginPacketListener(this, it) }
+                        selectedAccount?.authManager?.let { OnlineLoginPacketListener(this, it) }
                             ?.let { listeners.add(it) }
                         listeners.add(GamingPacketHandler(this))
                     }

@@ -3,6 +3,9 @@ package com.retrivedmods.wrelay.codec
 object VersionDetector {
 
     private val versionRanges = mapOf(
+        // 1.26.40 and 1.26.44 share protocol version 2168 (no wire-protocol break between
+        // them - confirmed via minecraft.wiki/w/Protocol_version and bedrock-v/protocol-docs).
+        2168 to listOf("1.26.40", "1.26.44"),
         898 to listOf("1.21.130", "1.21.131", "1.21.132"),
         860 to listOf("1.21.124"),
         859 to listOf("1.21.120"),

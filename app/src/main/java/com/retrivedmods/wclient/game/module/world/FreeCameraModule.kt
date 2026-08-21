@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.world
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -118,7 +120,7 @@ class FreeCameraModule : Module("free_camera", ModuleCategory.World) {
     private fun sendCountdownMessage(message: String) {
         val textPacket = TextPacket().apply {
             type = TextPacket.Type.RAW
-            this.message = message
+            setPacketField("message", message)
             xuid = ""
             sourceName = ""
         }

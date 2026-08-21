@@ -1,5 +1,6 @@
 package com.retrivedmods.wclient.game
 
+import com.retrivedmods.wclient.util.setPacketField
 import net.kyori.adventure.text.Component
 import org.cloudburstmc.protocol.bedrock.packet.SetTitlePacket
 
@@ -25,7 +26,7 @@ object ActionBarManager {
 
         session.clientBound(SetTitlePacket().apply {
             type = SetTitlePacket.Type.ACTIONBAR
-            text = combinedText
+            setPacketField("text", combinedText)
             fadeInTime = 0
             fadeOutTime = 0
             stayTime = 2
