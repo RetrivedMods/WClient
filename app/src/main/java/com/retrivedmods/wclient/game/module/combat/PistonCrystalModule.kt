@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.game.module.combat
 
+import com.retrivedmods.wclient.util.setPacketField
+
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -17,20 +19,24 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerHotbarPacket
 import kotlin.math.floor
 
 /**
- * Ported from the PistonCrystal.h/.cpp reference, now backed by real block data
- * (session.level.getBlockAt) rather than placing blind. Follows the original's
- * findValidPlacement/calculatePlacement/isValidPlacement structure:
- *  - try each of the 4 cardinal directions from the target, closest-to-player first
- *  - for each direction, try yLevel 0 then 1 (target's feet level, then one above)
- *  - a placement is valid if the crystal spot is air with air above and an obsidian/bedrock
- *    base below it, and both the piston and redstone spots are placeable
+ * Places an obsidian base + end crystal next to a target, plus an (best-effort) piston + redstone
+ * setup to try to pop the crystal via a block push instead of hitting it. Ported from the
+ * PistonCrystal/PistonCrystal2 C++ reference + ideas from ModuleCrystalAura.kt (ProtoHax), now that
+ * WClient has real block lookups via [com.retrivedmods.wclient.game.world.Level.getBlockAt].
  *
- * Not ported: the "dynamic"/shift perpendicular-offset placement variant, and the
- * target/player AABB-collision checks (WClient's Entity has no hitbox width/height to check
- * against). Piston orientation is approximated the same way Surround/AntiCrystal do it - faking
- * the outgoing PlayerAuthInputPacket's rotation just before placing - which is best-effort, not
- * guaranteed reliable. Direct-attack of any spawned crystal remains the fallback that actually
- * guarantees a detonation regardless of whether the piston geometry landed cleanly.
+ * Known limitations vs the original:
+ * - Piston orientation in Bedrock is set from the placer's look direction at placement time. This
+ *   fakes that by mutating the outgoing PlayerAuthInputPacket's rotation right before placing, the
+ *   same trick AntiCrystal/Surround use for position - it's not guaranteed as reliable as an actual
+ *   client rotating for real.
+ * - Block data for chunks loaded via blob caching or the newer per-subchunk-request system isn't
+ *   tracked (see Level.kt), so getBlockAt() may report air for those even if something's really
+ *   there. In that case placements will just be rejected server-side, same as if this weren't
+ *   checked at all.
+ * - Damage estimation (session.level.simulateExplosionDamage) is a distance-only approximation with
+ *   no block-occlusion/exposure factor, so it's an upper bound, not exact.
+ * - Direct-attack fallback (autoAttackCrystal) is what actually guarantees detonation; the
+ *   piston/redstone path is a best-effort bonus on top of that, not a replacement for it.
  */
 class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
 
@@ -46,23 +52,20 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
 
     private companion object {
         const val OBSIDIAN = "minecraft:obsidian"
-        const val BEDROCK = "minecraft:bedrock"
         const val CRYSTAL_ITEM = "minecraft:end_crystal"
         const val CRYSTAL_ENTITY = "minecraft:ender_crystal"
         const val PISTON = "minecraft:piston"
         const val REDSTONE_BLOCK = "minecraft:redstone_block"
         const val EXPLOSION_SIZE = 6f
-
-        // Direction.X_PLUS, X_MINUS, Z_PLUS, Z_MINUS from PistonCrystal.h
-        val DIRECTIONS = listOf(Vector3i.from(1, 0, 0), Vector3i.from(-1, 0, 0), Vector3i.from(0, 0, 1), Vector3i.from(0, 0, -1))
     }
 
-    private data class Placement(val crystalPos: Vector3i, val pistonPos: Vector3i, val redstonePos: Vector3i, val dir: Vector3i)
-
-    private enum class Step { PISTON, CRYSTAL, REDSTONE, DONE }
+    private enum class Step { OBSIDIAN, CRYSTAL, PISTON, REDSTONE, DONE }
 
     private var step = Step.DONE
-    private var placement: Placement? = null
+    private var obsidianPos: Vector3i? = null
+    private var pistonPos: Vector3i? = null
+    private var redstonePos: Vector3i? = null
+    private var pushDir: Vector3i? = null
     private var tickCounter = 0
     private var oldSlot = -1
     private val lastCrystalAttack = HashMap<Long, Long>()
@@ -82,7 +85,10 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
 
     private fun resetState() {
         step = Step.DONE
-        placement = null
+        obsidianPos = null
+        pistonPos = null
+        redstonePos = null
+        pushDir = null
         tickCounter = 0
         oldSlot = -1
         lastCrystalAttack.clear()
@@ -93,21 +99,16 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         val packet = interceptablePacket.packet
         if (packet !is PlayerAuthInputPacket) return
 
-        // Guaranteed detonation path - runs every tick regardless of placement state.
+        // Always try to guarantee detonation of any crystal that's already out there, regardless
+        // of whether we're mid-placement - this is the part that actually reliably deals damage.
         if (autoAttackCrystal) {
             attackNearbyCrystals()
         }
 
         if (step == Step.DONE) {
-            val target = findTarget()
-            if (target != null) {
-                val found = findValidPlacement(target)
-                if (found != null) {
-                    placement = found
-                    step = if (usePiston) Step.PISTON else Step.CRYSTAL
-                    tickCounter = 0
-                }
-            }
+            val target = findTarget() ?: return
+            val base = findPlacementSpot(target) ?: return
+            beginPlacement(base, target)
         }
 
         if (tickCounter < placeDelayTicks) {
@@ -119,7 +120,7 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         advanceStateMachine(packet)
     }
 
-    // --- target selection -------------------------------------------------------------------
+    // --- target / spot selection -----------------------------------------------------------
 
     private fun findTarget(): Entity? {
         val localPlayer = session.localPlayer
@@ -145,108 +146,109 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         }
     }
 
-    // --- placement search (PistonCrystal.cpp: findValidPlacement/calculatePlacement) --------
-
-    private fun findValidPlacement(target: Entity): Placement? {
+    /**
+     * Looks for a block directly adjacent to the target (one of the 4 cardinal neighbours at the
+     * target's feet level) that's solid, with air immediately above it (room for obsidian -> crystal).
+     * Real getBlockAt() checks now that Level tracks chunk data.
+     */
+    private fun findPlacementSpot(target: Entity): Vector3i? {
         val targetPos = target.vec3Position
-        val targetBlockPos = Vector3i.from(floor(targetPos.x).toInt(), floor(targetPos.y).toInt(), floor(targetPos.z).toInt())
+        val baseX = floor(targetPos.x).toInt()
+        val baseY = floor(targetPos.y).toInt()
+        val baseZ = floor(targetPos.z).toInt()
 
-        val localPlayer = session.localPlayer
-        val orderedDirs = DIRECTIONS.sortedBy { dir ->
-            val testPos = Vector3f.from(
-                targetBlockPos.x + dir.x * 3f,
-                targetBlockPos.y.toFloat(),
-                targetBlockPos.z + dir.z * 3f
-            )
-            localPlayer.distance(testPos)
-        }
-
-        for (dir in orderedDirs) {
-            for (yLevel in 0..1) {
-                val config = calculatePlacement(targetBlockPos, dir, yLevel)
-                if (isValidPlacement(config, target)) {
-                    return config
+        val offsets = listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1)
+        for ((dx, dz) in offsets) {
+            val candidate = Vector3i.from(baseX + dx, baseY - 1, baseZ + dz)
+            val at = session.level.getBlockAt(candidate.x, candidate.y + 1, candidate.z)
+            // crystal spot itself must be clear; the block below may be air too - in that case
+            // we'll place our own obsidian there first (see isObsidianNeeded-equivalent check
+            // in beginPlacement).
+            if (at.identifier.isAirLike()) {
+                if (session.localPlayer.distance(Vector3f.from(candidate.x + 0.5f, candidate.y + 1f, candidate.z + 0.5f)) <= range + 1f) {
+                    return candidate
                 }
             }
         }
         return null
     }
 
-    private fun calculatePlacement(targetPos: Vector3i, dir: Vector3i, yLevel: Int): Placement {
-        val crystalPos = targetPos.add(dir.x, yLevel, dir.z)
-        val pistonPos = targetPos.add(dir.x * 2, yLevel, dir.z * 2)
-        val redstonePos = targetPos.add(dir.x * 3, yLevel, dir.z * 3)
-        return Placement(crystalPos, pistonPos, redstonePos, dir)
+    private fun String.isAirLike(): Boolean {
+        return this == "minecraft:air"
     }
 
-    private fun isAir(pos: Vector3i) = session.level.getBlockAt(pos).identifier == "minecraft:air"
+    // --- placement sequencing --------------------------------------------------------------
 
-    private fun isValidCrystalBase(pos: Vector3i): Boolean {
-        val id = session.level.getBlockAt(pos).identifier
-        return id == OBSIDIAN || id == BEDROCK
-    }
+    private fun beginPlacement(base: Vector3i, target: Entity) {
+        val localPlayer = session.localPlayer
 
-    private fun canPlaceCrystal(pos: Vector3i): Boolean {
-        return isAir(pos) && isAir(pos.add(0, 1, 0)) && isValidCrystalBase(pos.add(0, -1, 0))
-    }
-
-    /** Loosely matches canBeBuiltOver(): only air here (WClient has no full block-property table). */
-    private fun canPlaceBlock(pos: Vector3i): Boolean = isAir(pos)
-
-    private fun isValidPlacement(config: Placement, target: Entity): Boolean {
-        if (!canPlaceCrystal(config.crystalPos)) return false
-        if (!canPlaceBlock(config.pistonPos)) return false
-        if (!canPlaceBlock(config.redstonePos)) return false
-
-        val crystalCenter = Vector3f.from(config.crystalPos.x + 0.5f, config.crystalPos.y + 0.5f, config.crystalPos.z + 0.5f)
-        if (target.distance(crystalCenter) > range) return false
-
+        val crystalCenter = Vector3f.from(base.x + 0.5f, base.y + 2f, base.z + 0.5f)
         var estimatedTargetDamage = 0f
         var estimatedSelfDamage = 0f
         session.level.simulateExplosionDamage(
-            Vector3f.from(config.crystalPos.x + 0.5f, config.crystalPos.y + 0.5f, config.crystalPos.z + 0.5f),
+            crystalCenter,
             EXPLOSION_SIZE,
-            extraEntities = listOf(session.localPlayer)
+            extraEntities = listOf(localPlayer)
         ) { entity, damage ->
             if (entity.runtimeEntityId == target.runtimeEntityId) estimatedTargetDamage = damage
             if (entity is LocalPlayer) estimatedSelfDamage = damage
         }
-        if (estimatedTargetDamage < targetDamageMin) return false
-        if (estimatedSelfDamage > selfDamageLimit) return false
 
-        return true
+        if (estimatedTargetDamage < targetDamageMin) return
+        if (estimatedSelfDamage > selfDamageLimit) return
+
+        obsidianPos = base
+
+        // matches PistonCrystal2's isObsidianNeeded(): only place obsidian if the spot doesn't
+        // already have a solid block there (e.g. the target is already standing on real ground).
+        val obsidianAlreadyPresent = !session.level.getBlockAt(base).identifier.isAirLike()
+
+        // push direction: away from the target, so a piston push (if it lands) knocks the
+        // obsidian - and whatever's resting on it - out from under the crystal.
+        val targetPos = target.vec3Position
+        val dx = base.x + 0.5f - targetPos.x
+        val dz = base.z + 0.5f - targetPos.z
+        pushDir = if (kotlin.math.abs(dx) > kotlin.math.abs(dz)) {
+            Vector3i.from(if (dx > 0) 1 else -1, 0, 0)
+        } else {
+            Vector3i.from(0, 0, if (dz > 0) 1 else -1)
+        }
+        pistonPos = base.add(pushDir)
+        redstonePos = pistonPos!!.add(pushDir)
+
+        step = if (obsidianAlreadyPresent) Step.CRYSTAL else Step.OBSIDIAN
+        tickCounter = 0
     }
 
-    // --- placement sequencing ----------------------------------------------------------------
-    // Order matches the PistonCrystal.cpp reference's placementStep (1=piston, 2=crystal,
-    // 3=redstone): the piston has to already be sitting there, unpowered, *before* the crystal
-    // spawns next to it - only then does placing the redstone block power it and have it punch
-    // straight into the crystal. Placing the crystal first (the previous order here) left the
-    // piston step arriving too late to matter for most servers.
-
     private fun advanceStateMachine(packet: PlayerAuthInputPacket) {
-        val config = placement ?: return resetState()
-
         when (step) {
-            Step.PISTON -> {
-                if (!usePiston) {
-                    step = Step.CRYSTAL
-                    return advanceStateMachine(packet)
-                }
-                if (place(PISTON, config.pistonPos, packet, lookTowards = config.crystalPos, pushDir = Vector3i.from(-config.dir.x, 0, -config.dir.z))) {
+            Step.OBSIDIAN -> {
+                val pos = obsidianPos ?: return resetState()
+                if (place(OBSIDIAN, pos, packet, faceUp = true)) {
                     step = Step.CRYSTAL
                 }
             }
 
             Step.CRYSTAL -> {
-                if (place(CRYSTAL_ITEM, config.crystalPos, packet, lookTowards = config.crystalPos)) {
-                    step = if (usePiston) Step.REDSTONE else Step.DONE
+                val pos = obsidianPos ?: return resetState()
+                val crystalPos = pos.add(0, 1, 0)
+                if (place(CRYSTAL_ITEM, crystalPos, packet, faceUp = true)) {
+                    step = if (usePiston) Step.PISTON else Step.DONE
                     if (!usePiston) resetState()
                 }
             }
 
+            Step.PISTON -> {
+                val pos = pistonPos ?: return resetState()
+                val dir = pushDir ?: return resetState()
+                if (place(PISTON, pos, packet, faceUp = false, lookTowards = obsidianPos, pushDir = dir)) {
+                    step = Step.REDSTONE
+                }
+            }
+
             Step.REDSTONE -> {
-                if (place(REDSTONE_BLOCK, config.redstonePos, packet, lookTowards = null)) {
+                val pos = redstonePos ?: return resetState()
+                if (place(REDSTONE_BLOCK, pos, packet, faceUp = false)) {
                     resetState()
                 }
             }
@@ -255,17 +257,23 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         }
     }
 
+    /**
+     * Sends one block placement attempt. Returns true whether or not the item was found/placed so
+     * the state machine keeps moving forward - we can't confirm server-side success without real
+     * world feedback, so we don't retry indefinitely.
+     */
     private fun place(
         identifier: String,
         pos: Vector3i,
         authInput: PlayerAuthInputPacket,
-        lookTowards: Vector3i?,
+        faceUp: Boolean,
+        lookTowards: Vector3i? = null,
         pushDir: Vector3i? = null
     ): Boolean {
         val localPlayer = session.localPlayer
         val slot = localPlayer.inventory.searchForItemInHotbar {
             it.definition?.identifier == identifier
-        } ?: return true // don't get stuck retrying forever if we're out of the item
+        } ?: return true // nothing to place with, don't get stuck retrying forever
 
         if (oldSlot == -1) {
             oldSlot = localPlayer.inventory.heldItemSlot
@@ -282,17 +290,33 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             authInput.rotation = Vector3f.from(0f, yaw, yaw)
         }
 
-        val transaction = InventoryTransactionPacket().apply {
-            transactionType = InventoryTransactionType.ITEM_USE
-            actionType = 0
-            blockPosition = pos
-            blockFace = pushDir?.let { faceForDirection(it) } ?: 1
-            hotbarSlot = slot
-            itemInHand = localPlayer.inventory.hand
-            playerPosition = localPlayer.vec3Position
-            clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
+        // Same underlying issue as SurroundModule had: Bedrock's block-place transaction places
+        // the new block adjacent to whatever existing block you "click", not at blockPosition
+        // itself. Clicking the empty target cell directly gets silently dropped server-side.
+        // Figure out which existing block we're clicking and which face of it, such that the
+        // resulting placement lands at `pos`:
+        //  - faceUp: click the block below `pos` from its top (UP) face.
+        //  - pushDir: click the block on the opposite side of `pos` from pushDir, on the face
+        //    that points towards `pos` (i.e. towards pushDir).
+        //  - neither: fall back to the same below/UP behavior as faceUp.
+        val face = if (faceUp) 1 else (pushDir?.let { faceForDirection(it) } ?: 1)
+        val referencePos = when {
+            faceUp || pushDir == null -> Vector3i.from(pos.x, pos.y - 1, pos.z)
+            else -> Vector3i.from(pos.x - pushDir.x, pos.y - pushDir.y, pos.z - pushDir.z)
         }
-        session.serverBound(transaction)
+
+        // The reference block has to actually exist (be non-air) or the server just drops the
+        // transaction - same issue Surround had. Unlike Surround's simple ring placement, this
+        // module picks the reference position itself based on faceUp/pushDir, so we can't fall
+        // back to a different neighbor here - just bail out for this attempt.
+        if (session.level.isAir(referencePos)) {
+            return false
+        }
+
+        val runtimeId = session.blockMapping.getRuntimeIdByIdentifier(identifier) ?: return true
+        val definition = session.blockMapping.getDefinition(runtimeId)
+
+        localPlayer.placeBlock(pos, referencePos, face, definition)
         return true
     }
 
@@ -308,15 +332,16 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
     }
 
     private fun switchToSlot(slot: Int) {
+        // matches the existing (working) HotbarSwitcherModule pattern exactly - only clientBound.
         val packet = PlayerHotbarPacket().apply {
             selectedHotbarSlot = slot
             containerId = 0
-            isSelectHotbarSlot = true
+            setPacketField("selectHotbarSlot", true)
         }
         session.clientBound(packet)
     }
 
-    // --- crystal detonation fallback ----------------------------------------------------------
+    // --- crystal detonation fallback -------------------------------------------------------
 
     private fun attackNearbyCrystals() {
         val localPlayer = session.localPlayer
