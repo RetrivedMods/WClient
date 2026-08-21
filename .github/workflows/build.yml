@@ -2,9 +2,9 @@ name: Compilar WClient APK
 
 on:
   push:
-    branches: [ "*" ]
+    branches: [ "main", "freebuff/*" ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -55,6 +55,19 @@ jobs:
             --max-workers=4 \
             --build-cache
 
+      - name: 🔨 Compilar APK Release
+        run: |
+          ./gradlew :app:assembleRelease --parallel --configure-on-demand \
+            -Dorg.gradle.caching=true \
+            -Dorg.gradle.parallel=true \
+            --max-workers=4 \
+            --build-cache
+
+      - name: 📋 Listar APKs gerados
+        run: |
+          echo "✅ APKs compilados com sucesso!"
+          find app/build/outputs -name "*.apk" -exec ls -lh {} \;
+
       - name: 📦 Upload APK Debug
         uses: actions/upload-artifact@v4
         with:
@@ -63,7 +76,34 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
-      - name: 📋 Listar APKs gerados
-        run: |
-          echo "✅ APKs compilados com sucesso!"
-          find app/build/outputs -name "*.apk" -exec ls -lh {} \;
+      - name: 📦 Upload APK Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: WClient-Release-APK
+          path: app/build/outputs/apk/release/*.apk
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: 🚀 Criar Release no GitHub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: WClient v${{ github.run_number }}
+          body: |
+            ## WClient APK Build #${{ github.run_number }}
+            
+            ### Alterações
+            - Branch: ${{ github.ref_name }}
+            - Commit: ${{ github.sha }}
+            
+            ### Arquivos
+            - **WClient-Debug.apk** — Para instalação e teste
+            - **WClient-Release.apk** — Versão otimizada para produção
+          files: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
