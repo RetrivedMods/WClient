@@ -125,8 +125,22 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
                     diag("target found (${target.javaClass.simpleName}, dist=${"%.1f".format(target.distance(session.localPlayer))}) but no valid placement. First failure: ${lastPlacementFailureReason}")
                 }
             } else {
-                val nearbyCount = session.level.entityMap.values.count { it.distance(session.localPlayer) <= range }
-                diag("no target found (range=$range, entities within range incl. non-targetable: $nearbyCount, total entities tracked: ${session.level.entityMap.size})")
+                val nearby = session.level.entityMap.values.filter { it.distance(session.localPlayer) <= range }
+                val breakdown = nearby.joinToString("; ") { e ->
+                    val why = when (e) {
+                        is LocalPlayer -> "self"
+                        is Player -> when {
+                            !playersOnly -> "playersOnly=false"
+                            FriendManager.isFriend(e.uuid) -> "is friend"
+                            antiBot && session.level.playerMap[e.uuid] == null -> "antiBot: not in playerMap (uuid=${e.uuid})"
+                            else -> "SHOULD BE VALID?!"
+                        }
+                        is EntityUnknown -> "EntityUnknown(identifier=${e.identifier}), playersOnly=$playersOnly"
+                        else -> "other type: ${e.javaClass.simpleName}"
+                    }
+                    "${e.javaClass.simpleName}@${"%.1f".format(e.distance(session.localPlayer))}m: $why"
+                }
+                diag("no target found (range=$range). Nearby entities: $breakdown")
             }
         }
 

@@ -121,6 +121,26 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
                     } catch (e: Exception) {
                         Log.e("GameSession", "Failed to load mappings for protocol $protocolVersion", e)
                     }
+
+                    // CRITICAL: codecHelper.blockDefinitions was never being set (only
+                    // itemDefinitions was, above/in ItemComponentPacket) - meaning the actual
+                    // packet encoder/decoder was reading and writing every block-definition field
+                    // on every packet (SubChunkPacket's block data, InventoryTransactionPacket's
+                    // blockDefinition, etc.) using its own default/empty registry instead of the
+                    // real per-server blockMapping we just built above. That's consistent with
+                    // what packet logging showed: a fixed, wrong block definition (birch_hanging_
+                    // sign) no matter what was actually being clicked - and it would equally well
+                    // explain the world's block data (via SubChunkPacket) never looking right,
+                    // which is why canPlaceCrystal/findValidPlacement kept rejecting everything.
+                    if (isBlockMappingInitialized) {
+                        try {
+                            wRelaySession.server.peer.codecHelper.blockDefinitions = blockMapping
+                            wRelaySession.client?.peer?.codecHelper?.blockDefinitions = blockMapping
+                            Log.i("GameSession", "Successfully set up codecHelper blockDefinitions")
+                        } catch (e: Exception) {
+                            Log.e("GameSession", "Failed to set up codecHelper blockDefinitions", e)
+                        }
+                    }
                 }
             }
 
