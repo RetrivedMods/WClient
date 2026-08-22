@@ -5,6 +5,7 @@ import com.retrivedmods.wclient.game.inventory.AbstractInventory
 import com.retrivedmods.wclient.game.inventory.ContainerInventory
 import com.retrivedmods.wclient.game.inventory.PlayerInventory
 import com.retrivedmods.wclient.game.registry.BlockDefinition
+import com.retrivedmods.wclient.game.utils.misc.removeNetInfo
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode
@@ -114,6 +115,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             hotbarSlot = inventory.heldItemSlot
             itemInHand = inventory.hand
             playerPosition = vec3Position
+            headPosition = Vector3f.from(vec3Position.x, vec3Position.y + 1.62f, vec3Position.z)
             clickPosition = Vector3f.from(
                 Math.random().toFloat(),
                 Math.random().toFloat(),

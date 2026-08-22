@@ -18,6 +18,7 @@ import org.cloudburstmc.protocol.bedrock.packet.LevelChunkPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.RemoveEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
+import org.cloudburstmc.protocol.bedrock.packet.SubChunkPacket
 import org.cloudburstmc.protocol.bedrock.packet.TakeItemEntityPacket
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket
 import org.cloudburstmc.math.vector.Vector3f
@@ -77,23 +78,65 @@ class Level(val session: GameSession) {
                     return
                 }
 
-                if (packet.isCachingEnabled || packet.isRequestSubChunks) {
-                    // blob-cache / newer subchunk-request chunk loading isn't supported, see note above
+                if (packet.isCachingEnabled) {
+                    // blob-cache chunk loading isn't supported, see note above
                     return
                 }
 
                 val chunk = Chunk(packet.chunkX, packet.chunkZ, is384WorldSupported, session.blockMapping)
                 try {
-                    // duplicate() gives us an independent reader index over the same underlying
-                    // memory (refcount shared with the original packet), so parsing here can never
-                    // disturb packet.data's own reader index / the relay's forwarding of the real
-                    // packet to the client.
-                    val buf = packet.data.duplicate()
-                    chunk.read(buf, packet.subChunksLength)
+                    if (!packet.isRequestSubChunks) {
+                        // duplicate() gives us an independent reader index over the same underlying
+                        // memory (refcount shared with the original packet), so parsing here can
+                        // never disturb packet.data's own reader index / the relay's forwarding of
+                        // the real packet to the client.
+                        val buf = packet.data.duplicate()
+                        chunk.read(buf, packet.subChunksLength)
+                    }
+                    // Either way, register the (possibly still-empty) chunk now: when
+                    // isRequestSubChunks is true, LevelChunkPacket only carries biome/border data
+                    // and the actual block data streams in afterwards via SubChunkPacket, which
+                    // needs a Chunk already sitting in the map to attach its sections to.
                     chunks[chunk.hash] = chunk
                 } catch (e: Exception) {
                     // malformed/unexpected chunk data for this protocol version - skip it rather
                     // than crash the relay
+                }
+            }
+
+            is SubChunkPacket -> {
+                if (!session.isBlockMappingInitialized) return
+
+                val center = packet.centerPosition
+                packet.subChunks.forEach { subChunkData ->
+                    try {
+                        // Only bother parsing entries that actually carry block data. We don't
+                        // depend on the exact SubChunkRequestResult enum name/value here (its
+                        // constants weren't confirmed) - an empty/absent buffer is a reliable
+                        // enough signal that there's nothing to parse for this one.
+                        val data = subChunkData.data ?: return@forEach
+                        if (data.readableBytes() <= 0) return@forEach
+
+                        val offset = subChunkData.position
+                        val chunkX = center.x + offset.x
+                        val chunkZ = center.z + offset.z
+                        // centerPosition.y is the signed index of the reference (usually bottom)
+                        // section; offset.y shifts from there. Our own Chunk.sectionStorage is a
+                        // plain 0-based array, so for a 384-world (24 sections, floor at y=-64) we
+                        // shift by +4 to land the lowest legal signed index (-4) on array index 0.
+                        // For the classic 256-world (16 sections, y starts at 0) signed indices are
+                        // already 0-based, so no shift is needed.
+                        val sectionIndex = (center.y + offset.y) + (if (is384WorldSupported) 4 else 0)
+
+                        val chunk = chunks.getOrPut(Chunk.hash(chunkX, chunkZ)) {
+                            Chunk(chunkX, chunkZ, is384WorldSupported, session.blockMapping)
+                        }
+
+                        val buf = data.duplicate()
+                        chunk.readSubChunk(sectionIndex, buf)
+                    } catch (e: Exception) {
+                        // same reasoning as the LevelChunkPacket catch above - skip, don't crash
+                    }
                 }
             }
 
