@@ -6,6 +6,7 @@ import com.retrivedmods.wclient.game.inventory.ContainerInventory
 import com.retrivedmods.wclient.game.inventory.PlayerInventory
 import com.retrivedmods.wclient.game.registry.BlockDefinition
 import com.retrivedmods.wclient.game.utils.misc.removeNetInfo
+import com.retrivedmods.wclient.util.PacketDebugLog
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode
@@ -146,6 +147,21 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         }
 
         session.serverBound(packet)
+        PacketDebugLog.log(
+            session,
+            "AutoPlaceLog",
+            buildString {
+                append("blockPosition: ${packet.blockPosition}\n")
+                append("blockFace: ${packet.blockFace}\n")
+                append("blockDefinition: ${packet.blockDefinition}\n")
+                append("clickPosition: ${packet.clickPosition}\n")
+                append("playerPosition: ${packet.playerPosition}\n")
+                append("headPosition: ${packet.headPosition}\n")
+                append("hotbarSlot: ${packet.hotbarSlot}\n")
+                append("itemInHand: ${packet.itemInHand}\n")
+                append("actions: ${packet.actions}")
+            }
+        )
     }
 
     /**
