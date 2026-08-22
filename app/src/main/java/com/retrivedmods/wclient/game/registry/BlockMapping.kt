@@ -42,6 +42,24 @@ class BlockMapping(
     val airId: Int by lazy { getRuntimeIdByIdentifier("minecraft:air") ?: 0 }
 
     companion object {
+        /**
+         * Builds a BlockMapping straight from the server's own StartGamePacket block palette,
+         * instead of a bundled per-version asset file. Each entry's position in [palette] is its
+         * runtime id (the modern Bedrock convention, since explicit per-entry runtime ids were
+         * removed from the palette format) - unless the entry itself still carries an explicit
+         * "runtimeId" tag (older-style palette), which takes priority when present.
+         */
+        fun fromPalette(palette: List<NbtMap>): BlockMapping {
+            val runtimeToBlock = mutableMapOf<Int, BlockDefinition>()
+            palette.forEachIndexed { index, entry ->
+                val name = entry.getString("name", null) ?: return@forEachIndexed
+                val explicitRuntimeId = entry.getInt("runtimeId", Int.MIN_VALUE)
+                val runtime = if (explicitRuntimeId != Int.MIN_VALUE) explicitRuntimeId else index
+                runtimeToBlock[runtime] = BlockDefinition(runtime, name)
+            }
+            return BlockMapping(runtimeToBlock)
+        }
+
         fun read(context: Context, version: Short): BlockMapping {
             val path = "mcpedata/blocks/runtime_block_states_$version.dat"
             context.assets.open(path).use { stream ->

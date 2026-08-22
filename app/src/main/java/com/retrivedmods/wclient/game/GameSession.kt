@@ -13,8 +13,6 @@ import com.retrivedmods.wrelay.WRelaySession
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.ItemComponentPacket
-import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
-import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 import org.cloudburstmc.protocol.common.SimpleDefinitionRegistry
@@ -49,14 +47,6 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
         wRelaySession.clientBound(packet)
     }
 
-    /**
-     * A real ITEM_USE packet captured from the vanilla client. The stock latest WClient
-     * Scaffold clones this packet instead of constructing placement transactions from
-     * scratch, preserving protocol fields such as trigger/prediction and legacy actions.
-     */
-    @Volatile
-    var lastPlacementTransaction: InventoryTransactionPacket? = null
-
     fun serverBound(packet: BedrockPacket) {
         wRelaySession.serverBound(packet)
     }
@@ -77,13 +67,6 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
     }
 
     override fun beforeServerBound(packet: BedrockPacket): Boolean {
-        if (packet is InventoryTransactionPacket &&
-            packet.transactionType == InventoryTransactionType.ITEM_USE &&
-            packet.actionType == 0 &&
-            packet.blockPosition != null
-        ) {
-            lastPlacementTransaction = packet.clone()
-        }
         return handlePacketBound(packet, isClientBound = false)
     }
 
@@ -107,8 +90,31 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
                     startGameReceived = true
                     Log.i("GameSession", "StartGamePacket received")
 
+                    // Prefer the block palette the *server itself* sent in this exact packet over
+                    // our bundled per-protocol-version asset files. Those asset files only go up to
+                    // an old protocol (they need to be hand-updated every Minecraft version), so on
+                    // any server newer than that, block runtime IDs looked up from them are silently
+                    // wrong (e.g. asking for "minecraft:obsidian" and getting back some unrelated
+                    // block) - which makes every placement attempt get rejected by the server, since
+                    // the block it's told to place doesn't match the item actually being used.
+                    // The server's own palette is *always* correct for whatever version it's running,
+                    // so this can never go stale the way the bundled files do.
+                    val livePalette = extractBlockPaletteFromStartGame(packet)
+                    if (livePalette != null) {
+                        try {
+                            blockMapping = BlockMapping.fromPalette(livePalette)
+                            Log.i("GameSession", "Loaded block mapping from the server's own StartGamePacket palette (${livePalette.size} entries)")
+                        } catch (e: Exception) {
+                            Log.e("GameSession", "Failed to build block mapping from StartGamePacket palette, falling back to bundled asset", e)
+                        }
+                    } else {
+                        Log.w("GameSession", "Could not find a block palette on StartGamePacket (tried: getBlockPalette/blockPalette/getBlockProperties/blockProperties) - falling back to the bundled per-protocol asset file, which may be outdated for this server's version")
+                    }
+
                     try {
-                        blockMapping = blockMappingProvider.craftMapping(protocolVersion)
+                        if (!isBlockMappingInitialized) {
+                            blockMapping = blockMappingProvider.craftMapping(protocolVersion)
+                        }
                         itemMapping = itemMappingProvider.craftMapping(protocolVersion)
 
                         Log.i("GameSession", "Loaded mappings for protocol $protocolVersion")
@@ -178,6 +184,33 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
         textPacket.platformChatId = ""
         textPacket.setPacketField("filteredMessage", "")
         clientBound(textPacket)
+    }
+
+    /**
+     * Reflection-based lookup for StartGamePacket's block palette. Used instead of referencing a
+     * property directly (like `packet.itemDefinitions` above) because - unlike itemDefinitions,
+     * which is already used elsewhere in this codebase against the current bedrock-codec version
+     * and therefore known to exist - the exact accessor name for the block palette on this specific
+     * library version hasn't been confirmed against source. Trying several plausible candidates via
+     * reflection means a wrong guess here just falls through to the next candidate (or the bundled
+     * asset fallback) instead of breaking the build.
+     */
+    private fun extractBlockPaletteFromStartGame(packet: StartGamePacket): List<org.cloudburstmc.nbt.NbtMap>? {
+        val candidates = listOf("getBlockPalette", "blockPalette", "getBlockProperties", "blockProperties")
+        for (name in candidates) {
+            try {
+                val method = packet.javaClass.getMethod(name)
+                val result = method.invoke(packet)
+                @Suppress("UNCHECKED_CAST")
+                val list = result as? List<org.cloudburstmc.nbt.NbtMap> ?: continue
+                if (list.isNotEmpty()) return list
+            } catch (e: NoSuchMethodException) {
+                // try the next candidate name
+            } catch (e: Exception) {
+                Log.w("GameSession", "Found StartGamePacket.$name() but couldn't read it as a block palette", e)
+            }
+        }
+        return null
     }
 
 }

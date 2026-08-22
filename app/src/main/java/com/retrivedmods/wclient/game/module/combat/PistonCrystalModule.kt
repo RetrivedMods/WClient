@@ -1,6 +1,7 @@
 package com.retrivedmods.wclient.game.module.combat
 
 import com.retrivedmods.wclient.game.InterceptablePacket
+import com.retrivedmods.wclient.game.BlockPlacementUtils
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.entity.Entity
@@ -59,7 +60,7 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
 
     private data class Placement(val crystalPos: Vector3i, val pistonPos: Vector3i, val redstonePos: Vector3i, val dir: Vector3i)
 
-    private enum class Step { CRYSTAL, PISTON, REDSTONE, DONE }
+    private enum class Step { PISTON, CRYSTAL, REDSTONE, DONE }
 
     private var step = Step.DONE
     private var placement: Placement? = null
@@ -104,7 +105,7 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
                 val found = findValidPlacement(target)
                 if (found != null) {
                     placement = found
-                    step = Step.CRYSTAL
+                    step = if (usePiston) Step.PISTON else Step.CRYSTAL
                     tickCounter = 0
                 }
             }
@@ -218,21 +219,30 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
     }
 
     // --- placement sequencing ----------------------------------------------------------------
+    // Order matches the PistonCrystal.cpp reference's placementStep (1=piston, 2=crystal,
+    // 3=redstone): the piston has to already be sitting there, unpowered, *before* the crystal
+    // spawns next to it - only then does placing the redstone block power it and have it punch
+    // straight into the crystal. Placing the crystal first (the previous order here) left the
+    // piston step arriving too late to matter for most servers.
 
     private fun advanceStateMachine(packet: PlayerAuthInputPacket) {
         val config = placement ?: return resetState()
 
         when (step) {
-            Step.CRYSTAL -> {
-                if (place(CRYSTAL_ITEM, config.crystalPos, packet, lookTowards = config.crystalPos)) {
-                    step = if (usePiston) Step.PISTON else Step.DONE
-                    if (!usePiston) resetState()
+            Step.PISTON -> {
+                if (!usePiston) {
+                    step = Step.CRYSTAL
+                    return advanceStateMachine(packet)
+                }
+                if (place(PISTON, config.pistonPos, packet, lookTowards = config.crystalPos, pushDir = Vector3i.from(-config.dir.x, 0, -config.dir.z))) {
+                    step = Step.CRYSTAL
                 }
             }
 
-            Step.PISTON -> {
-                if (place(PISTON, config.pistonPos, packet, lookTowards = config.crystalPos, preferredFace = faceForDirection(Vector3i.from(-config.dir.x, 0, -config.dir.z)))) {
-                    step = Step.REDSTONE
+            Step.CRYSTAL -> {
+                if (place(CRYSTAL_ITEM, config.crystalPos, packet, lookTowards = config.crystalPos)) {
+                    step = if (usePiston) Step.REDSTONE else Step.DONE
+                    if (!usePiston) resetState()
                 }
             }
 
@@ -251,7 +261,7 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         pos: Vector3i,
         authInput: PlayerAuthInputPacket,
         lookTowards: Vector3i?,
-        preferredFace: Int? = null
+        pushDir: Vector3i? = null
     ): Boolean {
         val localPlayer = session.localPlayer
         val slot = localPlayer.inventory.searchForItemInHotbar {
@@ -273,59 +283,32 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             authInput.rotation = Vector3f.from(0f, yaw, yaw)
         }
 
-        // Real Bedrock block placement clicks an existing SOLID block's face; the server computes
-        // the new block's position as (clickedBlockPos + faceNormal). Sending blockPosition = pos
-        // (the empty cell we want to fill) was wrong - resolve a real solid neighbour to click
-        // instead, preferring one that gives the orientation we actually want (e.g. for the
-        // piston's push direction) when possible.
-        val (refPos, face) = resolvePlacementReference(pos, preferredFace) ?: return true
+        // The crystal item itself isn't a block (it spawns an entity), so it has no
+        // blockDefinition - but for the crystal specifically we already know pos.add(0,-1,0) is a
+        // valid obsidian/bedrock base (isValidCrystalBase checked it before we ever got here), so
+        // reference that directly rather than running the general neighbor search on it.
+        val (refPos, refFace) = if (identifier == CRYSTAL_ITEM) {
+            pos.add(0, -1, 0) to 1
+        } else {
+            BlockPlacementUtils.findReferenceBlock(session, pos)
+                ?: return false // no solid neighbor to click yet - retry next tick
+        }
+        val blockDefinition = BlockPlacementUtils.blockDefinitionFor(session, identifier)
 
-        // Match latest WClient Scaffold: clone a real ITEM_USE transaction so protocol fields
-        // such as trigger/prediction/legacy actions are preserved. Only placement-specific fields
-        // are changed here.
-        val transaction = (session.lastPlacementTransaction?.clone() ?: InventoryTransactionPacket()).apply {
+        val transaction = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
             actionType = 0
             blockPosition = refPos
-            blockFace = face
+            blockFace = refFace
             hotbarSlot = slot
             itemInHand = localPlayer.inventory.hand
             playerPosition = localPlayer.vec3Position
-            headPosition = Vector3f.from(localPlayer.vec3Position.x, localPlayer.vec3Position.y + 1.62f, localPlayer.vec3Position.z)
             clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            // Keep blockDefinition from the real clicked transaction when a template exists.
-            if (session.lastPlacementTransaction == null) {
-                blockDefinition = session.level.getBlockAt(refPos)
-            }
+            this.blockDefinition = blockDefinition
         }
         session.serverBound(transaction)
+        BlockPlacementUtils.predictLocalBlockChange(session, pos, blockDefinition)
         return true
-    }
-
-    /**
-     * Finds a real, currently-solid block adjacent to [target] and the face of it that faces
-     * [target], so a placement packet can click that face like a real client would (see place()).
-     * If [preferredFace] is given (e.g. to aim the piston in a specific push direction) and that
-     * particular neighbour happens to be solid, it's used first; otherwise falls back to any
-     * solid neighbour, preferring straight down.
-     * Bedrock face indices: 0=down,1=up,2=north(-z),3=south(+z),4=west(-x),5=east(+x).
-     */
-    private fun resolvePlacementReference(target: Vector3i, preferredFace: Int? = null): Pair<Vector3i, Int>? {
-        val candidates = listOf(
-            target.add(0, -1, 0) to 1,
-            target.add(0, 0, -1) to 3,
-            target.add(0, 0, 1) to 2,
-            target.add(-1, 0, 0) to 5,
-            target.add(1, 0, 0) to 4,
-            target.add(0, 1, 0) to 0
-        )
-        if (preferredFace != null) {
-            val preferred = candidates.firstOrNull { it.second == preferredFace }
-            if (preferred != null && session.level.getBlockAt(preferred.first).identifier != "minecraft:air") {
-                return preferred
-            }
-        }
-        return candidates.firstOrNull { (pos, _) -> session.level.getBlockAt(pos).identifier != "minecraft:air" }
     }
 
     /** Bedrock block face indices: 0=down,1=up,2=north,3=south,4=west,5=east */

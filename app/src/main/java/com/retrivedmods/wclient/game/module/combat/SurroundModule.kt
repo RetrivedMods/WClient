@@ -1,6 +1,7 @@
 package com.retrivedmods.wclient.game.module.combat
 
 import com.retrivedmods.wclient.game.InterceptablePacket
+import com.retrivedmods.wclient.game.BlockPlacementUtils
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.math.vector.Vector3f
@@ -100,7 +101,8 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
                 val iterator = placeList.iterator()
                 while (iterator.hasNext() && placed < blocksPerTick) {
                     val pos = iterator.next()
-                    if (place(OBSIDIAN, pos, obsidianSlot)) placed++
+                    place(OBSIDIAN, pos, obsidianSlot)
+                    placed++
                 }
             } else {
                 tickCounter++
@@ -189,52 +191,25 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         return dx * dx + dy * dy + dz * dz
     }
 
-    private fun place(identifier: String, pos: Vector3i, slot: Int): Boolean {
+    private fun place(identifier: String, pos: Vector3i, slot: Int) {
         val localPlayer = session.localPlayer
+        val (refPos, refFace) = BlockPlacementUtils.findReferenceBlock(session, pos)
+            ?: return // no solid neighbor to click yet - skip this cell, the ring pass will retry it
+        val blockDefinition = BlockPlacementUtils.blockDefinitionFor(session, identifier)
 
-        // Real Bedrock block placement clicks an existing SOLID block's face; the server computes
-        // the new block's position as (clickedBlockPos + faceNormal) itself. Sending blockPosition
-        // = pos (the empty air cell we want to fill) was wrong - there's nothing solid there to
-        // click, so the server had nothing valid to place against. Resolve a real solid neighbour
-        // to click instead.
-        val (refPos, face) = resolvePlacementReference(pos) ?: return false
-
-        // Latest WClient Scaffold clones a real client ITEM_USE packet. This is important:
-        // newer Bedrock versions carry prediction/trigger/legacy-action fields that are easy
-        // to get wrong when constructing InventoryTransactionPacket from scratch.
-        val packet = (session.lastPlacementTransaction?.clone() ?: InventoryTransactionPacket()).apply {
+        val packet = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
             actionType = 0
             blockPosition = refPos
-            blockFace = face
+            blockFace = refFace
             hotbarSlot = slot
             itemInHand = localPlayer.inventory.hand
             playerPosition = localPlayer.vec3Position
-            headPosition = Vector3f.from(localPlayer.vec3Position.x, localPlayer.vec3Position.y + 1.62f, localPlayer.vec3Position.z)
             clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            // Do NOT overwrite blockDefinition: Scaffold keeps the definition from the real
-            // clicked-block transaction when cloning it.
+            this.blockDefinition = blockDefinition
         }
         session.serverBound(packet)
-        return true
-    }
-
-    /**
-     * Finds a real, currently-solid block adjacent to [target] and the face of it that faces
-     * [target], so a placement packet can click that face like a real client would (see place()).
-     * Prefers straight down, since that's the most common/expected case for these two modules.
-     * Bedrock face indices: 0=down,1=up,2=north(-z),3=south(+z),4=west(-x),5=east(+x).
-     */
-    private fun resolvePlacementReference(target: Vector3i): Pair<Vector3i, Int>? {
-        val candidates = listOf(
-            target.add(0, -1, 0) to 1,
-            target.add(0, 0, -1) to 3,
-            target.add(0, 0, 1) to 2,
-            target.add(-1, 0, 0) to 5,
-            target.add(1, 0, 0) to 4,
-            target.add(0, 1, 0) to 0
-        )
-        return candidates.firstOrNull { (pos, _) -> session.level.getBlockAt(pos).identifier != "minecraft:air" }
+        BlockPlacementUtils.predictLocalBlockChange(session, pos, blockDefinition)
     }
 
     private fun switchToSlot(slot: Int) {
