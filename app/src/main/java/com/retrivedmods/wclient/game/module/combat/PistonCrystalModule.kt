@@ -87,7 +87,20 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         tickCounter = 0
         oldSlot = -1
         lastCrystalAttack.clear()
+        lastWarnedMessage = null
     }
+
+    // --- TEMPORARY diagnostic logging -----------------------------------------------------
+    // Prints why placement isn't happening, at most once every ~40 ticks (~2s) so chat doesn't
+    // get flooded. Remove once we know whether the problem is "no target" vs "target found but
+    // every placement candidate rejected".
+    private var diagTickCounter = 0
+    private fun diag(msg: String) {
+        diagTickCounter++
+        if (diagTickCounter % 40 != 0) return
+        session.displayClientMessage("§d[PistonCrystalDiag] §f$msg")
+    }
+    // -----------------------------------------------------------------------------------------
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled || !isSessionCreated) return
@@ -107,7 +120,13 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
                     placement = found
                     step = if (usePiston) Step.PISTON else Step.CRYSTAL
                     tickCounter = 0
+                    diag("placement found, starting sequence")
+                } else {
+                    diag("target found (${target.javaClass.simpleName}, dist=${"%.1f".format(target.distance(session.localPlayer))}) but no valid placement. First failure: ${lastPlacementFailureReason}")
                 }
+            } else {
+                val nearbyCount = session.level.entityMap.values.count { it.distance(session.localPlayer) <= range }
+                diag("no target found (range=$range, entities within range incl. non-targetable: $nearbyCount, total entities tracked: ${session.level.entityMap.size})")
             }
         }
 
@@ -162,16 +181,23 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             localPlayer.distance(testPos)
         }
 
+        var firstFailureReason: String? = null
         for (dir in orderedDirs) {
             for (yLevel in 0..1) {
                 val config = calculatePlacement(targetBlockPos, dir, yLevel)
-                if (isValidPlacement(config, target)) {
+                val reason = isValidPlacementVerbose(config, target)
+                if (reason == null) {
                     return config
+                } else if (firstFailureReason == null) {
+                    firstFailureReason = "dir=$dir yLevel=$yLevel: $reason"
                 }
             }
         }
+        lastPlacementFailureReason = firstFailureReason
         return null
     }
+
+    private var lastPlacementFailureReason: String? = null
 
     private fun calculatePlacement(targetPos: Vector3i, dir: Vector3i, yLevel: Int): Placement {
         val crystalPos = targetPos.add(dir.x, yLevel, dir.z)
@@ -194,13 +220,20 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
     /** Loosely matches canBeBuiltOver(): only air here (WClient has no full block-property table). */
     private fun canPlaceBlock(pos: Vector3i): Boolean = isAir(pos)
 
-    private fun isValidPlacement(config: Placement, target: Entity): Boolean {
-        if (!canPlaceCrystal(config.crystalPos)) return false
-        if (!canPlaceBlock(config.pistonPos)) return false
-        if (!canPlaceBlock(config.redstonePos)) return false
+    private fun isValidPlacement(config: Placement, target: Entity): Boolean = isValidPlacementVerbose(config, target) == null
+
+    /** Same checks as isValidPlacement, but returns *why* it failed (or null if it passed) for diagnostics. */
+    private fun isValidPlacementVerbose(config: Placement, target: Entity): String? {
+        if (!canPlaceCrystal(config.crystalPos)) {
+            val base = session.level.getBlockAt(config.crystalPos.add(0, -1, 0)).identifier
+            val spot = session.level.getBlockAt(config.crystalPos).identifier
+            return "canPlaceCrystal failed (crystal spot=$spot, base below=$base, need air/air/obsidian-or-bedrock)"
+        }
+        if (!canPlaceBlock(config.pistonPos)) return "piston spot not air (${session.level.getBlockAt(config.pistonPos).identifier})"
+        if (!canPlaceBlock(config.redstonePos)) return "redstone spot not air (${session.level.getBlockAt(config.redstonePos).identifier})"
 
         val crystalCenter = Vector3f.from(config.crystalPos.x + 0.5f, config.crystalPos.y + 0.5f, config.crystalPos.z + 0.5f)
-        if (target.distance(crystalCenter) > range) return false
+        if (target.distance(crystalCenter) > range) return "target too far from crystal spot (${"%.1f".format(target.distance(crystalCenter))} > $range)"
 
         var estimatedTargetDamage = 0f
         var estimatedSelfDamage = 0f
@@ -212,10 +245,10 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             if (entity.runtimeEntityId == target.runtimeEntityId) estimatedTargetDamage = damage
             if (entity is LocalPlayer) estimatedSelfDamage = damage
         }
-        if (estimatedTargetDamage < targetDamageMin) return false
-        if (estimatedSelfDamage > selfDamageLimit) return false
+        if (estimatedTargetDamage < targetDamageMin) return "target damage too low (${"%.1f".format(estimatedTargetDamage)} < $targetDamageMin)"
+        if (estimatedSelfDamage > selfDamageLimit) return "self damage too high (${"%.1f".format(estimatedSelfDamage)} > $selfDamageLimit)"
 
-        return true
+        return null
     }
 
     // --- placement sequencing ----------------------------------------------------------------
@@ -266,7 +299,11 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
         val localPlayer = session.localPlayer
         val slot = localPlayer.inventory.searchForItemInHotbar {
             it.definition?.identifier == identifier
-        } ?: return true // don't get stuck retrying forever if we're out of the item
+        }
+        if (slot == null) {
+            warnMissingItem("§c${itemDisplayName(identifier)}を持っていません！")
+            return true // don't get stuck retrying forever if we're out of the item
+        }
 
         if (oldSlot == -1) {
             oldSlot = localPlayer.inventory.heldItemSlot
@@ -283,8 +320,9 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             authInput.rotation = Vector3f.from(0f, yaw, yaw)
         }
 
-        // The crystal item itself isn't a block (it spawns an entity), so it has no
-        // blockDefinition - but for the crystal specifically we already know pos.add(0,-1,0) is a
+        // The crystal item itself isn't a block (it spawns an entity) - but blockDefinition still
+        // needs to describe whatever's being clicked (the obsidian/bedrock base), same as any
+        // other placement. For the crystal specifically we already know pos.add(0,-1,0) is a
         // valid obsidian/bedrock base (isValidCrystalBase checked it before we ever got here), so
         // reference that directly rather than running the general neighbor search on it.
         val (refPos, refFace) = if (identifier == CRYSTAL_ITEM) {
@@ -293,7 +331,10 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             BlockPlacementUtils.findReferenceBlock(session, pos)
                 ?: return false // no solid neighbor to click yet - retry next tick
         }
-        val blockDefinition = BlockPlacementUtils.blockDefinitionFor(session, identifier)
+        // The block being *placed* (piston/redstone_block) - null for the crystal item, which is
+        // correct: nothing appears in our own block tracking when a crystal entity spawns.
+        val placedDefinition = BlockPlacementUtils.blockDefinitionFor(session, identifier)
+        val heldItem = localPlayer.inventory.hand
 
         val transaction = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
@@ -301,13 +342,17 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             blockPosition = refPos
             blockFace = refFace
             hotbarSlot = slot
-            itemInHand = localPlayer.inventory.hand
+            itemInHand = heldItem
             playerPosition = localPlayer.vec3Position
             clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            this.blockDefinition = blockDefinition
+            // blockDefinition must always describe the EXISTING block being clicked (refPos) -
+            // including for the crystal item, which previously left this null entirely. See
+            // BlockPlacementUtils' class doc for how a real captured packet confirmed this.
+            blockDefinition = BlockPlacementUtils.referenceBlockDefinition(session, refPos)
+            actions.add(BlockPlacementUtils.consumeItemAction(slot, heldItem))
         }
         session.serverBound(transaction)
-        BlockPlacementUtils.predictLocalBlockChange(session, pos, blockDefinition)
+        BlockPlacementUtils.predictLocalBlockChange(session, pos, placedDefinition)
         return true
     }
 
@@ -328,7 +373,27 @@ class PistonCrystalModule : Module("piston_crystal", ModuleCategory.Combat) {
             containerId = 0
             isSelectHotbarSlot = true
         }
-        session.clientBound(packet)
+        // Must go to the real server (this is what tells it which item we're now holding), not
+        // just update our own local display - sending it clientBound only meant the server never
+        // learned about the switch, so every placement afterwards referenced a hotbar slot/item
+        // the server didn't think was selected and rejected it.
+        session.serverBound(packet)
+    }
+
+    private var lastWarnedMessage: String? = null
+
+    /** Warns once per distinct message while the module stays enabled, instead of spamming chat every tick. */
+    private fun warnMissingItem(message: String) {
+        if (lastWarnedMessage == message) return
+        lastWarnedMessage = message
+        session.displayClientMessage(message)
+    }
+
+    private fun itemDisplayName(identifier: String): String = when (identifier) {
+        PISTON -> "ピストン"
+        CRYSTAL_ITEM -> "エンドクリスタル"
+        REDSTONE_BLOCK -> "レッドストーンブロック"
+        else -> identifier
     }
 
     // --- crystal detonation fallback ----------------------------------------------------------
