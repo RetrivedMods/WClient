@@ -3,25 +3,36 @@ package com.retrivedmods.wclient.game.module.misc
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
+import com.retrivedmods.wclient.util.PacketDebugLog
 import com.retrivedmods.wclient.util.setPacketField
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 
 /**
- * Debug tool: prints the fields of every real ITEM_USE (block place) InventoryTransactionPacket
- * to chat as it passes through the relay - including ones the real Minecraft client sends when
- * you manually place a block by hand. Enable this, place one block yourself, and compare the
- * logged fields against what PistonCrystalModule/SurroundModule construct, field by field, to
- * find whatever's still wrong/missing.
- *
- * Doesn't see our own modules' auto-placed packets - those go out via session.serverBound(...)
- * directly, bypassing the intercept pipeline this module listens on, same as every other module
- * here (see e.g. PositionLoggerModule for the same TextPacket-based logging pattern).
+ * Debug tool: prints the fields of every ITEM_USE (block place) InventoryTransactionPacket to
+ * chat, tagged by where it came from:
+ *  - [PlaceLog] - real packets the actual Minecraft client sends, e.g. when you manually place a
+ *    block by hand, seen here via the normal beforePacketBound intercept pipeline.
+ *  - [AutoPlaceLog] - packets our own modules (PistonCrystalModule/SurroundModule, via
+ *    LocalPlayer.placeBlock) send directly with session.serverBound(...), which bypass that
+ *    pipeline - these come through PacketDebugLog instead, toggled on/off by this module.
+ * Enable this, place one block yourself and let an auto-place module try one too, then compare
+ * the two logs field by field.
  */
 class PacketLoggerModule : Module("packet_logger", ModuleCategory.Misc) {
 
     private var logPlacements by boolValue("log_placements", true)
+
+    override fun onEnabled() {
+        super.onEnabled()
+        PacketDebugLog.enabled = true
+    }
+
+    override fun onDisabled() {
+        super.onDisabled()
+        PacketDebugLog.enabled = false
+    }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled || !logPlacements) return

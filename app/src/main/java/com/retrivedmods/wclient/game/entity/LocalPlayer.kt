@@ -6,6 +6,7 @@ import com.retrivedmods.wclient.game.inventory.ContainerInventory
 import com.retrivedmods.wclient.game.inventory.PlayerInventory
 import com.retrivedmods.wclient.game.registry.BlockDefinition
 import com.retrivedmods.wclient.game.utils.misc.removeNetInfo
+import com.retrivedmods.wclient.util.PacketDebugLog
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.math.vector.Vector3i
 import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode
@@ -115,33 +116,74 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             hotbarSlot = inventory.heldItemSlot
             itemInHand = inventory.hand
             playerPosition = vec3Position
-            headPosition = Vector3f.from(vec3Position.x, vec3Position.y + 1.62f, vec3Position.z)
-            clickPosition = Vector3f.from(
-                Math.random().toFloat(),
-                Math.random().toFloat(),
-                Math.random().toFloat()
-            )
-            blockDefinition = definition
+            // headPosition: confirmed via a real captured placement packet (see PacketLoggerModule)
+            // that the actual Minecraft client sends this as null - leaving it unset entirely
+            // (previously this was set to an eye-height offset, which was wrong).
+            clickPosition = clickPositionForFace(face)
+            // blockDefinition must describe the EXISTING block at referencePos (the thing being
+            // clicked), not the new block being placed - also confirmed from a real captured
+            // packet, where this field held the wall block that was clicked, not the obsidian
+            // being placed. Using `definition` (the new block) here was backwards.
+            blockDefinition = session.level.getBlockAt(referencePos)
 
-            if (inventoriesServerAuthoritative) {
-                val current = itemInHand
-                val afterUse = if (current.count > 1) {
-                    current.toBuilder().count(current.count - 1).build()
-                } else {
-                    ItemData.AIR
-                }
-                actions.add(
-                    InventoryActionData(
-                        InventorySource.fromContainerWindowId(0),
-                        hotbarSlot,
-                        current,
-                        afterUse
-                    )
-                )
+            // A real captured placement packet (via PacketLoggerModule) always included this
+            // inventory action alongside the ITEM_USE transaction, so it's sent unconditionally
+            // now rather than only when inventoriesServerAuthoritative reads true - trusting what
+            // the real client actually does over that flag's value on any particular server.
+            val current = itemInHand
+            val afterUse = if (current.count > 1) {
+                current.toBuilder().count(current.count - 1).build()
+            } else {
+                ItemData.AIR
             }
+            actions.add(
+                InventoryActionData(
+                    InventorySource.fromContainerWindowId(0),
+                    hotbarSlot,
+                    current,
+                    afterUse
+                )
+            )
         }
 
         session.serverBound(packet)
+        PacketDebugLog.log(
+            session,
+            "AutoPlaceLog",
+            buildString {
+                append("blockPosition: ${packet.blockPosition}\n")
+                append("blockFace: ${packet.blockFace}\n")
+                append("blockDefinition: ${packet.blockDefinition}\n")
+                append("clickPosition: ${packet.clickPosition}\n")
+                append("playerPosition: ${packet.playerPosition}\n")
+                append("headPosition: ${packet.headPosition}\n")
+                append("hotbarSlot: ${packet.hotbarSlot}\n")
+                append("itemInHand: ${packet.itemInHand}\n")
+                append("actions: ${packet.actions}")
+            }
+        )
+    }
+
+    /**
+     * A click position consistent with [face] - the axis matching the clicked face pinned to its
+     * boundary (0f or 1f), the other two randomized within the face like a real click would be.
+     * Matches the shape of a real captured placement packet's clickPosition (e.g. (0.875, 1.0,
+     * 0.125) for an up-face click), rather than the old fixed/fully-random point which didn't
+     * correspond to the face at all.
+     */
+    private fun clickPositionForFace(face: Int): Vector3f {
+        val rx = Math.random().toFloat()
+        val ry = Math.random().toFloat()
+        val rz = Math.random().toFloat()
+        return when (face) {
+            0 -> Vector3f.from(rx, 0f, rz)
+            1 -> Vector3f.from(rx, 1f, rz)
+            2 -> Vector3f.from(rx, ry, 0f)
+            3 -> Vector3f.from(rx, ry, 1f)
+            4 -> Vector3f.from(0f, ry, rz)
+            5 -> Vector3f.from(1f, ry, rz)
+            else -> Vector3f.from(0.5f, 0.5f, 0.5f)
+        }
     }
 
     fun swing() {

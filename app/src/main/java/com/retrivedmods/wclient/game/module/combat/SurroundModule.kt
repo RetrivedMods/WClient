@@ -46,6 +46,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         tickCounter = 0
         oldSlot = -1
         hasCentered = false
+        lastWarnedMessage = null
     }
 
     override fun onDisabled() {
@@ -73,6 +74,10 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
 
         val obsidianSlot = localPlayer.inventory.searchForItemInHotbar {
             it.definition?.identifier == OBSIDIAN
+        }
+
+        if (obsidianSlot == null) {
+            warnMissingItem("§c黒曜石を持っていません！")
         }
 
         placeList = computePlaceList()
@@ -113,7 +118,9 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
             val buttonSlot = localPlayer.inventory.searchForItemInHotbar {
                 it.definition?.identifier == BUTTON
             }
-            if (buttonSlot != null) {
+            if (buttonSlot == null) {
+                warnMissingItem("§cボタン(stone_button)を持っていません！")
+            } else {
                 val buttonPos = Vector3i.from(
                     floor(localPlayer.vec3Position.x).toInt(),
                     floor(localPlayer.vec3Position.y).toInt() - 1,
@@ -122,6 +129,15 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
                 place(BUTTON, buttonPos, buttonSlot)
             }
         }
+    }
+
+    private var lastWarnedMessage: String? = null
+
+    /** Warns once per distinct message while the module stays enabled, instead of spamming chat every tick. */
+    private fun warnMissingItem(message: String) {
+        if (lastWarnedMessage == message) return
+        lastWarnedMessage = message
+        session.displayClientMessage(message)
     }
 
     /** [Surround.cpp]'s canPlaceBlock(): the target itself must be air (or, with airPlace, anything). */
@@ -195,7 +211,8 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         val localPlayer = session.localPlayer
         val (refPos, refFace) = BlockPlacementUtils.findReferenceBlock(session, pos)
             ?: return // no solid neighbor to click yet - skip this cell, the ring pass will retry it
-        val blockDefinition = BlockPlacementUtils.blockDefinitionFor(session, identifier)
+        val placedDefinition = BlockPlacementUtils.blockDefinitionFor(session, identifier)
+        val heldItem = localPlayer.inventory.hand
 
         val packet = InventoryTransactionPacket().apply {
             transactionType = InventoryTransactionType.ITEM_USE
@@ -203,13 +220,17 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
             blockPosition = refPos
             blockFace = refFace
             hotbarSlot = slot
-            itemInHand = localPlayer.inventory.hand
+            itemInHand = heldItem
             playerPosition = localPlayer.vec3Position
             clickPosition = Vector3f.from(0.5f, 0.5f, 0.5f)
-            this.blockDefinition = blockDefinition
+            // blockDefinition must describe the EXISTING block being clicked (refPos), not the
+            // item being placed - see BlockPlacementUtils' class doc for how a real captured
+            // packet confirmed this.
+            blockDefinition = BlockPlacementUtils.referenceBlockDefinition(session, refPos)
+            actions.add(BlockPlacementUtils.consumeItemAction(slot, heldItem))
         }
         session.serverBound(packet)
-        BlockPlacementUtils.predictLocalBlockChange(session, pos, blockDefinition)
+        BlockPlacementUtils.predictLocalBlockChange(session, pos, placedDefinition)
     }
 
     private fun switchToSlot(slot: Int) {
@@ -218,6 +239,10 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
             containerId = 0
             isSelectHotbarSlot = true
         }
-        session.clientBound(packet)
+        // Must go to the real server (this is what tells it which item we're now holding), not
+        // just update our own local display - sending it clientBound only meant the server never
+        // learned about the switch, so every placement afterwards referenced a hotbar slot/item
+        // the server didn't think was selected and rejected it.
+        session.serverBound(packet)
     }
 }
