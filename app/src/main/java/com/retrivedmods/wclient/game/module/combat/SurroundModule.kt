@@ -39,6 +39,7 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
     private var tickCounter = 0
     private var oldSlot = -1
     private var hasCentered = false
+    private var surroundDiagTickCounter = 0
 
     override fun onEnabled() {
         super.onEnabled()
@@ -81,6 +82,20 @@ class SurroundModule : Module("surround", ModuleCategory.Combat) {
         }
 
         placeList = computePlaceList()
+
+        run {
+            surroundDiagTickCounter++
+            if (surroundDiagTickCounter % 40 == 0) {
+                val pos = localPlayer.vec3Position
+                val currentPos = Vector3i.from(floor(pos.x).toInt(), floor(pos.y + 0.5f).toInt(), floor(pos.z).toInt())
+                val feetBelow = session.level.getBlockAt(currentPos.add(0, -1, 0)).identifier
+                val north = session.level.getBlockAt(currentPos.add(0, -1, -1)).identifier
+                session.displayClientMessage(
+                    "§b[SurroundDiag] placeList size=${placeList.size}, airPlace=$airPlace, " +
+                        "block directly below feet=$feetBelow, block below N cell=$north, obsidianSlot=$obsidianSlot"
+                )
+            }
+        }
 
         if (fakeRotation && placeList.isNotEmpty()) {
             val eye = localPlayer.vec3Position
