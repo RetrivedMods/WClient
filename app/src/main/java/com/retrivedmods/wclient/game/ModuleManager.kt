@@ -32,6 +32,7 @@ import com.retrivedmods.wclient.game.module.misc.FakeXPModule
 import com.retrivedmods.wclient.game.module.misc.MinerModule
 import com.retrivedmods.wclient.game.module.misc.NoChatModule
 import com.retrivedmods.wclient.game.module.misc.PieChartModule
+import com.retrivedmods.wclient.game.module.misc.PacketLoggerModule
 import com.retrivedmods.wclient.game.module.misc.PositionLoggerModule
 import com.retrivedmods.wclient.game.module.misc.ReplayModule
 import com.retrivedmods.wclient.game.module.misc.ChestStealerModule
@@ -156,6 +157,7 @@ object ModuleManager {
             add(SpammerModule())
             add(WaterMarkModule())
             add(PositionLoggerModule())
+            add(PacketLoggerModule())
             add(NoChatModule())
             add(CommandHandlerModule())
             add(ReplayModule())
