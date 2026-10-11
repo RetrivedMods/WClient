@@ -20,6 +20,7 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.math.vector.Vector2f
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
+import org.cloudburstmc.protocol.bedrock.packet.TickSyncPacket
 import org.cloudburstmc.protocol.common.SimpleDefinitionRegistry
 
 @Suppress("MemberVisibilityCanBePrivate")
@@ -42,6 +43,19 @@ class GameSession(val wRelaySession: WRelaySession) : ComposedPacketHandler {
 
     val protocolVersion: Int
         get() = wRelaySession.server.codec.protocolVersion
+
+    /**
+     * True when the negotiated protocol still ships the legacy TickSync echo probe. TickSync was
+     * deregistered in protocol 685 (1.20.60), so it must not be sent on newer servers: the codec has
+     * no id for it and the write would fail inside the encoder.
+     */
+    val supportsTickSyncProbe: Boolean
+        get() = runCatching {
+            wRelaySession.server.codec.getPacketDefinition(TickSyncPacket::class.java) != null
+        }.getOrDefault(false)
+
+    /** RakNet-level RTT (ms) of the relay <-> server link, or null before it has been measured. */
+    fun relayUpstreamPingMs(): Long? = runCatching { wRelaySession.upstreamPingMs }.getOrNull()
 
     private val mappingProviderContext = AppContext.instance
 

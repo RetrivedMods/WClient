@@ -3,6 +3,9 @@ package com.retrivedmods.wrelay.listener
 import com.retrivedmods.wrelay.WRelaySession
 import com.retrivedmods.wrelay.util.AuthUtils
 import com.retrivedmods.wrelay.util.refresh
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm
@@ -22,27 +25,20 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 @Suppress("MemberVisibilityCanBePrivate")
 class OnlineLoginPacketListener(
     val wRelaySession: WRelaySession,
-    private var fullBedrockSession: StepFullBedrockSession.FullBedrockSession
+    fullBedrockSession: StepFullBedrockSession.FullBedrockSession
 ) : WRelayPacketListener {
+
+    /**
+     * Refreshed off the Netty event loop so a stale token cannot stall the game facing session.
+     * Volatile because it is written on Dispatchers.IO and read from the packet pipeline.
+     */
+    @Volatile
+    private var fullBedrockSession: StepFullBedrockSession.FullBedrockSession = fullBedrockSession
 
     private var skinData: JSONObject? = null
 
     override fun beforeClientBound(packet: BedrockPacket): Boolean {
         if (packet is LoginPacket) {
-            if (fullBedrockSession.isExpired) {
-                println("Session expired, attempting to refresh tokens...")
-
-                try {
-                    fullBedrockSession = fullBedrockSession.refresh()
-                    println("Successfully refreshed session for: ${fullBedrockSession.mcChain.displayName}")
-                } catch (e: Exception) {
-                    println("Failed to refresh session: ${e.message}")
-                    e.printStackTrace()
-                    wRelaySession.server.disconnect("Your session has expired and could not be refreshed. Please re-login in the W Client.")
-                    return true
-                }
-            }
-
             println("Processing login packet")
 
             try {
@@ -139,25 +135,57 @@ class OnlineLoginPacketListener(
         return false
     }
 
+    /**
+     * Kicks off the upstream connection. The token refresh and the RakNet connect both perform
+     * network I/O: they must never run on the Netty event loop. Doing the refresh inline used to
+     * block the game facing session for tens of seconds on the first join, which the game reports
+     * as a "creeper" connection timeout and which appears to be fixed by simply trying again.
+     */
     private fun connectServer() {
-        try {
-            wRelaySession.wRelay.connectToServer {
-                println("Connected to server, sending network settings request")
-
-                try {
-                    val packet = RequestNetworkSettingsPacket()
-                    packet.protocolVersion = wRelaySession.server.codec.protocolVersion
-                    wRelaySession.serverBoundImmediately(packet)
-                    println("Network settings request sent")
-                } catch (e: Exception) {
-                    println("Failed to send network settings request: ${e.message}")
-                    e.printStackTrace()
-                }
+        CoroutineScope(Dispatchers.IO).launch {
+            if (!ensureSessionFresh()) {
+                return@launch
             }
+
+            try {
+                wRelaySession.wRelay.connectToServer {
+                    println("Connected to server, sending network settings request")
+
+                    try {
+                        val packet = RequestNetworkSettingsPacket()
+                        packet.protocolVersion = wRelaySession.server.codec.protocolVersion
+                        wRelaySession.serverBoundImmediately(packet)
+                        println("Network settings request sent")
+                    } catch (e: Exception) {
+                        println("Failed to send network settings request: ${e.message}")
+                        e.printStackTrace()
+                    }
+                }
+            } catch (e: Exception) {
+                println("Failed to connect to server: ${e.message}")
+                e.printStackTrace()
+                wRelaySession.server.disconnect("Failed to connect to server: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun ensureSessionFresh(): Boolean {
+        if (!fullBedrockSession.isExpired) {
+            return true
+        }
+
+        println("Session expired, attempting to refresh tokens...")
+        return try {
+            fullBedrockSession = fullBedrockSession.refresh()
+            println("Successfully refreshed session for: ${fullBedrockSession.mcChain.displayName}")
+            true
         } catch (e: Exception) {
-            println("Failed to connect to server: ${e.message}")
+            println("Failed to refresh session: ${e.message}")
             e.printStackTrace()
-            wRelaySession.server.disconnect("Failed to connect to server: ${e.message}")
+            wRelaySession.server.disconnect(
+                "Your session has expired and could not be refreshed. Please re-login in the W Client."
+            )
+            false
         }
     }
 

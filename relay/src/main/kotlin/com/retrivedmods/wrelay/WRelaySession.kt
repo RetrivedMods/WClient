@@ -3,6 +3,7 @@ package com.retrivedmods.wrelay
 import com.retrivedmods.wrelay.listener.WRelayPacketListener
 import io.netty.util.internal.PlatformDependent
 import net.kyori.adventure.text.Component
+import org.cloudburstmc.netty.handler.codec.raknet.common.RakSessionCodec
 import org.cloudburstmc.protocol.bedrock.BedrockClientSession
 import org.cloudburstmc.protocol.bedrock.BedrockPeer
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession
@@ -61,6 +62,39 @@ class WRelaySession internal constructor(
     private val packetQueue: Queue<Pair<BedrockPacket, Boolean>> = PlatformDependent.newMpscQueue()
     private val maxQueueSize = 1000
 
+    /**
+     * Round trip time (ms) of the upstream RakNet link as measured by the transport itself
+     * (ConnectedPing is sent every 2 seconds by [RakSessionCodec]).
+     *
+     * Null until the first pong arrives. This is the fallback RTT source for application protocols
+     * that no longer ship an in-band probe: TickSync was deregistered in protocol 685, so writing it
+     * on a modern server would fail inside the encoder.
+     */
+    val upstreamPingMs: Long?
+        get() = runCatching {
+            client?.peer?.channel?.pipeline()?.get(RakSessionCodec::class.java)?.ping?.takeIf { it > 0L }
+        }.getOrNull()
+
+    /**
+     * True when the negotiated codec can encode [packet]. Pre-encoded [UnknownPacket]s are always
+     * accepted. Packets missing from the codec (for example TickSync on protocol >= 685) would make
+     * the Netty encoder throw, so callers should drop them instead of writing them.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun isEncodable(packet: BedrockPacket): Boolean {
+        if (packet is UnknownPacket) {
+            return true
+        }
+        val codec = client?.codec ?: server.codec
+        return runCatching {
+            codec.getPacketDefinition(packet.javaClass as Class<BedrockPacket>) != null
+        }.getOrDefault(true)
+    }
+
+    private fun dropUnsupported(packet: BedrockPacket) {
+        println("Dropping unsupported packet ${packet.javaClass.simpleName}: not present in the negotiated codec")
+    }
+
     fun clientBound(packet: BedrockPacket) {
         try {
             server.sendPacket(packet)
@@ -78,6 +112,10 @@ class WRelaySession internal constructor(
     }
 
     fun serverBound(packet: BedrockPacket) {
+        if (!isEncodable(packet)) {
+            dropUnsupported(packet)
+            return
+        }
         if (client != null) {
             try {
                 client!!.sendPacket(packet)
@@ -94,6 +132,10 @@ class WRelaySession internal constructor(
     }
 
     fun serverBoundImmediately(packet: BedrockPacket) {
+        if (!isEncodable(packet)) {
+            dropUnsupported(packet)
+            return
+        }
         if (client != null) {
             try {
                 client!!.sendPacketImmediately(packet)

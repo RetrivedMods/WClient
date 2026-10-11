@@ -36,6 +36,16 @@ class ConnectionManager(
     companion object {
         private const val RATE_LIMIT_WINDOW_MS = 60000L
         private const val MAX_CONNECTIONS_PER_WINDOW = 3
+
+        /**
+         * How often the RakNet offline handshake re-sends Request1/Request2 while completing the
+         * connection. RakNet's own default is 1000ms; halving it doubles the number of attempts that
+         * fit inside [EnhancedServerConfig.connectionTimeout] and — because the MTU probe size steps
+         * down every 4 attempts (1400 -> 1200 -> 576) — reaches the smaller probe sizes twice as fast.
+         * That matters on mobile paths where large, fragmented UDP datagrams get dropped, which shows
+         * up as "the first join times out but a second attempt works".
+         */
+        private const val HANDSHAKE_RETRY_MS = 500
     }
 
     fun cleanup() {
@@ -85,7 +95,7 @@ class ConnectionManager(
                     
                 } catch (e: Exception) {
                     lastException = e
-                    println("Connection attempt ${attempt + 1} failed: ${e.message}")
+                    println("Connection attempt ${attempt + 1} failed: ${describe(e)}")
 
                     if (shouldNotRetry(e)) {
                         break
@@ -164,6 +174,15 @@ class ConnectionManager(
             }
         }
 
+        val sessionTimeout =
+            if (clientConfig.useRealisticTiming) ClientIdentification.getRealisticSessionTimeout() else config.sessionTimeout
+
+        println(
+            "RakNet connect options: protocol=${clientConfig.protocolVersion} guid=${clientConfig.guid} " +
+                "mtu=1400 connectTimeout=${config.connectionTimeout}ms sessionTimeout=${sessionTimeout}ms " +
+                "handshakeRetry=${HANDSHAKE_RETRY_MS}ms compatibilityMode=${clientConfig.compatibilityMode}"
+        )
+
         if (eventLoopGroup == null || eventLoopGroup!!.isShuttingDown || eventLoopGroup!!.isShutdown) {
             eventLoopGroup = NioEventLoopGroup()
         }
@@ -174,10 +193,11 @@ class ConnectionManager(
             .option(RakChannelOption.RAK_PROTOCOL_VERSION, clientConfig.protocolVersion)
             .option(RakChannelOption.RAK_GUID, clientConfig.guid)
             .option(RakChannelOption.RAK_CONNECT_TIMEOUT, config.connectionTimeout)
-            .option(RakChannelOption.RAK_SESSION_TIMEOUT, if (clientConfig.useRealisticTiming) ClientIdentification.getRealisticSessionTimeout() else config.sessionTimeout)
+            .option(RakChannelOption.RAK_SESSION_TIMEOUT, sessionTimeout)
             .option(RakChannelOption.RAK_COMPATIBILITY_MODE, clientConfig.compatibilityMode)
             .option(RakChannelOption.RAK_UNCONNECTED_MAGIC, clientConfig.unconnectedMagic)
             .option(RakChannelOption.RAK_MTU, 1400)
+            .option(RakChannelOption.RAK_TIME_BETWEEN_SEND_CONNECTION_ATTEMPTS_MS, HANDSHAKE_RETRY_MS)
             .handler(object : BedrockChannelInitializer<WRelaySession.ClientSession>() {
                 
                 override fun createSession0(peer: BedrockPeer, subClientId: Int): WRelaySession.ClientSession {
@@ -205,7 +225,7 @@ class ConnectionManager(
             delay(config.connectionTimeout + 10000)
             if (!continuation.isCompleted) {
                 connectFuture.cancel(true)
-                continuation.resumeWithException(Exception("Connection timeout after ${config.connectionTimeout}ms"))
+                continuation.resumeWithException(Exception("Connection timeout after ${config.connectionTimeout + 10000}ms"))
             }
         }
         
@@ -221,6 +241,26 @@ class ConnectionManager(
         continuation.invokeOnCancellation {
             timeoutJob.cancel()
             connectFuture.cancel(true)
+        }
+    }
+
+    /**
+     * Renders an exception together with its cause chain. RakNet surfaces handshake failures as bare
+     * exceptions (for example ConnectTimeoutException) whose message is null, which used to produce
+     * useless "failed: null" logs.
+     */
+    private fun describe(throwable: Throwable): String = buildString {
+        var current: Throwable? = throwable
+        var depth = 0
+        while (current != null && depth < 5) {
+            if (depth > 0) {
+                append(" <- ")
+            }
+            append(current.javaClass.simpleName)
+            append(": ")
+            append(current.message ?: "(no message)")
+            current = current.cause
+            depth++
         }
     }
 

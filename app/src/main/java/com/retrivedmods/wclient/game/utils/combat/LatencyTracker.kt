@@ -10,8 +10,10 @@ import kotlin.math.abs
  * (SRTT / RTTVAR) so a single spike does not yank the aim around.
  *
  * Two sample sources:
- *  1. Active probe: a [TickSyncPacket] is sent every [PROBE_INTERVAL_MS]; the server echoes the
- *     request timestamp back, giving a full-stack RTT (RakNet + server tick processing).
+ *  1. Active probe: a [TickSyncPacket] is sent every [PROBE_INTERVAL_MS] on protocols that still
+ *     support it (removed in 685); the server echoes the request timestamp back, giving a full-stack
+ *     RTT (RakNet + server tick processing). On newer protocols the RakNet-level RTT of the relay
+ *     <-> server link is sampled instead, because TickSync no longer exists on the wire.
  *  2. Passive: combat feedback (attack -> HURT event) reported by [HitTracker] via [addSample].
  *
  * Note: the relay runs on the same device as the game, so relay<->client latency is ~0 and the
@@ -76,6 +78,14 @@ class LatencyTracker(private val session: GameSession) {
         lastProbeSentAt = now
 
         pendingProbes.entries.removeAll { now - it.value > MAX_SANE_RTT_MS * 2 }
+
+        if (!session.supportsTickSyncProbe) {
+            // TickSync was removed in protocol 685; sending it on a modern server throws inside the
+            // relay encoder (no packet id) and the server could never echo it back. Fall back to the
+            // RakNet-level RTT of the relay <-> server link, which the transport measures anyway.
+            session.relayUpstreamPingMs()?.let { addSample(it) }
+            return
+        }
 
         val probe = TickSyncPacket().apply {
             requestTimestamp = now
